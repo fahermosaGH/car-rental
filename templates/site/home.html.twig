@@ -1,0 +1,10 @@
+{% extends 'base.html.twig' %}
+{% block title %}Inicio · Car Rental{% endblock %}
+{% block body %}
+  <h1 class="mb-3">Inicio</h1>
+  <p>Bienvenido a la app de alquiler. Desde acá vamos a construir cada módulo.</p>
+  <div class="d-flex gap-2">
+    <a class="btn btn-primary" href="{{ path('quote') }}">Ir a Cotizar</a>
+    <a class="btn btn-outline-secondary" href="{{ path('my_reservations') }}">Mis reservas</a>
+  </div>
+{% endblock %}

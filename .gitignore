@@ -1,0 +1,21 @@
+# Symfony/Composer
+/vendor/
+/var/
+/node_modules/
+composer.lock
+
+# Entornos y secretos locales
+.env.local
+.env.*.local
+
+# Caché y logs
+*.log
+.cache/
+.phpunit.result.cache
+
+# IDEs/OS
+/.idea/
+/.vscode/
+/*.code-workspace
+.DS_Store
+Thumbs.db

@@ -3,8 +3,11 @@
 namespace App\Entity;
 
 use App\Repository\VehicleRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use App\Entity\VehicleLocationStock; // agregado para tipar correctamente la relación
 
 #[ORM\Entity(repositoryClass: VehicleRepository::class)]
 class Vehicle
@@ -38,6 +41,22 @@ class Vehicle
 
     #[ORM\Column]
     private ?bool $isActive = null;
+
+    /**
+     * @var Collection<int, VehicleLocationStock>
+     */
+    #[ORM\OneToMany(
+        mappedBy: 'vehicle',
+        targetEntity: VehicleLocationStock::class,
+        cascade: ['persist', 'remove'],
+        orphanRemoval: true
+    )]
+    private Collection $stocks;
+
+    public function __construct()
+    {
+        $this->stocks = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -138,5 +157,42 @@ class Vehicle
         $this->isActive = $isActive;
 
         return $this;
+    }
+
+    /**
+     * @return Collection<int, VehicleLocationStock>
+     */
+    public function getStocks(): Collection
+    {
+        return $this->stocks;
+    }
+
+    public function addStock(VehicleLocationStock $stock): static
+    {
+        if (!$this->stocks->contains($stock)) {
+            $this->stocks->add($stock);
+            $stock->setVehicle($this);
+        }
+
+        return $this;
+    }
+
+    public function removeStock(VehicleLocationStock $stock): static
+    {
+        if ($this->stocks->removeElement($stock)) {
+            // set the owning side to null (unless already changed)
+            if ($stock->getVehicle() === $this) {
+                $stock->setVehicle(null);
+            }
+        }
+
+        return $this;
+    }
+
+    // Opcional: mejora la visualización en selects/tablas del admin
+    public function __toString(): string
+    {
+        $label = trim(($this->brand ?? '') . ' ' . ($this->model ?? ''));
+        return $label !== '' ? $label : 'Vehículo #' . ($this->id ?? 0);
     }
 }

@@ -3,7 +3,10 @@
 namespace App\Entity;
 
 use App\Repository\LocationRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use App\Entity\VehicleLocationStock;
 
 #[ORM\Entity(repositoryClass: LocationRepository::class)]
 class Location
@@ -24,6 +27,22 @@ class Location
 
     #[ORM\Column]
     private ?bool $isActive = null;
+
+    /**
+     * @var Collection<int, VehicleLocationStock>
+     */
+    #[ORM\OneToMany(
+        targetEntity: VehicleLocationStock::class,
+        mappedBy: 'location',
+        cascade: ['persist', 'remove'],
+        orphanRemoval: true
+    )]
+    private Collection $stocks;
+
+    public function __construct()
+    {
+        $this->stocks = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -77,4 +96,41 @@ class Location
 
         return $this;
     }
+
+    /**
+     * @return Collection<int, VehicleLocationStock>
+     */
+    public function getStocks(): Collection
+    {
+        return $this->stocks;
+    }
+
+    public function addStock(VehicleLocationStock $stock): static
+    {
+        if (!$this->stocks->contains($stock)) {
+            $this->stocks->add($stock);
+            $stock->setLocation($this);
+        }
+
+        return $this;
+    }
+
+    public function removeStock(VehicleLocationStock $stock): static
+    {
+        if ($this->stocks->removeElement($stock)) {
+            // set the owning side to null (unless already changed)
+            if ($stock->getLocation() === $this) {
+                $stock->setLocation(null);
+            }
+        }
+
+        return $this;
+    }
+
+    // Opcional: mejora la visualización en selects/tablas del admin
+    public function __toString(): string
+    {
+        return $this->name ?? 'Ubicación #' . ($this->id ?? 0);
+    }
 }
+

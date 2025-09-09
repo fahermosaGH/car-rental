@@ -5,6 +5,7 @@ namespace App\Controller\Admin;
 use App\Entity\Location;
 use App\Entity\VehicleCategory;
 use App\Entity\Vehicle;
+use App\Entity\VehicleLocationStock;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
@@ -31,6 +32,7 @@ public function index(): Response
         yield MenuItem::linkToCrud('Ubicaciones', 'fa fa-location-dot', Location::class);
         yield MenuItem::linkToCrud('Categorías', 'fa fa-tags', VehicleCategory::class);
         yield MenuItem::linkToCrud('Vehículos', 'fa fa-car', Vehicle::class);
+        yield MenuItem::linkToCrud('Stock por ubicación', 'fa-solid fa-boxes-stacked', VehicleLocationStock::class);
     }
 }
 

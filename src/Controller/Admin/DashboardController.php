@@ -40,7 +40,6 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToCrud('Categorías', 'fa fa-tags', VehicleCategory::class);
         yield MenuItem::linkToCrud('Vehículos', 'fa fa-car', Vehicle::class);
 
-        // Trabajo de tu compañero (Stock por ubicación)
         if (class_exists(VehicleLocationStock::class)) {
             yield MenuItem::section('Stock');
             yield MenuItem::linkToCrud('Stock por ubicación', 'fa fa-warehouse', VehicleLocationStock::class);
@@ -49,7 +48,6 @@ class DashboardController extends AbstractDashboardController
             yield MenuItem::linkToCrud('Stock por ubicación', 'fa fa-warehouse', VehicleStock::class);
         }
 
-        // Tu trabajo (Clientes)
         yield MenuItem::section('Clientes');
         yield MenuItem::linkToCrud('Clientes', 'fa fa-users', Customer::class);
     }

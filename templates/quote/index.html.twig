@@ -1,0 +1,90 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Cotizar{% endblock %}
+
+{% block body %}
+  <h1>Cotizar</h1>
+
+  {# Errores #}
+  {% if errors is not empty %}
+    <div style="background:#300;color:#fff;padding:10px;margin:10px 0;border-radius:6px;">
+      <ul style="margin:0;padding-left:18px;">
+        {% for e in errors %}<li>{{ e }}</li>{% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  <form method="post" action="{{ path('app_quote') }}" style="display:grid;gap:10px;max-width:520px;margin-bottom:20px;">
+    <label>
+      Ubicación
+      <select name="location_id" required style="width:100%;padding:8px;">
+        <option value="">-- Elegí ubicación --</option>
+        {% for loc in locations %}
+          <option value="{{ loc.id }}" {{ form.location_id == loc.id ? 'selected' : '' }}>
+            {{ loc.name ?? ('Ubicación #' ~ loc.id) }}
+          </option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <label>
+        Retiro (dd/mm/yyyy)
+        <input type="text" name="pickup" value="{{ form.pickup }}" placeholder="dd/mm/yyyy" required style="width:100%;padding:8px;">
+      </label>
+
+      <label>
+        Devolución (dd/mm/yyyy)
+        <input type="text" name="dropoff" value="{{ form.dropoff }}" placeholder="dd/mm/yyyy" required style="width:100%;padding:8px;">
+      </label>
+    </div>
+
+    <button type="submit" style="padding:10px 12px;">Buscar disponibilidad</button>
+  </form>
+
+  {% if results is not empty %}
+    <h2>Vehículos disponibles{% if days %} ({{ days }} {{ days == 1 ? 'día' : 'días' }}){% endif %}</h2>
+
+    <table style="width:100%;border-collapse:collapse;">
+      <thead>
+        <tr style="text-align:left;border-bottom:1px solid #444;">
+          <th style="padding:8px;">Vehículo</th>
+          <th style="padding:8px;">Stock</th>
+          <th style="padding:8px;">Precio/día</th>
+          <th style="padding:8px;">Total</th>
+          <th style="padding:8px;">Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in results %}
+          {% set v = row.vehicle %}
+          <tr style="border-bottom:1px solid #333;">
+            <td style="padding:8px;">
+              {{ v.name ?? v.model ?? ('Vehículo #' ~ v.id) }}
+            </td>
+            <td style="padding:8px;">{{ row.quantity }}</td>
+            <td style="padding:8px;">
+              {% if row.pricePerDay is not null %}
+                $ {{ row.pricePerDay|number_format(0, ',', '.') }} ARS
+              {% else %}
+                —
+              {% endif %}
+            </td>
+            <td style="padding:8px;">
+              {% if row.total is not null %}
+                $ {{ row.total|number_format(0, ',', '.') }} ARS
+              {% else %}
+                —
+              {% endif %}
+            </td>
+            <td style="padding:8px;">
+              <a href="{{ path('app_reserve') }}" style="text-decoration:underline;">Reservar (próximo paso)</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% elseif form.location_id and form.pickup and form.dropoff and errors is empty %}
+    <p>No hay vehículos disponibles para esa ubicación.</p>
+  {% endif %}
+{% endblock %}

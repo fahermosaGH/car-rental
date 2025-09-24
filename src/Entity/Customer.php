@@ -56,4 +56,23 @@ class Customer
     public function setDocumentNumber(?string $doc): self { $this->document_number = $doc; return $this; }
 
     public function getCreatedAt(): \DateTimeImmutable { return $this->created_at; }
+
+    public function getFullName(): string
+    {
+        $first = trim($this->first_name ?? '');
+        $last  = trim($this->last_name ?? '');
+        $name  = trim($first . ' ' . $last);
+
+        if ($name !== '') {
+            return $name;
+        }
+
+        return $this->email !== '' ? $this->email : 'Cliente #'.($this->id ?? '');
+    }
+
+    public function __toString(): string
+    {
+        $name = $this->getFullName();
+        return $this->email !== '' ? "{$name} ({$this->email})" : $name;
+    }
 }

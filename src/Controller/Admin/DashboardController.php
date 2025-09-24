@@ -2,14 +2,12 @@
 
 namespace App\Controller\Admin;
 
+use App\Entity\Reservation;
 use App\Entity\Location;
 use App\Entity\Vehicle;
 use App\Entity\VehicleCategory;
 use App\Entity\Customer;
-
-// Opcionales (según cómo la haya nombrado tu compañero)
 use App\Entity\VehicleLocationStock;
-use App\Entity\VehicleStock;
 
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
@@ -50,5 +48,8 @@ class DashboardController extends AbstractDashboardController
 
         yield MenuItem::section('Clientes');
         yield MenuItem::linkToCrud('Clientes', 'fa fa-users', Customer::class);
+
+        yield MenuItem::section('Operaciones');
+        yield MenuItem::linkToCrud('Reservas', 'fa fa-calendar-check', Reservation::class);
     }
 }

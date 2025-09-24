@@ -42,11 +42,9 @@ class Reservation
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     #[Assert\NotNull(message: 'La fecha/hora de fin es obligatoria.')]
-    #[Assert\Expression(
-        "this.getEndAt() > this.getStartAt()",
-        message: "La fecha/hora de fin debe ser posterior a la de inicio."
-    )]
+    #[Assert\GreaterThan(propertyPath: 'startAt', message: 'La fecha/hora de fin debe ser posterior a la de inicio.')]
     private ?\DateTimeImmutable $endAt = null;
+
 
     #[ORM\Column(length: 20)]
     #[Assert\Choice(choices: ['pending', 'confirmed', 'cancelled'], message: 'Estado inválido.')]

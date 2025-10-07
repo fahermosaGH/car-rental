@@ -10,14 +10,14 @@ use App\Entity\Customer;
 use App\Entity\VehicleLocationStock;
 
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
-use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Assets;
+use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 class DashboardController extends AbstractDashboardController
 {
-    // Nombre que EasyAdmin espera para el dashboard
     #[Route('/admin', name: 'ea_dashboard')]
     public function index(): Response
     {
@@ -26,7 +26,8 @@ class DashboardController extends AbstractDashboardController
 
     public function configureDashboard(): Dashboard
     {
-        return Dashboard::new()->setTitle('Car Rental - Admin');
+        return Dashboard::new()
+            ->setTitle('Car Rental - Admin');
     }
 
     public function configureMenuItems(): iterable
@@ -41,9 +42,6 @@ class DashboardController extends AbstractDashboardController
         if (class_exists(VehicleLocationStock::class)) {
             yield MenuItem::section('Stock');
             yield MenuItem::linkToCrud('Stock por ubicación', 'fa fa-warehouse', VehicleLocationStock::class);
-        } elseif (class_exists(VehicleStock::class)) {
-            yield MenuItem::section('Stock');
-            yield MenuItem::linkToCrud('Stock por ubicación', 'fa fa-warehouse', VehicleStock::class);
         }
 
         yield MenuItem::section('Clientes');
@@ -52,4 +50,12 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::section('Operaciones');
         yield MenuItem::linkToCrud('Reservas', 'fa fa-calendar-check', Reservation::class);
     }
+
+   public function configureAssets(): \EasyCorp\Bundle\EasyAdminBundle\Config\Assets
+ {
+    return parent::configureAssets()
+        ->addCssFile('css/admin-custom.css');
+ }
+
+
 }

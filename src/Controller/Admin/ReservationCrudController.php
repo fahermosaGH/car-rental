@@ -4,12 +4,12 @@ namespace App\Controller\Admin;
 
 use App\Entity\Reservation;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Assets;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\NumberField;
-use EasyCorp\Bundle\EasyAdminBundle\Config\Assets;
 use App\Service\ReservationValidator;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -28,6 +28,13 @@ class ReservationCrudController extends AbstractCrudController
             ->setEntityLabelInSingular('Reserva')
             ->setEntityLabelInPlural('Reservas')
             ->setDefaultSort(['startAt' => 'DESC']);
+    }
+
+    public function configureAssets(Assets $assets): Assets
+    {
+        return $assets
+            ->addJsFile('https://cdn.jsdelivr.net/npm/flatpickr')
+            ->addJsFile('js/reservation-datepicker.js');
     }
 
     public function configureFields(string $pageName): iterable
@@ -52,33 +59,21 @@ class ReservationCrudController extends AbstractCrudController
             ->setHelp('Se puede calcular luego en el flujo de reserva');
     }
 
-    public function configureAssets(Assets $assets): Assets
-    {
-        // Minimal y estable: EasyAdmin carga su propio CSS.
-        return $assets
-            ->addJsFile('js/reservation-check.js');
-            // Si más adelante querés el modal "Ver conflicto", descomentá:
-            // ->addJsFile('js/reservation-conflict-modal.js');
-            // Dejamos fuera Flatpickr/datepicker por ahora.
-    }
-
     public function persistEntity(EntityManagerInterface $em, $entityInstance): void
     {
         if ($entityInstance instanceof Reservation) {
             $vehicleId = $entityInstance->getVehicle()?->getId();
-            $pickupId  = $entityInstance->getPickupLocation()?->getId(); // <-- sucursal de retiro
+            $pickupId  = $entityInstance->getPickupLocation()?->getId();
             $start     = $entityInstance->getStartAt();
             $end       = $entityInstance->getEndAt();
 
             if (!$vehicleId || !$pickupId || !$start || !$end || $start >= $end) {
-                $this->addFlash('danger', 'Datos incompletos o fechas inválidas (Fin > Inicio y seleccionar vehículo/sucursal).');
+                $this->addFlash('danger', 'Fechas o datos inválidos.');
                 return;
             }
 
-            // Disponibilidad por stock en sucursal (fin exclusivo)
-            $ok = $this->validator->isAvailable($vehicleId, $pickupId, $start, $end, null);
-            if (!$ok) {
-                $this->addFlash('danger', 'No hay unidades disponibles para ese vehículo en esa sucursal y rango.');
+            if (!$this->validator->isAvailable($vehicleId, $pickupId, $start, $end, null)) {
+                $this->addFlash('danger', 'No hay unidades disponibles para ese vehículo.');
                 return;
             }
         }
@@ -91,19 +86,17 @@ class ReservationCrudController extends AbstractCrudController
     {
         if ($entityInstance instanceof Reservation) {
             $vehicleId = $entityInstance->getVehicle()?->getId();
-            $pickupId  = $entityInstance->getPickupLocation()?->getId(); // <-- sucursal de retiro
+            $pickupId  = $entityInstance->getPickupLocation()?->getId();
             $start     = $entityInstance->getStartAt();
             $end       = $entityInstance->getEndAt();
 
             if (!$vehicleId || !$pickupId || !$start || !$end || $start >= $end) {
-                $this->addFlash('danger', 'Datos incompletos o fechas inválidas (Fin > Inicio y seleccionar vehículo/sucursal).');
+                $this->addFlash('danger', 'Fechas o datos inválidos.');
                 return;
             }
 
-            // Excluye la propia reserva al editar
-            $ok = $this->validator->isAvailable($vehicleId, $pickupId, $start, $end, $entityInstance->getId());
-            if (!$ok) {
-                $this->addFlash('danger', 'No hay unidades disponibles para ese vehículo en esa sucursal y rango.');
+            if (!$this->validator->isAvailable($vehicleId, $pickupId, $start, $end, $entityInstance->getId())) {
+                $this->addFlash('danger', 'No hay stock disponible en esa fecha.');
                 return;
             }
         }
@@ -112,4 +105,3 @@ class ReservationCrudController extends AbstractCrudController
         $this->addFlash('success', 'Reserva actualizada.');
     }
 }
-

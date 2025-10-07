@@ -2,77 +2,120 @@
 
 namespace App\Entity;
 
+use App\Repository\CustomerRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity]
-#[ORM\Table(name: 'customers')]
-#[ORM\UniqueConstraint(name: 'UNIQ_CUSTOMERS_EMAIL', columns: ['email'])]
+#[ORM\Entity(repositoryClass: CustomerRepository::class)]
 class Customer
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column(type:'integer')]
+    #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(type:'string', length:100)]
-    private string $first_name = '';
+    #[ORM\Column(length: 100)]
+    private ?string $name = null;
 
-    #[ORM\Column(type:'string', length:100)]
-    private string $last_name = '';
+    #[ORM\Column(length: 180, unique: true)]
+    private ?string $email = null;
 
-    #[ORM\Column(type:'string', length:180)]
-    private string $email = '';
-
-    #[ORM\Column(type:'string', length:30, nullable:true)]
+    #[ORM\Column(length: 20, nullable: true)]
     private ?string $phone = null;
 
-    #[ORM\Column(type:'string', length:30, nullable:true)]
-    private ?string $document_number = null;
+    #[ORM\Column(type: 'datetime_immutable')]
+    private ?\DateTimeImmutable $createdAt = null;
 
-    #[ORM\Column(type:'datetime_immutable')]
-    private \DateTimeImmutable $created_at;
+    #[ORM\OneToMany(mappedBy: 'customer', targetEntity: Reservation::class, orphanRemoval: true)]
+    private Collection $reservations;
 
     public function __construct()
     {
-        $tz = new \DateTimeZone($_ENV['APP_TIMEZONE'] ?? 'UTC');
-        $this->created_at = new \DateTimeImmutable('now', $tz);
+        $this->reservations = new ArrayCollection();
+        $this->createdAt = new \DateTimeImmutable();
     }
 
-    public function getId(): ?int { return $this->id; }
-
-    public function getFirstName(): string { return $this->first_name; }
-    public function setFirstName(string $firstName): self { $this->first_name = $firstName; return $this; }
-
-    public function getLastName(): string { return $this->last_name; }
-    public function setLastName(string $lastName): self { $this->last_name = $lastName; return $this; }
-
-    public function getEmail(): string { return $this->email; }
-    public function setEmail(string $email): self { $this->email = $email; return $this; }
-
-    public function getPhone(): ?string { return $this->phone; }
-    public function setPhone(?string $phone): self { $this->phone = $phone; return $this; }
-
-    public function getDocumentNumber(): ?string { return $this->document_number; }
-    public function setDocumentNumber(?string $doc): self { $this->document_number = $doc; return $this; }
-
-    public function getCreatedAt(): \DateTimeImmutable { return $this->created_at; }
-
-    public function getFullName(): string
+    public function getId(): ?int
     {
-        $first = trim($this->first_name ?? '');
-        $last  = trim($this->last_name ?? '');
-        $name  = trim($first . ' ' . $last);
+        return $this->id;
+    }
 
-        if ($name !== '') {
-            return $name;
+    public function getName(): ?string
+    {
+        return $this->name;
+    }
+
+    public function setName(string $name): static
+    {
+        $this->name = $name;
+        return $this;
+    }
+
+    public function getEmail(): ?string
+    {
+        return $this->email;
+    }
+
+    public function setEmail(string $email): static
+    {
+        $this->email = $email;
+        return $this;
+    }
+
+    public function getPhone(): ?string
+    {
+        return $this->phone;
+    }
+
+    public function setPhone(?string $phone): static
+    {
+        $this->phone = $phone;
+        return $this;
+    }
+
+    public function getCreatedAt(): ?\DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(\DateTimeImmutable $createdAt): static
+    {
+        $this->createdAt = $createdAt;
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Reservation>
+     */
+    public function getReservations(): Collection
+    {
+        return $this->reservations;
+    }
+
+    public function addReservation(Reservation $reservation): static
+    {
+        if (!$this->reservations->contains($reservation)) {
+            $this->reservations->add($reservation);
+            $reservation->setCustomer($this);
         }
 
-        return $this->email !== '' ? $this->email : 'Cliente #'.($this->id ?? '');
+        return $this;
+    }
+
+    public function removeReservation(Reservation $reservation): static
+    {
+        if ($this->reservations->removeElement($reservation)) {
+            if ($reservation->getCustomer() === $this) {
+                $reservation->setCustomer(null);
+            }
+        }
+
+        return $this;
     }
 
     public function __toString(): string
     {
-        $name = $this->getFullName();
-        return $this->email !== '' ? "{$name} ({$this->email})" : $name;
+        return $this->name ?? 'Cliente sin nombre';
     }
 }

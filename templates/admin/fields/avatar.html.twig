@@ -1,0 +1,16 @@
+{% set colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#6366F1'] %}
+{% set color = colors[value|length % colors|length] %}
+<span style="
+    display:inline-block;
+    width:32px;
+    height:32px;
+    border-radius:50%;
+    background-color:{{ color }};
+    color:white;
+    text-align:center;
+    line-height:32px;
+    font-weight:bold;
+    font-size:14px;
+">
+    {{ value[0]|upper }}
+</span>

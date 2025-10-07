@@ -16,28 +16,20 @@ class ReservationRepository extends ServiceEntityRepository
         parent::__construct($registry, Reservation::class);
     }
 
-    //    /**
-    //     * @return Reservation[] Returns an array of Reservation objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('r')
-    //            ->andWhere('r.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('r.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
-
-    //    public function findOneBySomeField($value): ?Reservation
-    //    {
-    //        return $this->createQueryBuilder('r')
-    //            ->andWhere('r.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+    /**
+     * Devuelve los rangos de fechas ocupadas para un vehículo en una sucursal
+     */
+    public function findBookedRanges($vehicleId, $locationId): array
+    {
+        return $this->createQueryBuilder('r')
+            ->select('r.startAt', 'r.endAt')
+            ->where('r.vehicle = :vehicle')
+            ->andWhere('r.pickupLocation = :location')
+            ->andWhere('r.status IN (:statuses)')
+            ->setParameter('vehicle', $vehicleId)
+            ->setParameter('location', $locationId)
+            ->setParameter('statuses', ['pending', 'confirmed'])
+            ->getQuery()
+            ->getArrayResult();
+    }
 }

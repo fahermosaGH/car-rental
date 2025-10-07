@@ -17,22 +17,22 @@ class Reservation
     private ?int $id = null;
 
     // Cliente que realiza la reserva
-    #[ORM\ManyToOne]
+    #[ORM\ManyToOne(inversedBy: 'reservations', targetEntity: Customer::class)]
     #[ORM\JoinColumn(nullable: false)]
     private ?Customer $customer = null;
 
     // Vehículo reservado
-    #[ORM\ManyToOne]
+    #[ORM\ManyToOne(targetEntity: Vehicle::class)]
     #[ORM\JoinColumn(nullable: false)]
     private ?Vehicle $vehicle = null;
 
     // Retiro
-    #[ORM\ManyToOne]
+    #[ORM\ManyToOne(targetEntity: Location::class)]
     #[ORM\JoinColumn(nullable: false)]
     private ?Location $pickupLocation = null;
 
     // Devolución
-    #[ORM\ManyToOne]
+    #[ORM\ManyToOne(targetEntity: Location::class)]
     #[ORM\JoinColumn(nullable: false)]
     private ?Location $dropoffLocation = null;
 
@@ -44,7 +44,6 @@ class Reservation
     #[Assert\NotNull(message: 'La fecha/hora de fin es obligatoria.')]
     #[Assert\GreaterThan(propertyPath: 'startAt', message: 'La fecha/hora de fin debe ser posterior a la de inicio.')]
     private ?\DateTimeImmutable $endAt = null;
-
 
     #[ORM\Column(length: 20)]
     #[Assert\Choice(choices: ['pending', 'confirmed', 'cancelled'], message: 'Estado inválido.')]
@@ -148,6 +147,6 @@ class Reservation
 
     public function __toString(): string
     {
-        return 'Reserva #' . ($this->id ?? 0);
+        return 'Reserva #' . ($this->id ?? 'N/A');
     }
 }

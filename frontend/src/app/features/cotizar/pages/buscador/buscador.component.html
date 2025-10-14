@@ -1,0 +1,38 @@
+<section class="panel">
+  <h1>Buscar vehículos</h1>
+
+  <form [formGroup]="form" (ngSubmit)="buscar()" class="grid">
+    <div class="field">
+      <label>Sucursal de retiro</label>
+      <select formControlName="pickupBranchId">
+        <option *ngFor="let s of sucursales" [value]="s.id">{{ s.nombre }}</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Sucursal de devolución</label>
+      <select formControlName="returnBranchId">
+        <option *ngFor="let s of sucursales" [value]="s.id">{{ s.nombre }}</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Fecha de retiro</label>
+      <input type="date" formControlName="fromISO">
+    </div>
+
+    <div class="field">
+      <label>Fecha de devolución</label>
+      <input type="date" formControlName="toISO">
+    </div>
+
+    <div class="field">
+      <label>Edad del conductor</label>
+      <input type="number" formControlName="driverAge" min="18" step="1">
+    </div>
+
+    <div class="actions">
+      <button type="submit">Buscar</button>
+    </div>
+  </form>
+</section>

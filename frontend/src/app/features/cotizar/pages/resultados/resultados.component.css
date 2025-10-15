@@ -1,3 +1,12 @@
+.panel {
+  max-width: 1080px;
+  margin: 20px auto;
+  padding: 16px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(0,0,0,.06);
+}
+
 .resultados {
   padding: 1.5rem;
 }

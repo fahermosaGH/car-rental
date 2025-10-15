@@ -1,0 +1,24 @@
+<div class="detalle-container" *ngIf="vehiculo">
+  <button routerLink="/cotizar/resultados" class="btn-volver">
+    ← Volver a resultados
+  </button>
+
+  <img [src]="vehiculo.img" [alt]="vehiculo.name" class="img-detalle" />
+
+  <h2>{{ vehiculo.name }}</h2>
+  <p><strong>Categoría:</strong> {{ vehiculo.category }}</p>
+  <p><strong>Transmisión:</strong> {{ vehiculo.transmission }}</p>
+  <p><strong>Combustible:</strong> {{ vehiculo.fuel }}</p>
+  <p><strong>Descripción:</strong> {{ vehiculo.description }}</p>
+
+  <p><strong>Tarifa diaria:</strong> {{ vehiculo.dailyRate | currency:'ARS':'symbol':'1.0-0' }}</p>
+  <p><strong>Cantidad de días:</strong> {{ dias }}</p>
+  <h3>Total estimado: {{ total | currency:'ARS':'symbol':'1.0-0' }}</h3>
+
+  <button
+  class="btn-reservar"
+  [routerLink]="['/cotizar/confirmacion', vehiculo?.id]"
+  [queryParams]="{ dias: dias }">
+  Continuar con la reserva
+</button>
+</div>

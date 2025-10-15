@@ -1,4 +1,25 @@
-<section class="panel">
-  <h2>Resultados</h2>
-  <p>Acá mostraremos los vehículos disponibles. (Vista en construcción)</p>
-</section>
+<div class="resultados">
+  <h2>Resultados de búsqueda</h2>
+
+  <div *ngIf="!resultados.length" class="loading">
+    Cargando vehículos disponibles...
+  </div>
+
+  <div class="grid">
+    <div class="card" *ngFor="let auto of resultados">
+      <img [src]="auto.img" [alt]="auto.name">
+      <div class="info">
+        <h3>{{ auto.name }}</h3>
+        <p>Categoría: {{ auto.category }}</p>
+        <p>Tarifa diaria: {{ auto.dailyRate | currency:'ARS' }}</p>
+        <p><strong>Total: {{ calcularTotal(auto.dailyRate) | currency:'ARS' }}</strong></p>
+        <button
+  class="btn-ver-detalle"
+  [routerLink]="['/cotizar/detalle', auto.id]"
+  [queryParams]="{ dias: dias }">
+  Ver detalle
+</button>
+      </div>
+    </div>
+  </div>
+</div>

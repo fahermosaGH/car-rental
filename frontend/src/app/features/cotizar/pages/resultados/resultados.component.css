@@ -6,3 +6,57 @@
   border-radius: 12px;
   box-shadow: 0 6px 18px rgba(0,0,0,.06);
 }
+
+.resultados {
+  padding: 1.5rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.card img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+}
+
+.card .info {
+  padding: 1rem;
+}
+
+button {
+  background: #999;
+  border: none;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: not-allowed;
+  margin-top: 0.5rem;
+}
+
+.btn-ver-detalle {
+  background-color: #444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-ver-detalle:hover {
+  background-color: #222;
+}
+

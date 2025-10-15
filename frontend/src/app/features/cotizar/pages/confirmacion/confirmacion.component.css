@@ -1,0 +1,67 @@
+.confirmacion-container {
+  max-width: 700px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.resumen {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+  align-items: center;
+}
+
+.resumen img {
+  width: 200px;
+  border-radius: 8px;
+}
+
+.form-cliente {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+  margin-bottom: 20px;
+}
+
+.form-cliente input {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 100%;
+}
+
+.acciones {
+  margin-top: 20px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.btn-volver,
+.btn-confirmar {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-volver {
+  background-color: #ccc;
+  color: #333;
+}
+
+.btn-volver:hover {
+  background-color: #bbb;
+}
+
+.btn-confirmar {
+  background-color: #007bff;
+  color: white;
+}
+
+.btn-confirmar:hover {
+  background-color: #0056b3;
+}

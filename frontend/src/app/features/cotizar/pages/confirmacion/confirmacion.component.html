@@ -1,0 +1,51 @@
+<div class="confirmacion-container" *ngIf="vehiculo">
+  <h2>Confirmar reserva</h2>
+
+  <div class="resumen">
+    <img [src]="vehiculo.img" [alt]="vehiculo.name" />
+    <div>
+      <h3>{{ vehiculo.name }}</h3>
+      <p>Categoría: {{ vehiculo.category }}</p>
+      <p>Días: {{ dias }}</p>
+      <p>Tarifa diaria: {{ vehiculo.dailyRate | currency:'ARS':'symbol' }}</p>
+      <p><strong>Subtotal: {{ totalBase | currency:'ARS':'symbol' }}</strong></p>
+    </div>
+  </div>
+
+  <h3>Extras disponibles</h3>
+  <ul>
+    <li *ngFor="let e of extras">
+      <label>
+        <input type="checkbox" [(ngModel)]="e.seleccionado" (change)="calcularTotal()" />
+        {{ e.nombre }} (+{{ e.precio | currency:'ARS':'symbol' }})
+      </label>
+    </li>
+  </ul>
+
+  <h3>Datos del cliente</h3>
+  <form #formCliente="ngForm" class="form-cliente">
+    <label>
+      Nombre completo:
+      <input type="text" [(ngModel)]="cliente.nombre" name="nombre" required />
+    </label>
+
+    <label>
+      Email:
+      <input type="email" [(ngModel)]="cliente.email" name="email" required />
+    </label>
+
+    <label>
+      Edad:
+      <input type="number" [(ngModel)]="cliente.edad" name="edad" required min="18" />
+    </label>
+  </form>
+
+  <h3>Total final: {{ totalFinal | currency:'ARS':'symbol' }}</h3>
+
+  <div class="acciones">
+    <button routerLink="/cotizar/resultados" class="btn-volver">← Volver</button>
+    <button (click)="confirmarReserva()" class="btn-confirmar">
+      Confirmar reserva
+    </button>
+  </div>
+</div>

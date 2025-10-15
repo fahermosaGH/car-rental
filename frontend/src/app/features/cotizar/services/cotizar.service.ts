@@ -1,55 +1,37 @@
 import { Injectable } from '@angular/core';
-import { Observable, of, delay, map } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { Observable, map } from 'rxjs';
 import { VehicleOption } from '../models/quote';
+import { environment } from '../../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class CotizarService {
-  private mock: VehicleOption[] = [
-    { id: 1, category: 'Económico', name: 'Chevrolet Onix o similar', dailyRate: 32000, img: 'https://picsum.photos/seed/onix/400/220' },
-    { id: 2, category: 'Compacto',  name: 'Volkswagen Polo o similar', dailyRate: 38500, img: 'https://picsum.photos/seed/polo/400/220' },
-    { id: 3, category: 'SUV',       name: 'Chevrolet Tracker o similar', dailyRate: 55000, img: 'https://picsum.photos/seed/tracker/400/220' },
-  ];
+  private apiUrl = environment.apiUrl;
 
+  constructor(private http: HttpClient) {}
+
+  // 🔹 Obtener todos los vehículos desde el backend Symfony
   buscarVehiculos(): Observable<VehicleOption[]> {
-    return of(this.mock).pipe(delay(500));
+    return this.http.get<any[]>(`${this.apiUrl}/vehicles`).pipe(
+      map((data) =>
+        data.map((v) => ({
+          id: v.id,
+          category: v.category,
+          name: `${v.brand} ${v.model}`,
+          dailyRate: parseFloat(v.dailyRate),
+          img: 'https://picsum.photos/seed/' + v.model + '/400/220',
+          transmission: v.transmission,
+          fuel: 'Nafta',
+          description: `${v.brand} ${v.model} (${v.category})`
+        }))
+      )
+    );
   }
 
+  // 🔹 Obtener un vehículo por ID
   obtenerVehiculoPorId(id: number): Observable<VehicleOption | undefined> {
-    return of(this.mock).pipe(
-      delay(200),
-      map(lista => lista.find(v => v.id === id))
+    return this.buscarVehiculos().pipe(
+      map((vehiculos) => vehiculos.find((v) => v.id === id))
     );
   }
 }
-const mock: VehicleOption[] = [
-  {
-    id: 1,
-    category: 'Económico',
-    name: 'Chevrolet Onix o similar',
-    dailyRate: 32000,
-    img: 'https://picsum.photos/seed/onix/400/220',
-    transmission: 'Manual',
-    fuel: 'Nafta',
-    description: 'Ideal para ciudad. Compacto, eficiente y fácil de estacionar.'
-  },
-  {
-    id: 2,
-    category: 'Compacto',
-    name: 'Volkswagen Polo o similar',
-    dailyRate: 38500,
-    img: 'https://picsum.photos/seed/polo/400/220',
-    transmission: 'Automática',
-    fuel: 'Nafta',
-    description: 'Un compacto moderno con gran confort y rendimiento.'
-  },
-  {
-    id: 3,
-    category: 'SUV',
-    name: 'Chevrolet Tracker o similar',
-    dailyRate: 55000,
-    img: 'https://picsum.photos/seed/tracker/400/220',
-    transmission: 'Automática',
-    fuel: 'Nafta / Diesel',
-    description: 'SUV familiar con amplio espacio y confort premium.'
-  }
-];

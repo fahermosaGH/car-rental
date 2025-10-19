@@ -2,6 +2,7 @@
 
 namespace App\Controller\Api;
 
+use App\Entity\Vehicle;
 use App\Repository\VehicleRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -15,7 +16,7 @@ class VehicleController extends AbstractController
     {
         $vehicles = $vehicleRepository->findAll();
 
-        $data = array_map(function ($v) {
+        $data = array_map(function (Vehicle $v) {
             return [
                 'id' => $v->getId(),
                 'brand' => $v->getBrand(),
@@ -23,12 +24,14 @@ class VehicleController extends AbstractController
                 'year' => $v->getYear(),
                 'seats' => $v->getSeats(),
                 'transmission' => $v->getTransmission(),
-                'dailyRate' => $v->getDailyPriceOverride(), // ✅ Campo correcto
+                'dailyRate' => $v->getDailyPriceOverride(), // ✅ campo real de tu tabla
                 'isActive' => $v->isActive(),
-                'category' => $v->getCategory()?->getName() ?? null, // si tu categoría tiene nombre
+                'category' => $v->getCategory() ? $v->getCategory()->getName() : null,
             ];
         }, $vehicles);
 
-        return $this->json($data);
+        return $this->json($data, Response::HTTP_OK, [], [
+            'json_encode_options' => JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT
+        ]);
     }
 }

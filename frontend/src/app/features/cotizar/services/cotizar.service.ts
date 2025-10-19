@@ -16,13 +16,13 @@ export class CotizarService {
       map((data) =>
         data.map((v) => ({
           id: v.id,
-          category: v.category,
+          category: v.category?.name || v.category || 'Sin categoría',
           name: `${v.brand} ${v.model}`,
-          dailyRate: parseFloat(v.dailyRate),
+          dailyRate: parseFloat(v.dailyPriceOverride || v.dailyRate || 0),
           img: 'https://picsum.photos/seed/' + v.model + '/400/220',
           transmission: v.transmission,
           fuel: 'Nafta',
-          description: `${v.brand} ${v.model} (${v.category})`
+          description: `${v.brand} ${v.model} (${v.category?.name || v.category})`
         }))
       )
     );
@@ -32,6 +32,20 @@ export class CotizarService {
   obtenerVehiculoPorId(id: number): Observable<VehicleOption | undefined> {
     return this.buscarVehiculos().pipe(
       map((vehiculos) => vehiculos.find((v) => v.id === id))
+    );
+  }
+
+  // 🆕 Nuevo: obtener sucursales reales desde el backend
+  obtenerSucursales(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/locations`).pipe(
+      map((data) =>
+        data.map((s) => ({
+          id: s.id,
+          nombre: s.name || s.nombre,
+          ciudad: s.city || '',
+          direccion: s.address || ''
+        }))
+      )
     );
   }
 }

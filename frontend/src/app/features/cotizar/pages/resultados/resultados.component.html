@@ -13,12 +13,10 @@
         <p>Categoría: {{ auto.category }}</p>
         <p>Tarifa diaria: {{ auto.dailyRate | currency:'ARS' }}</p>
         <p><strong>Total: {{ calcularTotal(auto.dailyRate) | currency:'ARS' }}</strong></p>
-        <button
-  class="btn-ver-detalle"
-  [routerLink]="['/cotizar/detalle', auto.id]"
-  [queryParams]="{ dias: dias }">
-  Ver detalle
-</button>
+
+        <button class="btn-ver-detalle" (click)="verDetalle(auto.id)">
+          Ver detalle
+        </button>
       </div>
     </div>
   </div>

@@ -6,7 +6,8 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
-class ReservationController extends AbstractController
+class ReservationPageControllerOLD extends AbstractController
+
 {
     #[Route('/reservar', name: 'app_reserve')]
     public function index(): Response

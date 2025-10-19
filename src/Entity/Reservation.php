@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\ReservationRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -16,9 +18,9 @@ class Reservation
     #[ORM\Column]
     private ?int $id = null;
 
-    // Cliente que realiza la reserva
+    // Cliente que realiza la reserva (puede ser null)
     #[ORM\ManyToOne]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: true)]
     private ?Customer $customer = null;
 
     // Vehículo reservado
@@ -45,13 +47,20 @@ class Reservation
     #[Assert\GreaterThan(propertyPath: 'startAt', message: 'La fecha/hora de fin debe ser posterior a la de inicio.')]
     private ?\DateTimeImmutable $endAt = null;
 
-
     #[ORM\Column(length: 20)]
     #[Assert\Choice(choices: ['pending', 'confirmed', 'cancelled'], message: 'Estado inválido.')]
     private string $status = 'pending';
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true)]
     private ?string $totalPrice = null;
+
+    #[ORM\OneToMany(mappedBy: 'reservation', targetEntity: ReservationExtra::class, cascade: ['persist', 'remove'])]
+    private Collection $extras;
+
+    public function __construct()
+    {
+        $this->extras = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -143,6 +152,31 @@ class Reservation
     public function setTotalPrice(?string $totalPrice): static
     {
         $this->totalPrice = $totalPrice;
+        return $this;
+    }
+
+    /** @return Collection<int, ReservationExtra> */
+    public function getExtras(): Collection
+    {
+        return $this->extras;
+    }
+
+    public function addExtra(ReservationExtra $extra): static
+    {
+        if (!$this->extras->contains($extra)) {
+            $this->extras->add($extra);
+            $extra->setReservation($this);
+        }
+        return $this;
+    }
+
+    public function removeExtra(ReservationExtra $extra): static
+    {
+        if ($this->extras->removeElement($extra)) {
+            if ($extra->getReservation() === $this) {
+                $extra->setReservation(null);
+            }
+        }
         return $this;
     }
 

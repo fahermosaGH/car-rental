@@ -6,6 +6,7 @@ use App\Entity\Reservation;
 use App\Entity\ReservationExtra;
 use App\Repository\VehicleRepository;
 use App\Repository\LocationRepository;
+use App\Service\ReservationValidator; // ✅ usar el validador unificado
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -20,7 +21,8 @@ class ReservationController extends AbstractController
         Request $request,
         EntityManagerInterface $em,
         VehicleRepository $vehicleRepo,
-        LocationRepository $locationRepo
+        LocationRepository $locationRepo,
+        ReservationValidator $validator // ✅ inyectado
     ): Response {
         $data = json_decode($request->getContent(), true);
 
@@ -33,47 +35,37 @@ class ReservationController extends AbstractController
         }
 
         $vehicle = $vehicleRepo->find($data['vehicleId']);
-        $pickup = $locationRepo->find($data['pickupLocationId']);
+        $pickup  = $locationRepo->find($data['pickupLocationId']);
         $dropoff = $locationRepo->find($data['dropoffLocationId']);
 
         if (!$vehicle || !$pickup || !$dropoff) {
             return $this->json(['error' => 'Datos de vehículo o sucursal inválidos'], 422);
         }
 
-        // 🕒 Parsear fechas (sin horas)
+        // 🕒 Parsear fechas (día completo / ISO)
         try {
             $startAt = new \DateTimeImmutable($data['startAt']);
-            $endAt = new \DateTimeImmutable($data['endAt']);
+            $endAt   = new \DateTimeImmutable($data['endAt']);
         } catch (\Exception $e) {
             return $this->json(['error' => 'Formato de fecha inválido'], 400);
         }
 
-        // ✅ Validar rango
-        if ($endAt < $startAt) {
-            return $this->json(['error' => 'La fecha de fin debe ser igual o posterior a la de inicio'], 422);
+        // ✅ Rango válido (fin EXCLUSIVO, consistente con Availability)
+        if ($startAt >= $endAt) {
+            return $this->json(['error' => 'La fecha de fin debe ser posterior a la de inicio'], 422);
         }
 
-        // 🔍 Comprobar solapamiento (por días)
-        $conn = $em->getConnection();
-        $sql = "
-            SELECT COUNT(*) AS count
-            FROM reservation r
-            WHERE r.vehicle_id = :vehicleId
-              AND r.status != 'cancelled'
-              AND (
-                    r.start_at <= :endAt
-                    AND r.end_at >= :startAt
-              )
-        ";
+        // 🔍 Revalidar disponibilidad con el mismo criterio del sistema (stock por sucursal + solape fin exclusivo)
+        $available = $validator->isAvailable(
+            $vehicle->getId(),
+            $pickup->getId(),
+            $startAt,
+            $endAt,
+            null // alta (sin excluir id)
+        );
 
-        $result = $conn->executeQuery($sql, [
-            'vehicleId' => $vehicle->getId(),
-            'startAt' => $startAt->format('Y-m-d'),
-            'endAt' => $endAt->format('Y-m-d'),
-        ])->fetchAssociative();
-
-        if ($result && $result['count'] > 0) {
-            return $this->json(['error' => 'El vehículo no está disponible en las fechas seleccionadas'], 409);
+        if (!$available) {
+            return $this->json(['error' => 'El vehículo no está disponible en las fechas seleccionadas (sucursal/stock).'], 409);
         }
 
         // 🚗 Crear reserva
@@ -126,3 +118,4 @@ class ReservationController extends AbstractController
         return $this->json($data);
     }
 }
+

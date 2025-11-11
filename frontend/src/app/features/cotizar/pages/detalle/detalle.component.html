@@ -1,56 +1,60 @@
-<div class="detalle-container" *ngIf="vehiculo">
+<section class="detalle-wrapper" *ngIf="vehiculo">
   <button routerLink="/cotizar/resultados" class="btn-volver">
     ← Volver a resultados
   </button>
 
-  <img [src]="vehiculo.img" [alt]="vehiculo.name" class="img-detalle" />
+  <div class="detalle-card">
+    <div class="img-wrapper">
+      <img [src]="vehiculo.img" [alt]="vehiculo.name" />
+    </div>
 
-  <h2>{{ vehiculo.name }}</h2>
+    <div class="info">
+      <h2>{{ vehiculo.name }}</h2>
+      <p class="categoria">{{ vehiculo.category }}</p>
 
-  <div class="info">
-    <p><strong>Categoría:</strong> {{ vehiculo.category }}</p>
-    <p><strong>Transmisión:</strong> {{ vehiculo.transmission }}</p>
-    <p><strong>Combustible:</strong> {{ vehiculo.fuel }}</p>
-    <p><strong>Descripción:</strong> {{ vehiculo.description }}</p>
+      <div class="atributos">
+        <p><strong>Transmisión:</strong> {{ vehiculo.transmission }}</p>
+        <p><strong>Combustible:</strong> {{ vehiculo.fuel }}</p>
+        <p><strong>Descripción:</strong> {{ vehiculo.description }}</p>
+      </div>
+
+      <div class="tarifas">
+        <p><strong>Tarifa diaria:</strong> {{ vehiculo.dailyRate | currency:'ARS' }}</p>
+        <p><strong>Cantidad de días:</strong> {{ dias }}</p>
+      </div>
+
+      <h3>Extras disponibles</h3>
+      <div class="extras">
+        <label>
+          <input type="checkbox" [(ngModel)]="extras.seguro" (change)="actualizarTotal()" />
+          Seguro (+{{ preciosExtras.seguro | currency:'ARS' }})
+        </label>
+
+        <label>
+          <input type="checkbox" [(ngModel)]="extras.silla" (change)="actualizarTotal()" />
+          Silla para niño (+{{ preciosExtras.silla | currency:'ARS' }})
+        </label>
+
+        <label>
+          <input type="checkbox" [(ngModel)]="extras.gps" (change)="actualizarTotal()" />
+          GPS (+{{ preciosExtras.gps | currency:'ARS' }})
+        </label>
+      </div>
+
+      <div class="total-box">
+        <h3>Total estimado: {{ total | currency:'ARS' }}</h3>
+        <p class="fechas">
+          <strong>Desde:</strong> {{ startAt | date:'dd/MM/yyyy' }}<br />
+          <strong>Hasta:</strong> {{ endAt | date:'dd/MM/yyyy' }}
+        </p>
+      </div>
+
+      <button class="btn-reservar" (click)="confirmarReserva()">Confirmar reserva</button>
+    </div>
   </div>
+</section>
 
-  <div class="tarifas">
-    <p><strong>Tarifa diaria:</strong> {{ vehiculo.dailyRate | currency:'ARS':'symbol':'1.0-0' }}</p>
-    <p><strong>Cantidad de días:</strong> {{ dias }}</p>
-  </div>
-
-  <h3>Extras disponibles</h3>
-  <div class="extras">
-    <label>
-      <input type="checkbox" [(ngModel)]="extras.seguro" (change)="actualizarTotal()">
-      Seguro (+{{ preciosExtras.seguro | currency:'ARS':'symbol':'1.0-0' }})
-    </label><br>
-
-    <label>
-      <input type="checkbox" [(ngModel)]="extras.silla" (change)="actualizarTotal()">
-      Silla para niño (+{{ preciosExtras.silla | currency:'ARS':'symbol':'1.0-0' }})
-    </label><br>
-
-    <label>
-      <input type="checkbox" [(ngModel)]="extras.gps" (change)="actualizarTotal()">
-      GPS (+{{ preciosExtras.gps | currency:'ARS':'symbol':'1.0-0' }})
-    </label>
-  </div>
-
-  <div class="total-box">
-    <h3>Total estimado: {{ total | currency:'ARS':'symbol':'1.0-0' }}</h3>
-    <p class="fechas">
-      <strong>Desde:</strong> {{ startAt | date:'dd/MM/yyyy' }}<br>
-      <strong>Hasta:</strong> {{ endAt | date:'dd/MM/yyyy' }}
-    </p>
-  </div>
-
-  <button class="btn-reservar" (click)="confirmarReserva()">
-    Confirmar reserva
-  </button>
-</div>
-
-<!-- En caso de que no exista el vehículo -->
-<div *ngIf="!vehiculo" class="detalle-container">
-  <p>Cargando información del vehículo...</p>
+<!-- Sin datos -->
+<div *ngIf="!vehiculo" class="loading">
+  🚘 Cargando información del vehículo...
 </div>

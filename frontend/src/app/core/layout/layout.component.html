@@ -1,0 +1,19 @@
+<header class="header">
+  <div class="container">
+    <h1 class="logo">🚗 Car Rental</h1>
+    <nav class="nav">
+      <a routerLink="/cotizar" routerLinkActive="active">Cotizar</a>
+      <a routerLink="/cotizar/resultados" routerLinkActive="active">Resultados</a>
+    </nav>
+  </div>
+</header>
+
+<main class="content">
+  <router-outlet></router-outlet>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <p>© {{ currentYear }} Car Rental. Todos los derechos reservados.</p>
+  </div>
+</footer>

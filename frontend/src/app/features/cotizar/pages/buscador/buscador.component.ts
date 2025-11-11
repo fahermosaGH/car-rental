@@ -1,22 +1,24 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { CotizarService } from '../../services/cotizar.service';
+import { LocationService, Location } from '../../services/location.service';
+import { MapaSucursalesComponent } from '../../components/mapa-sucursales/mapa-sucursales.component';
 
 @Component({
   selector: 'app-buscador',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, MapaSucursalesComponent],
   templateUrl: './buscador.component.html',
-  styleUrls: ['./buscador.component.css']
+  styleUrls: ['./buscador.component.css'],
 })
 export class BuscadorComponent implements OnInit {
   private fb = inject(FormBuilder);
   private router = inject(Router);
-  private cotizarService = inject(CotizarService);
+  private locationService = inject(LocationService);
 
-  sucursales: any[] = [];
+  sucursales: Location[] = [];
+  cargando = true;
 
   todayISO = new Date().toISOString().slice(0, 10);
   tomorrowISO = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
@@ -29,21 +31,23 @@ export class BuscadorComponent implements OnInit {
     driverAge: [25, [Validators.required, Validators.min(18)]],
   });
 
-  ngOnInit() {
-    this.cargarSucursales();
-  }
+  ciudades = [
+  { nombre: 'Buenos Aires', region: 'CABA', img: '/assets/imagenes/ba.jpg' },
+  { nombre: 'Mendoza', region: 'MZ', img: '/assets/imagenes/mendoza.jpg' },
+  { nombre: 'Salta', region: 'SA', img: '/assets/imagenes/salta.jpg' },
+  { nombre: 'Córdoba', region: 'CB', img: '/assets/imagenes/cordoba.jpg' },
+];
 
-  // 🏙️ Cargar sucursales desde el backend
-  cargarSucursales() {
-    this.cotizarService.obtenerSucursales().subscribe({
+  ngOnInit() {
+    this.locationService.obtenerSucursales().subscribe({
       next: (data) => {
-        console.log('📍 Sucursales recibidas:', data);
         this.sucursales = data;
+        this.cargando = false;
       },
       error: (err) => {
-        console.error('❌ Error al cargar sucursales:', err);
-        alert('Error al cargar las sucursales.');
-      }
+        console.error('Error cargando sucursales', err);
+        this.cargando = false;
+      },
     });
   }
 

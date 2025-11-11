@@ -1,38 +1,82 @@
-<section class="panel">
-  <h1>Buscar vehículos</h1>
+<!-- Banner principal -->
+<section class="hero-banner">
+  <div class="hero-content">
+    <h1>Alquilá tu auto ideal en Argentina</h1>
+    <p>Compará precios, elegí tu sucursal y viajá sin preocupaciones.</p>
+    <button class="btn-cta">Ver vehículos disponibles</button>
+  </div>
+</section>
 
-  <form [formGroup]="form" (ngSubmit)="buscar()" class="grid">
-    <div class="field">
-      <label>Sucursal de retiro</label>
-      <select formControlName="pickupLocationId">
-        <option *ngFor="let s of sucursales" [value]="s.id">{{ s.nombre }}</option>
-      </select>
-    </div>
+<!-- Buscador principal -->
+<section class="search-container">
+  <div class="search-card">
+    <h1>Encontrá tu vehículo ideal</h1>
 
-    <div class="field">
-      <label>Sucursal de devolución</label>
-      <select formControlName="dropoffLocationId">
-        <option *ngFor="let s of sucursales" [value]="s.id">{{ s.nombre }}</option>
-      </select>
-    </div>
+    <form [formGroup]="form" (ngSubmit)="buscar()" class="search-grid">
+      <div class="field">
+        <label>Sucursal de retiro</label>
+        <select formControlName="pickupLocationId">
+          <option *ngFor="let s of sucursales" [value]="s.id">{{ s.name }}</option>
+        </select>
+      </div>
 
-    <div class="field">
-      <label>Fecha de retiro</label>
-      <input type="date" formControlName="startAt" />
-    </div>
+      <div class="field">
+        <label>Sucursal de devolución</label>
+        <select formControlName="dropoffLocationId">
+          <option *ngFor="let s of sucursales" [value]="s.id">{{ s.name }}</option>
+        </select>
+      </div>
 
-    <div class="field">
-      <label>Fecha de devolución</label>
-      <input type="date" formControlName="endAt" />
-    </div>
+      <div class="field">
+        <label>Fecha de retiro</label>
+        <input type="date" formControlName="startAt" />
+      </div>
 
-    <div class="field">
-      <label>Edad del conductor</label>
-      <input type="number" formControlName="driverAge" min="18" step="1" />
-    </div>
+      <div class="field">
+        <label>Fecha de devolución</label>
+        <input type="date" formControlName="endAt" />
+      </div>
 
-    <div class="actions">
-      <button type="submit">Buscar</button>
+      <div class="field">
+        <label>Edad del conductor</label>
+        <input type="number" formControlName="driverAge" min="18" step="1" />
+      </div>
+
+      <div class="actions">
+        <button type="submit">🔍 Buscar</button>
+      </div>
+    </form>
+
+    <!-- Mapa -->
+    <app-mapa-sucursales [selectedLocationId]="form.value.pickupLocationId || undefined"></app-mapa-sucursales>
+
+    <!-- Sección app -->
+<section class="app-promo">
+  <div class="app-text">
+    <h2>📱 Descargá nuestra app ahora</h2>
+    <p>Compará precios y alquilá un auto dondequiera que estés. ¡Rápido y fácil!</p>
+    <div class="store-buttons">
+      <img src="/assets/imagenes/cel1.jpg" alt="Google Play" />
+      <img src="/assets/imagenes/cel2.jpg" alt="App Store" />
     </div>
-  </form>
+  </div>
+  <div class="app-image">
+    <img src="/assets/imagenes/app-preview.png" alt="App Car Rental" />
+  </div>
+</section>
+
+    <!-- Ciudades más buscadas -->
+    <section class="popular-cities">
+      <h2>Ciudades más buscadas</h2>
+      <div class="city-grid">
+        <div class="city-card" *ngFor="let city of ciudades">
+          <img [src]="city.img" [alt]="city.nombre" />
+          <div class="city-info">
+            <h3>{{ city.nombre }}</h3>
+            <p>{{ city.region }}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
 </section>

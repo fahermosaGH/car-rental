@@ -1,51 +1,61 @@
-<div class="resultados">
-  <h2>Resultados de búsqueda</h2>
+<section class="resultados">
+  <h2>Vehículos disponibles</h2>
 
-  <!-- Controles de orden -->
-  <div class="toolbar">
+  <!-- Barra de orden -->
+  <div class="toolbar" *ngIf="resultados.length">
     <span>Ordenar por precio:</span>
-    <button class="btn-sort" [class.active]="order==='asc'" (click)="ordenarPorPrecio('asc')">
+    <button class="btn-sort" [class.active]="order === 'asc'" (click)="ordenarPorPrecio('asc')">
       Menor → Mayor
     </button>
-    <button class="btn-sort" [class.active]="order==='desc'" (click)="ordenarPorPrecio('desc')">
+    <button class="btn-sort" [class.active]="order === 'desc'" (click)="ordenarPorPrecio('desc')">
       Mayor → Menor
     </button>
   </div>
 
   <!-- Estado de carga -->
   <div *ngIf="cargando" class="loading">
-    Cargando vehículos disponibles...
+    🚗 Cargando vehículos disponibles...
   </div>
 
   <!-- Sin resultados -->
   <div *ngIf="!cargando && resultados.length === 0" class="loading">
-    No encontramos vehículos para esa búsqueda.
+    😕 No encontramos vehículos para esa búsqueda.
   </div>
 
   <!-- Listado -->
   <div class="grid" *ngIf="!cargando && resultados.length">
     <div class="card" *ngFor="let auto of resultados">
-      <img [src]="auto.img" [alt]="auto.name" />
-      <div class="info">
-        <h3 class="title-row">
-          {{ auto.name }}
-          <span *ngIf="auto.unitsAvailable !== undefined" class="badge-disponibles">
-            Quedan {{ auto.unitsAvailable }}
-          </span>
-        </h3>
+      <div class="img-wrapper">
+        <img [src]="auto.img" [alt]="auto.name" />
+        <span
+          *ngIf="auto.unitsAvailable !== undefined"
+          class="badge-disponibles"
+          [class.no-stock]="auto.unitsAvailable <= 0"
+        >
+          {{
+            auto.unitsAvailable > 0
+              ? 'Quedan ' + auto.unitsAvailable
+              : 'Sin stock'
+          }}
+        </span>
+      </div>
 
-        <p>Categoría: {{ auto.category }}</p>
-        <p>Tarifa diaria: {{ auto.dailyRate | currency:'ARS' }}</p>
-        <p><strong>Total: {{ calcularTotal(auto.dailyRate) | currency:'ARS' }}</strong></p>
+      <div class="info">
+        <h3>{{ auto.name }}</h3>
+        <p class="categoria">{{ auto.category }}</p>
+        <p><strong>Tarifa diaria:</strong> {{ auto.dailyRate | currency:'ARS' }}</p>
+        <p><strong>Total:</strong> {{ calcularTotal(auto.dailyRate) | currency:'ARS' }}</p>
 
         <button
           class="btn-ver-detalle"
           [disabled]="auto.unitsAvailable !== undefined && auto.unitsAvailable <= 0"
           (click)="verDetalle(auto.id)"
         >
-          {{ (auto.unitsAvailable !== undefined && auto.unitsAvailable <= 0) ? 'Sin stock' : 'Ver detalle' }}
+          {{ (auto.unitsAvailable !== undefined && auto.unitsAvailable <= 0)
+            ? 'No disponible'
+            : 'Ver detalle' }}
         </button>
       </div>
     </div>
   </div>
-</div>
+</section>

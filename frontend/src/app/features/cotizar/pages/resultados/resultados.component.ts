@@ -19,6 +19,11 @@ export class ResultadosComponent implements OnInit {
   pickupLocationId = 1;
   dropoffLocationId = 1;
 
+  cargando = true;
+
+  // 🔹 nuevo: estado de orden
+  order: 'asc' | 'desc' = 'asc';
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -37,36 +42,69 @@ export class ResultadosComponent implements OnInit {
         this.dias = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
       }
 
-      // 🔹 Si hay parámetros → disponibilidad real por sucursal y fechas
-      if (this.startAt && this.endAt && this.pickupLocationId) {
-        this.cotizarService.getAvailableVehicles({
-          pickupLocationId: this.pickupLocationId,
-          startAt: this.startAt,
-          endAt: this.endAt
-        }).subscribe({
-          next: (data) => {
-            console.log('✅ Disponibles:', data);
-            this.resultados = data;
+      this.cargarResultados();
+    });
+  }
 
-            // Fallback amable si no hay disponibles
-            if (this.resultados.length === 0) {
-              console.warn('No hay disponibles para ese rango; mostrando catálogo general como fallback.');
-              this.cotizarService.buscarVehiculos().subscribe((all) => this.resultados = all);
-            }
-          },
-          error: (err) => {
-            console.error('Error disponibilidad', err);
-            // Ante error (400/422/etc), mostramos catálogo general
-            this.cotizarService.buscarVehiculos().subscribe((all) => this.resultados = all);
-          }
-        });
-      } else {
-        // 🔹 Sin parámetros → catálogo general (comportamiento actual)
-        this.cotizarService.buscarVehiculos().subscribe(data => {
-          console.log('🚗 Vehículos (sin filtro):', data);
+  private cargarResultados() {
+    this.cargando = true;
+
+    // 🔹 Si hay parámetros → disponibilidad real por sucursal y fechas
+    if (this.startAt && this.endAt && this.pickupLocationId) {
+      console.log('[Resultados] Fetch /vehicles/available', {
+        pickupLocationId: this.pickupLocationId,
+        startAt: this.startAt,
+        endAt: this.endAt
+      });
+
+      this.cotizarService.getAvailableVehicles({
+        pickupLocationId: this.pickupLocationId,
+        startAt: this.startAt,
+        endAt: this.endAt
+      }).subscribe({
+        next: (data) => {
+          console.log('✅ Disponibles:', data);
           this.resultados = data;
-        });
-      }
+          this.ordenarPorPrecio(this.order);   // 👈 aplicar orden
+          this.cargando = false;
+
+          // Fallback amable si no hay disponibles
+          if (this.resultados.length === 0) {
+            console.warn('No hay disponibles; mostrando catálogo general como fallback.');
+            this.cargando = true;
+            this.cotizarService.buscarVehiculos().subscribe({
+              next: (all) => { this.resultados = all; this.ordenarPorPrecio(this.order); this.cargando = false; },
+              error: () => { this.resultados = []; this.cargando = false; }
+            });
+          }
+        },
+        error: (err) => {
+          console.error('❌ Error disponibilidad', err);
+          // Ante error (400/422/etc), mostramos catálogo general
+          this.cotizarService.buscarVehiculos().subscribe({
+            next: (all) => { this.resultados = all; this.ordenarPorPrecio(this.order); this.cargando = false; },
+            error: () => { this.resultados = []; this.cargando = false; }
+          });
+        }
+      });
+
+    } else {
+      // 🔹 Sin parámetros → catálogo general
+      console.log('[Resultados] Fetch catálogo general /vehicles');
+      this.cotizarService.buscarVehiculos().subscribe({
+        next: (data) => { console.log('🚗 Vehículos (sin filtro):', data); this.resultados = data; this.ordenarPorPrecio(this.order); this.cargando = false; },
+        error: () => { this.resultados = []; this.cargando = false; }
+      });
+    }
+  }
+
+  // 🔹 nuevo: ordenar por precio
+  ordenarPorPrecio(dir: 'asc' | 'desc') {
+    this.order = dir;
+    this.resultados = [...this.resultados].sort((a, b) => {
+      const da = a.dailyRate ?? 0;
+      const db = b.dailyRate ?? 0;
+      return dir === 'asc' ? da - db : db - da;
     });
   }
 
@@ -91,4 +129,3 @@ export class ResultadosComponent implements OnInit {
     });
   }
 }
-

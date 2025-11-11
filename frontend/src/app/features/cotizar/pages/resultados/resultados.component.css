@@ -36,6 +36,24 @@
   padding: 1rem;
 }
 
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 .25rem 0;
+}
+
+.badge-disponibles {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #e8f5e9;
+  color: #1b5e20;
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 1;
+}
+
 button {
   background: #999;
   border: none;
@@ -59,4 +77,26 @@ button {
 .btn-ver-detalle:hover {
   background-color: #222;
 }
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px 0;
+}
+
+.btn-sort {
+  background: #eee;
+  color: #333;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.btn-sort.active {
+  background: #dfe8ff;
+  border-color: #92a7ff;
+}
+
 

@@ -10,7 +10,7 @@ export class CotizarService {
 
   constructor(private http: HttpClient) {}
 
-  // 🔹 Obtener todos los vehículos desde el backend Symfony
+  // 🔹 Obtener todos los vehículos desde el backend Symfony (catálogo general)
   buscarVehiculos(): Observable<VehicleOption[]> {
     return this.http.get<any[]>(`${this.apiUrl}/vehicles`).pipe(
       map((data) =>
@@ -22,20 +22,22 @@ export class CotizarService {
           img: 'https://picsum.photos/seed/' + v.model + '/400/220',
           transmission: v.transmission,
           fuel: 'Nafta',
-          description: `${v.brand} ${v.model} (${v.category?.name || v.category})`
+          description: `${v.brand} ${v.model} (${v.category?.name || v.category})`,
+          // si algún día el back también manda unitsAvailable acá, lo tomamos
+          unitsAvailable: typeof v.unitsAvailable === 'number' ? v.unitsAvailable : undefined
         }))
       )
     );
   }
 
-  // 🔹 Obtener un vehículo por ID
+  // 🔹 Obtener un vehículo por ID (sobre el catálogo ya cargado)
   obtenerVehiculoPorId(id: number): Observable<VehicleOption | undefined> {
     return this.buscarVehiculos().pipe(
       map((vehiculos) => vehiculos.find((v) => v.id === id))
     );
   }
 
-  // 🆕 Nuevo: obtener sucursales reales desde el backend
+  // 🔹 Sucursales reales
   obtenerSucursales(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/locations`).pipe(
       map((data) =>
@@ -49,7 +51,7 @@ export class CotizarService {
     );
   }
 
-  // 🆕 Nuevo: vehículos disponibles por sucursal + fechas
+  // 🔹 Vehículos disponibles por sucursal + fechas
   getAvailableVehicles(params: {
     pickupLocationId: number;
     startAt: string; // 'YYYY-MM-DD' o ISO
@@ -72,7 +74,9 @@ export class CotizarService {
             img: 'https://picsum.photos/seed/' + v.model + '/400/220',
             transmission: v.transmission,
             fuel: 'Nafta',
-            description: `${v.brand} ${v.model} (${v.category?.name || v.category})`
+            description: `${v.brand} ${v.model} (${v.category?.name || v.category})`,
+            // 👇 ahora mapeamos lo que envía el back
+            unitsAvailable: typeof v.unitsAvailable === 'number' ? v.unitsAvailable : undefined
           }))
         )
       );

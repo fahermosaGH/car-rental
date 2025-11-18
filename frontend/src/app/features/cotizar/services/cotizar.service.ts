@@ -51,16 +51,21 @@ export class CotizarService {
     );
   }
 
-  // 🔹 Vehículos disponibles por sucursal + fechas
+  // 🔹 Vehículos disponibles por sucursal + fechas (+ categoría opcional)
   getAvailableVehicles(params: {
     pickupLocationId: number;
     startAt: string; // 'YYYY-MM-DD' o ISO
     endAt: string;   // 'YYYY-MM-DD' o ISO
+    category?: string; // <-- NUEVO (opcional)
   }): Observable<VehicleOption[]> {
-    const httpParams = new HttpParams()
+    let httpParams = new HttpParams()
       .set('pickupLocationId', String(params.pickupLocationId))
       .set('startAt', params.startAt)
       .set('endAt', params.endAt);
+
+    if (params.category && params.category.trim() !== '') {
+      httpParams = httpParams.set('category', params.category.trim());
+    }
 
     return this.http
       .get<any[]>(`${this.apiUrl}/vehicles/available`, { params: httpParams })
@@ -75,10 +80,46 @@ export class CotizarService {
             transmission: v.transmission,
             fuel: 'Nafta',
             description: `${v.brand} ${v.model} (${v.category?.name || v.category})`,
-            // 👇 ahora mapeamos lo que envía el back
+            // 👇 lo que envía el back
             unitsAvailable: typeof v.unitsAvailable === 'number' ? v.unitsAvailable : undefined
           }))
         )
       );
   }
+
+  // ✅ Chequear disponibilidad puntual para un vehículo en sucursal+fechas
+  checkAvailability(params: {
+    vehicleId: number;
+    pickupLocationId: number;
+    startAt: string; // YYYY-MM-DD o ISO
+    endAt: string;   // YYYY-MM-DD o ISO
+  }): Observable<{ available: boolean; message: string }> {
+    const httpParams = new HttpParams()
+      .set('vehicle', String(params.vehicleId))
+      .set('pickup', String(params.pickupLocationId))
+      .set('start', params.startAt)
+      .set('end', params.endAt);
+
+    return this.http.get<{ available: boolean; message: string }>(
+      `${this.apiUrl}/check-availability`,
+      { params: httpParams }
+    );
+  }
+
+  // ✅ Crear reserva real en el backend
+  crearReserva(payload: {
+    vehicleId: number;
+    pickupLocationId: number;
+    dropoffLocationId: number;
+    startAt: string;   // YYYY-MM-DD
+    endAt: string;     // YYYY-MM-DD
+    totalPrice: string | number;
+    extras: Array<{ name: string; price: string | number }>;
+  }): Observable<{ message: string; id: number }> {
+    return this.http.post<{ message: string; id: number }>(
+      `${this.apiUrl}/reservations`,
+      payload
+    );
+  }
 }
+

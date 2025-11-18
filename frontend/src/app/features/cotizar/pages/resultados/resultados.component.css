@@ -15,10 +15,94 @@ h2 {
   margin-bottom: 20px;
 }
 
-/* Toolbar */
+/* ======= LAYOUT: sidebar + contenido ======= */
+.layout {
+  display: grid;
+  grid-template-columns: 260px 1fr; /* sidebar fija + contenido fluido */
+  gap: 24px;
+}
+
+/* Sidebar */
+.sidebar {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 3px 12px rgba(0,0,0,.06);
+  padding: 16px;
+  align-self: start; /* que no estire verticalmente */
+}
+
+.sidebar-title {
+  margin: 0 0 8px 0;
+  color: #0d47a1;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.cat-list {
+  list-style: none;
+  margin: 0;
+  padding: 8px 0 12px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cat-list li {
+  margin: 0;
+  padding: 0;
+}
+
+.cat-chip {
+  background: #f4f6fb;
+  color: #333;
+  border: 1px solid #c9d2f3;
+  border-radius: 999px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.cat-chip:hover {
+  background: #e8f0ff;
+}
+
+.cat-chip.active,
+.cat-chip[aria-pressed="true"] {
+  background: #0d6efd;
+  color: #fff;
+  border-color: #0d6efd;
+}
+
+/* Orden dentro del sidebar (opcional en mobile) */
+.sidebar-order {
+  margin-top: 12px;
+  border-top: 1px solid #eef2ff;
+  padding-top: 12px;
+}
+
+.sidebar-order h4 {
+  margin: 0 0 8px 0;
+  font-size: 1rem;
+  color: #333;
+}
+
+.order-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Contenido principal */
+.content {
+  min-width: 0; /* evita overflow en grid */
+}
+
+/* ======= Toolbar (orden en la parte superior del contenido) ======= */
 .toolbar {
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
   align-items: center;
   gap: 10px;
   margin-bottom: 24px;
@@ -51,7 +135,7 @@ h2 {
   border-color: #0d6efd;
 }
 
-/* Grid de vehículos */
+/* ======= Grid de vehículos ======= */
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -157,7 +241,25 @@ h2 {
   margin-top: 20px;
 }
 
-/* Adaptabilidad */
+/* ======= Adaptabilidad ======= */
+@media (max-width: 1024px) {
+  .layout {
+    grid-template-columns: 1fr; /* sidebar arriba, lista abajo */
+  }
+
+  .sidebar {
+    order: 0;
+  }
+
+  .content {
+    order: 1;
+  }
+
+  .toolbar {
+    justify-content: center;
+  }
+}
+
 @media (max-width: 768px) {
   .resultados {
     padding: 15px;
@@ -165,5 +267,12 @@ h2 {
   .toolbar {
     flex-direction: column;
     gap: 8px;
+  }
+  .cat-list {
+    gap: 6px;
+  }
+  .cat-chip {
+    padding: 6px 10px;
+    font-size: 0.85rem;
   }
 }

@@ -1,11 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+
 import { CotizarService } from '../../services/cotizar.service';
 import { VehicleOption } from '../../models/quote';
-import { HttpClient } from '@angular/common/http';
-import { FormsModule } from '@angular/forms';
-import { environment } from '../../../../../environments/environment';
 
 @Component({
   selector: 'app-detalle',
@@ -16,21 +15,29 @@ import { environment } from '../../../../../environments/environment';
 })
 export class DetalleComponent implements OnInit {
   vehiculo?: VehicleOption;
+
   dias = 1;
   total = 0;
+
   startAt = '';
   endAt = '';
   pickupLocationId = 1;
   dropoffLocationId = 1;
 
+  // disponibilidad
+  unitsAvailable?: number;
+  checking = false;
+  creating = false;
+  errorMsg = '';
+
+  // extras
   extras = { seguro: false, silla: false, gps: false };
   preciosExtras = { seguro: 500, silla: 300, gps: 400 };
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private cotizarService: CotizarService,
-    private http: HttpClient
+    private cotizarService: CotizarService
   ) {}
 
   ngOnInit() {
@@ -39,11 +46,12 @@ export class DetalleComponent implements OnInit {
     this.route.queryParamMap.subscribe(params => {
       this.dias = +(params.get('dias') || 1);
       this.startAt = params.get('startAt') || '';
-      this.endAt = params.get('endAt') || '';
-      this.pickupLocationId = +(params.get('pickupLocationId') || 1);
+      this.endAt   = params.get('endAt') || '';
+      this.pickupLocationId  = +(params.get('pickupLocationId') || 1);
       this.dropoffLocationId = +(params.get('dropoffLocationId') || 1);
 
-      console.log('📅 Fechas recibidas correctamente:', this.startAt, this.endAt);
+      // si ya tenemos el vehículo cargado, actualizar total
+      if (this.vehiculo) this.actualizarTotal();
     });
 
     this.cotizarService.obtenerVehiculoPorId(id).subscribe(v => {
@@ -53,6 +61,34 @@ export class DetalleComponent implements OnInit {
       }
       this.vehiculo = v;
       this.actualizarTotal();
+      this.verificarDisponibilidad(); // chequeo inicial
+    });
+  }
+
+  private verificarDisponibilidad() {
+    this.errorMsg = '';
+    if (!this.vehiculo || !this.startAt || !this.endAt || !this.pickupLocationId) {
+      this.unitsAvailable = undefined;
+      return;
+    }
+
+    this.checking = true;
+    this.cotizarService.checkAvailability({
+      vehicleId: this.vehiculo.id,
+      pickupLocationId: this.pickupLocationId,
+      startAt: this.startAt,
+      endAt: this.endAt
+    }).subscribe({
+      next: (r) => {
+        // checkAvailability es booleano; mostramos 1 si ok, 0 si no (para el botón)
+        this.unitsAvailable = r.available ? 1 : 0;
+        this.checking = false;
+      },
+      error: () => {
+        this.unitsAvailable = undefined;
+        this.errorMsg = 'No se pudo verificar la disponibilidad.';
+        this.checking = false;
+      }
     });
   }
 
@@ -60,48 +96,76 @@ export class DetalleComponent implements OnInit {
     if (!this.vehiculo) return;
     let base = this.vehiculo.dailyRate * this.dias;
     if (this.extras.seguro) base += this.preciosExtras.seguro;
-    if (this.extras.silla) base += this.preciosExtras.silla;
-    if (this.extras.gps) base += this.preciosExtras.gps;
+    if (this.extras.silla)  base += this.preciosExtras.silla;
+    if (this.extras.gps)    base += this.preciosExtras.gps;
     this.total = base;
+  }
+
+  get botonDeshabilitado(): boolean {
+    const sinFechas = !this.startAt || !this.endAt;
+    const sinCupo   = this.unitsAvailable !== undefined && this.unitsAvailable <= 0;
+    return sinFechas || sinCupo || this.checking || this.creating || !this.vehiculo;
   }
 
   confirmarReserva() {
     if (!this.vehiculo) return;
-
     if (!this.startAt || !this.endAt) {
       alert('⚠️ Faltan las fechas de reserva.');
       return;
     }
 
-    const extrasSeleccionados: any[] = [];
-    if (this.extras.seguro) extrasSeleccionados.push({ name: 'Seguro', price: this.preciosExtras.seguro });
-    if (this.extras.silla) extrasSeleccionados.push({ name: 'Silla para niño', price: this.preciosExtras.silla });
-    if (this.extras.gps) extrasSeleccionados.push({ name: 'GPS', price: this.preciosExtras.gps });
-
-    const payload = {
+    // 1) Revalidar disponibilidad por las dudas
+    this.checking = true;
+    this.cotizarService.checkAvailability({
       vehicleId: this.vehiculo.id,
       pickupLocationId: this.pickupLocationId,
-      dropoffLocationId: this.dropoffLocationId,
       startAt: this.startAt,
-      endAt: this.endAt,
-      totalPrice: this.total,
-      extras: extrasSeleccionados
-    };
+      endAt: this.endAt
+    }).subscribe({
+      next: (r) => {
+        this.checking = false;
+        if (!r.available) {
+          this.unitsAvailable = 0;
+          alert('❌ Sin stock para esas fechas en esa sucursal.');
+          return;
+        }
 
-    console.log('📦 Enviando reserva al backend:', payload);
+        // 2) Crear reserva real
+        const extrasSeleccionados: Array<{name: string; price: number}> = [];
+        if (this.extras.seguro) extrasSeleccionados.push({ name: 'Seguro',            price: this.preciosExtras.seguro });
+        if (this.extras.silla)  extrasSeleccionados.push({ name: 'Silla para niño',  price: this.preciosExtras.silla });
+        if (this.extras.gps)    extrasSeleccionados.push({ name: 'GPS',              price: this.preciosExtras.gps });
 
-    this.http.post(`${environment.apiUrl}/reservations`, payload).subscribe({
-      next: (res) => {
-        console.log('✅ Reserva creada correctamente:', res);
-        alert('✅ Reserva creada correctamente!');
-        this.router.navigate(['/cotizar']);
+        const payload = {
+          vehicleId: this.vehiculo!.id,
+          pickupLocationId: this.pickupLocationId,
+          dropoffLocationId: this.dropoffLocationId,
+          startAt: this.startAt,
+          endAt: this.endAt,
+          totalPrice: this.total,
+          extras: extrasSeleccionados
+        };
+
+        this.creating = true;
+        this.cotizarService.crearReserva(payload).subscribe({
+          next: (res) => {
+            this.creating = false;
+            alert('✅ Reserva creada correctamente (ID ' + res.id + ').');
+            // podés redirigir a confirmación/éxito si querés
+            this.router.navigate(['/cotizar']);
+          },
+          error: (err) => {
+            this.creating = false;
+            if (err.status === 409)       alert('❌ El vehículo no está disponible en las fechas seleccionadas.');
+            else if (err.status === 422)  alert('⚠️ Datos faltantes o inválidos en la reserva.');
+            else if (err.status === 400)  alert('⚠️ Fechas o formato inválido.');
+            else                          alert('💥 Error inesperado. Intenta de nuevo.');
+          }
+        });
       },
-      error: (err) => {
-        console.error('❌ Error al crear reserva:', err);
-        if (err.status === 409) alert('❌ El vehículo no está disponible en las fechas seleccionadas.');
-        else if (err.status === 422) alert('⚠️ Datos faltantes o inválidos en la reserva.');
-        else if (err.status === 400) alert('⚠️ Formato de solicitud incorrecto. Verifica las fechas.');
-        else alert('💥 Error inesperado. Intenta de nuevo.');
+      error: () => {
+        this.checking = false;
+        alert('No se pudo verificar la disponibilidad.');
       }
     });
   }

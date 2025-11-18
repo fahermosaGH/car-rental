@@ -35,13 +35,14 @@ class VehicleController extends AbstractController
         ]);
     }
 
-    // Disponibilidad real por sucursal + fechas, devolviendo unitsAvailable
+    // Disponibilidad real por sucursal + fechas, devolviendo unitsAvailable (filtrable por categoría)
     #[Route('/available', name: 'api_vehicles_available', methods: ['GET'])]
     public function available(Request $request, VehicleRepository $vehicleRepository): Response
     {
         $pickupStr = $request->query->get('pickupLocationId');
         $startStr  = $request->query->get('startAt'); // YYYY-MM-DD o ISO
         $endStr    = $request->query->get('endAt');
+        $category  = $request->query->get('category'); // opcional
 
         if (!$pickupStr || !$startStr || !$endStr) {
             return $this->json(['error' => 'pickupLocationId, startAt y endAt son obligatorios'], 400);
@@ -58,24 +59,29 @@ class VehicleController extends AbstractController
             return $this->json(['error' => 'startAt debe ser menor que endAt'], 400);
         }
 
-        // IMPORTANTe: este método del repo debe devolver filas **escalares**
-        $rows = $vehicleRepository->findAvailableWithStockInfo((int)$pickupStr, $start, $end);
+        // IMPORTANTE: este método del repo devuelve filas escalares
+        $rows = $vehicleRepository->findAvailableWithStockInfo(
+            (int) $pickupStr,
+            $start,
+            $end,
+            $category ?: null // filtra por categoría si viene
+        );
 
         $data = array_map(static function (array $r) {
-            $branchStock    = (int) $r['branchStock'];
-            $taken          = (int) $r['taken'];
+            $branchStock    = (int) ($r['branchStock'] ?? 0);
+            $taken          = (int) ($r['taken'] ?? 0);
             $unitsAvailable = max($branchStock - $taken, 0);
 
             return [
                 'id'             => (int) $r['id'],
-                'brand'          => $r['brand'],
-                'model'          => $r['model'],
-                'year'           => (int) $r['year'],
-                'seats'          => (int) $r['seats'],
-                'transmission'   => $r['transmission'],
-                'dailyRate'      => $r['dailyRate'],
+                'brand'          => (string) $r['brand'],
+                'model'          => (string) $r['model'],
+                'year'           => isset($r['year']) ? (int) $r['year'] : null,
+                'seats'          => isset($r['seats']) ? (int) $r['seats'] : null,
+                'transmission'   => $r['transmission'] ?? null,
+                'dailyRate'      => $r['dailyRate'], // DECIMAL como string
                 'isActive'       => (bool) $r['isActive'],
-                'category'       => $r['category'],
+                'category'       => $r['category'] ?? null,
                 'unitsAvailable' => $unitsAvailable,
                 'branchStock'    => $branchStock,
             ];

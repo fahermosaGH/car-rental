@@ -66,10 +66,31 @@ h2 {
   margin-bottom: 0.3rem;
 }
 
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  flex-wrap: wrap;
+}
+
 .categoria {
   color: #666;
   font-size: 1rem;
   margin-bottom: 1.2rem;
+}
+
+/* Badge stock */
+.badge-disponibles {
+  display: inline-block;
+  background: #2e7d32;
+  color: #fff;
+  padding: .2rem .6rem;
+  border-radius: 999px;
+  font-size: .8rem;
+  line-height: 1;
+}
+.badge-disponibles.no {
+  background: #c62828;
 }
 
 /* Atributos */
@@ -121,6 +142,12 @@ input[type='checkbox'] {
   color: #0d47a1;
   margin-bottom: 0.5rem;
 }
+.total-box .error {
+  display: block;
+  color: #c62828;
+  margin-top: .4rem;
+  font-size: .85rem;
+}
 
 /* Botón principal */
 .btn-reservar {
@@ -139,6 +166,12 @@ input[type='checkbox'] {
   background-color: #0b5ed7;
   transform: translateY(-2px);
 }
+.btn-reservar:disabled,
+.btn-reservar[disabled] {
+  background: #9bbcf7;
+  cursor: not-allowed;
+  transform: none;
+}
 
 /* Cargando */
 .loading {
@@ -151,13 +184,7 @@ input[type='checkbox'] {
 
 /* Responsive */
 @media (max-width: 600px) {
-  .detalle-card {
-    max-width: 95%;
-  }
-  .img-wrapper {
-    height: 220px;
-  }
-  h2 {
-    font-size: 1.5rem;
-  }
+  .detalle-card { max-width: 95%; }
+  .img-wrapper { height: 220px; }
+  h2 { font-size: 1.5rem; }
 }

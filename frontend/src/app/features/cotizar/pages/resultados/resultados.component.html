@@ -1,61 +1,96 @@
 <section class="resultados">
   <h2>Vehículos disponibles</h2>
 
-  <!-- Barra de orden -->
-  <div class="toolbar" *ngIf="resultados.length">
-    <span>Ordenar por precio:</span>
-    <button class="btn-sort" [class.active]="order === 'asc'" (click)="ordenarPorPrecio('asc')">
-      Menor → Mayor
-    </button>
-    <button class="btn-sort" [class.active]="order === 'desc'" (click)="ordenarPorPrecio('desc')">
-      Mayor → Menor
-    </button>
-  </div>
+  <!-- Layout: filtros + lista -->
+  <div class="layout">
 
-  <!-- Estado de carga -->
-  <div *ngIf="cargando" class="loading">
-    🚗 Cargando vehículos disponibles...
-  </div>
+    <!-- Filtro por categoría -->
+    <aside class="sidebar">
+      <h3 class="sidebar-title">Categorías</h3>
+      <ul class="cat-list">
+        <li *ngFor="let cat of availableCategories">
+          <button
+            type="button"
+            class="cat-chip"
+            [class.active]="selectedCategory === cat"
+            (click)="cambiarCategoria(cat)"
+            [attr.aria-pressed]="selectedCategory === cat"
+          >
+            {{ cat }}
+          </button>
+        </li>
+      </ul>
 
-  <!-- Sin resultados -->
-  <div *ngIf="!cargando && resultados.length === 0" class="loading">
-    😕 No encontramos vehículos para esa búsqueda.
-  </div>
-
-  <!-- Listado -->
-  <div class="grid" *ngIf="!cargando && resultados.length">
-    <div class="card" *ngFor="let auto of resultados">
-      <div class="img-wrapper">
-        <img [src]="auto.img" [alt]="auto.name" />
-        <span
-          *ngIf="auto.unitsAvailable !== undefined"
-          class="badge-disponibles"
-          [class.no-stock]="auto.unitsAvailable <= 0"
-        >
-          {{
-            auto.unitsAvailable > 0
-              ? 'Quedan ' + auto.unitsAvailable
-              : 'Sin stock'
-          }}
-        </span>
+      <!-- Orden por precio (también accesible arriba en desktop) -->
+      <div class="sidebar-order" *ngIf="resultados.length">
+        <h4>Ordenar por precio</h4>
+        <div class="order-buttons">
+          <button class="btn-sort" [class.active]="order === 'asc'" (click)="ordenarPorPrecio('asc')">
+            Menor → Mayor
+          </button>
+          <button class="btn-sort" [class.active]="order === 'desc'" (click)="ordenarPorPrecio('desc')">
+            Mayor → Menor
+          </button>
+        </div>
       </div>
+    </aside>
 
-      <div class="info">
-        <h3>{{ auto.name }}</h3>
-        <p class="categoria">{{ auto.category }}</p>
-        <p><strong>Tarifa diaria:</strong> {{ auto.dailyRate | currency:'ARS' }}</p>
-        <p><strong>Total:</strong> {{ calcularTotal(auto.dailyRate) | currency:'ARS' }}</p>
-
-        <button
-          class="btn-ver-detalle"
-          [disabled]="auto.unitsAvailable !== undefined && auto.unitsAvailable <= 0"
-          (click)="verDetalle(auto.id)"
-        >
-          {{ (auto.unitsAvailable !== undefined && auto.unitsAvailable <= 0)
-            ? 'No disponible'
-            : 'Ver detalle' }}
+    <!-- Contenido principal -->
+    <div class="content">
+      <!-- Barra de orden (visible en pantallas anchas; la de la sidebar queda como alternativa en mobile) -->
+      <div class="toolbar" *ngIf="resultados.length">
+        <span>Ordenar por precio:</span>
+        <button class="btn-sort" [class.active]="order === 'asc'" (click)="ordenarPorPrecio('asc')">
+          Menor → Mayor
+        </button>
+        <button class="btn-sort" [class.active]="order === 'desc'" (click)="ordenarPorPrecio('desc')">
+          Mayor → Menor
         </button>
       </div>
+
+      <!-- Estado de carga -->
+      <div *ngIf="cargando" class="loading">
+        🚗 Cargando vehículos disponibles...
+      </div>
+
+      <!-- Sin resultados -->
+      <div *ngIf="!cargando && resultados.length === 0" class="loading">
+        😕 No encontramos vehículos para esa búsqueda.
+      </div>
+
+      <!-- Listado -->
+      <div class="grid" *ngIf="!cargando && resultados.length">
+        <div class="card" *ngFor="let auto of resultados">
+          <div class="img-wrapper">
+            <img [src]="auto.img" [alt]="auto.name" />
+            <span
+              *ngIf="auto.unitsAvailable !== undefined"
+              class="badge-disponibles"
+              [class.no-stock]="auto.unitsAvailable <= 0"
+            >
+              {{ auto.unitsAvailable > 0 ? 'Quedan ' + auto.unitsAvailable : 'Sin stock' }}
+            </span>
+          </div>
+
+          <div class="info">
+            <h3>{{ auto.name }}</h3>
+            <p class="categoria">{{ auto.category }}</p>
+            <p><strong>Tarifa diaria:</strong> {{ auto.dailyRate | currency:'ARS' }}</p>
+            <p><strong>Total:</strong> {{ calcularTotal(auto.dailyRate) | currency:'ARS' }}</p>
+
+            <button
+              class="btn-ver-detalle"
+              [disabled]="auto.unitsAvailable !== undefined && auto.unitsAvailable <= 0"
+              (click)="verDetalle(auto.id)"
+            >
+              {{ (auto.unitsAvailable !== undefined && auto.unitsAvailable <= 0)
+                ? 'No disponible'
+                : 'Ver detalle' }}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
+
   </div>
 </section>

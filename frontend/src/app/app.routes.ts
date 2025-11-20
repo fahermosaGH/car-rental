@@ -3,10 +3,25 @@ import { LayoutComponent } from './core/layout/layout.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'cotizar', pathMatch: 'full' },
+
   {
     path: '',
     component: LayoutComponent,
     children: [
+      // === Auth (/auth/login) ===
+      {
+        path: 'auth',
+        children: [
+          {
+            path: 'login',
+            loadComponent: () =>
+              import('./features/auth/login/login.component')
+                .then(m => m.LoginComponent),
+          },
+        ],
+      },
+
+      // === Cotizar ===
       {
         path: 'cotizar',
         children: [
@@ -38,5 +53,8 @@ export const routes: Routes = [
       },
     ],
   },
+
   { path: '**', redirectTo: 'cotizar' },
 ];
+
+

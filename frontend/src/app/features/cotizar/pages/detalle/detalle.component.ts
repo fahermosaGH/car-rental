@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 
 import { CotizarService } from '../../services/cotizar.service';
 import { VehicleOption } from '../../models/quote';
+import { AuthService } from '../../../../core/services/auth.service'; // ✅ ruta corregida (3 niveles)
 
 @Component({
   selector: 'app-detalle',
@@ -37,7 +38,8 @@ export class DetalleComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private cotizarService: CotizarService
+    private cotizarService: CotizarService,
+    private auth: AuthService
   ) {}
 
   ngOnInit() {
@@ -50,7 +52,6 @@ export class DetalleComponent implements OnInit {
       this.pickupLocationId  = +(params.get('pickupLocationId') || 1);
       this.dropoffLocationId = +(params.get('dropoffLocationId') || 1);
 
-      // si ya tenemos el vehículo cargado, actualizar total
       if (this.vehiculo) this.actualizarTotal();
     });
 
@@ -61,7 +62,7 @@ export class DetalleComponent implements OnInit {
       }
       this.vehiculo = v;
       this.actualizarTotal();
-      this.verificarDisponibilidad(); // chequeo inicial
+      this.verificarDisponibilidad();
     });
   }
 
@@ -80,7 +81,6 @@ export class DetalleComponent implements OnInit {
       endAt: this.endAt
     }).subscribe({
       next: (r) => {
-        // checkAvailability es booleano; mostramos 1 si ok, 0 si no (para el botón)
         this.unitsAvailable = r.available ? 1 : 0;
         this.checking = false;
       },
@@ -107,10 +107,57 @@ export class DetalleComponent implements OnInit {
     return sinFechas || sinCupo || this.checking || this.creating || !this.vehiculo;
   }
 
+  private redirigirALogin() {
+    if (!this.vehiculo) return;
+
+    const redirectUrl = this.router.createUrlTree(
+      ['/cotizar/detalle', this.vehiculo.id],
+      {
+        queryParams: {
+          dias: this.dias,
+          startAt: this.startAt,
+          endAt: this.endAt,
+          pickupLocationId: this.pickupLocationId,
+          dropoffLocationId: this.dropoffLocationId
+        }
+      }
+    ).toString();
+
+    const pendingPayload = {
+      vehicleId: this.vehiculo.id,
+      pickupLocationId: this.pickupLocationId,
+      dropoffLocationId: this.dropoffLocationId,
+      startAt: this.startAt,
+      endAt: this.endAt,
+      totalPrice: this.total,
+      extras: [
+        ...(this.extras.seguro ? [{ name: 'Seguro',          price: this.preciosExtras.seguro }] : []),
+        ...(this.extras.silla  ? [{ name: 'Silla para niño', price: this.preciosExtras.silla  }] : []),
+        ...(this.extras.gps    ? [{ name: 'GPS',             price: this.preciosExtras.gps    }] : []),
+      ],
+    };
+
+    // ⚠️ Ajustá este path si tu pantalla de login es distinta
+    this.router.navigate(
+      ['/auth/login'],
+      {
+        queryParams: { redirectUrl },
+        state: { pendingReservation: pendingPayload }
+      }
+    );
+  }
+
   confirmarReserva() {
     if (!this.vehiculo) return;
     if (!this.startAt || !this.endAt) {
       alert('⚠️ Faltan las fechas de reserva.');
+      return;
+    }
+
+    // ✅ si no hay sesión, NO hacemos el POST y redirigimos primero
+    if (!this.auth.isLoggedIn()) {
+      alert('Necesitás iniciar sesión para confirmar la reserva.');
+      this.redirigirALogin();
       return;
     }
 
@@ -132,9 +179,9 @@ export class DetalleComponent implements OnInit {
 
         // 2) Crear reserva real
         const extrasSeleccionados: Array<{name: string; price: number}> = [];
-        if (this.extras.seguro) extrasSeleccionados.push({ name: 'Seguro',            price: this.preciosExtras.seguro });
-        if (this.extras.silla)  extrasSeleccionados.push({ name: 'Silla para niño',  price: this.preciosExtras.silla });
-        if (this.extras.gps)    extrasSeleccionados.push({ name: 'GPS',              price: this.preciosExtras.gps });
+        if (this.extras.seguro) extrasSeleccionados.push({ name: 'Seguro',          price: this.preciosExtras.seguro });
+        if (this.extras.silla)  extrasSeleccionados.push({ name: 'Silla para niño', price: this.preciosExtras.silla  });
+        if (this.extras.gps)    extrasSeleccionados.push({ name: 'GPS',             price: this.preciosExtras.gps    });
 
         const payload = {
           vehicleId: this.vehiculo!.id,
@@ -151,12 +198,12 @@ export class DetalleComponent implements OnInit {
           next: (res) => {
             this.creating = false;
             alert('✅ Reserva creada correctamente (ID ' + res.id + ').');
-            // podés redirigir a confirmación/éxito si querés
             this.router.navigate(['/cotizar']);
           },
           error: (err) => {
             this.creating = false;
-            if (err.status === 409)       alert('❌ El vehículo no está disponible en las fechas seleccionadas.');
+            if (err.status === 401)       alert('Necesitás iniciar sesión para confirmar la reserva.');
+            else if (err.status === 409)  alert('❌ El vehículo no está disponible en las fechas seleccionadas.');
             else if (err.status === 422)  alert('⚠️ Datos faltantes o inválidos en la reserva.');
             else if (err.status === 400)  alert('⚠️ Fechas o formato inválido.');
             else                          alert('💥 Error inesperado. Intenta de nuevo.');

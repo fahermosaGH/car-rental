@@ -1,0 +1,19 @@
+<div class="login-wrapper">
+  <h2>Ingresar</h2>
+
+  <form (ngSubmit)="submit()" #f="ngForm" novalidate>
+    <label>
+      Email
+      <input type="email" name="email" [(ngModel)]="email" required />
+    </label>
+
+    <label>
+      Contraseña
+      <input type="password" name="password" [(ngModel)]="password" required />
+    </label>
+
+    <button type="submit" [disabled]="cargando">Entrar</button>
+
+    <p class="error" *ngIf="errorMsg">{{ errorMsg }}</p>
+  </form>
+</div>

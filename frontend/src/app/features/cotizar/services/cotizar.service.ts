@@ -1,14 +1,15 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { VehicleOption } from '../models/quote';
 import { environment } from '../../../../environments/environment';
+import { AuthService } from '../../../core/services/auth.service'; // 👈 importa el AuthService
 
 @Injectable({ providedIn: 'root' })
 export class CotizarService {
   private apiUrl = environment.apiUrl;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private auth: AuthService) {} // 👈 inyecta AuthService
 
   // 🔹 Obtener todos los vehículos desde el backend Symfony (catálogo general)
   buscarVehiculos(): Observable<VehicleOption[]> {
@@ -23,7 +24,6 @@ export class CotizarService {
           transmission: v.transmission,
           fuel: 'Nafta',
           description: `${v.brand} ${v.model} (${v.category?.name || v.category})`,
-          // si algún día el back también manda unitsAvailable acá, lo tomamos
           unitsAvailable: typeof v.unitsAvailable === 'number' ? v.unitsAvailable : undefined
         }))
       )
@@ -56,7 +56,7 @@ export class CotizarService {
     pickupLocationId: number;
     startAt: string; // 'YYYY-MM-DD' o ISO
     endAt: string;   // 'YYYY-MM-DD' o ISO
-    category?: string; // <-- NUEVO (opcional)
+    category?: string;
   }): Observable<VehicleOption[]> {
     let httpParams = new HttpParams()
       .set('pickupLocationId', String(params.pickupLocationId))
@@ -80,7 +80,6 @@ export class CotizarService {
             transmission: v.transmission,
             fuel: 'Nafta',
             description: `${v.brand} ${v.model} (${v.category?.name || v.category})`,
-            // 👇 lo que envía el back
             unitsAvailable: typeof v.unitsAvailable === 'number' ? v.unitsAvailable : undefined
           }))
         )
@@ -106,7 +105,7 @@ export class CotizarService {
     );
   }
 
-  // ✅ Crear reserva real en el backend
+  // ✅ Crear reserva real en el backend (forzamos Authorization mientras afinamos CORS/interceptor)
   crearReserva(payload: {
     vehicleId: number;
     pickupLocationId: number;
@@ -116,9 +115,14 @@ export class CotizarService {
     totalPrice: string | number;
     extras: Array<{ name: string; price: string | number }>;
   }): Observable<{ message: string; id: number }> {
+    const headers = this.auth.token
+      ? new HttpHeaders({ Authorization: `Bearer ${this.auth.token}` })
+      : undefined;
+
     return this.http.post<{ message: string; id: number }>(
       `${this.apiUrl}/reservations`,
-      payload
+      payload,
+      { headers }
     );
   }
 }

@@ -10,34 +10,34 @@ export class CotizarService {
 
   constructor(private http: HttpClient) {}
 
-  // 🔹 Obtener todos los vehículos desde el backend Symfony (catálogo general)
   buscarVehiculos(): Observable<VehicleOption[]> {
     return this.http.get<any[]>(`${this.apiUrl}/vehicles`).pipe(
       map((data) =>
         data.map((v) => ({
           id: v.id,
-          category: v.category?.name || v.category || 'Sin categoría',
+          category: v.category || 'Sin categoría',
+          brand: v.brand,
+          model: v.model,
           name: `${v.brand} ${v.model}`,
-          dailyRate: parseFloat(v.dailyPriceOverride || v.dailyRate || 0),
-          img: 'https://picsum.photos/seed/' + v.model + '/400/220',
+          year: v.year,
+          seats: v.seats,
           transmission: v.transmission,
+          dailyRate: parseFloat(v.dailyRate || 0),
+          img: 'https://picsum.photos/seed/' + v.model + '/400/220',
+          description: `${v.brand} ${v.model} (${v.category})`,
           fuel: 'Nafta',
-          description: `${v.brand} ${v.model} (${v.category?.name || v.category})`,
-          // si algún día el back también manda unitsAvailable acá, lo tomamos
-          unitsAvailable: typeof v.unitsAvailable === 'number' ? v.unitsAvailable : undefined
+          unitsAvailable: undefined
         }))
       )
     );
   }
 
-  // 🔹 Obtener un vehículo por ID (sobre el catálogo ya cargado)
   obtenerVehiculoPorId(id: number): Observable<VehicleOption | undefined> {
     return this.buscarVehiculos().pipe(
       map((vehiculos) => vehiculos.find((v) => v.id === id))
     );
   }
 
-  // 🔹 Sucursales reales
   obtenerSucursales(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/locations`).pipe(
       map((data) =>
@@ -51,12 +51,11 @@ export class CotizarService {
     );
   }
 
-  // 🔹 Vehículos disponibles por sucursal + fechas (+ categoría opcional)
   getAvailableVehicles(params: {
     pickupLocationId: number;
-    startAt: string; // 'YYYY-MM-DD' o ISO
-    endAt: string;   // 'YYYY-MM-DD' o ISO
-    category?: string; // <-- NUEVO (opcional)
+    startAt: string;
+    endAt: string;
+    category?: string;
   }): Observable<VehicleOption[]> {
     let httpParams = new HttpParams()
       .set('pickupLocationId', String(params.pickupLocationId))
@@ -73,26 +72,32 @@ export class CotizarService {
         map((data) =>
           data.map((v) => ({
             id: v.id,
-            category: v.category?.name || v.category || 'Sin categoría',
+            category: v.category || 'Sin categoría',
+            brand: v.brand,
+            model: v.model,
             name: `${v.brand} ${v.model}`,
-            dailyRate: parseFloat(v.dailyPriceOverride || v.dailyRate || 0),
-            img: 'https://picsum.photos/seed/' + v.model + '/400/220',
+            year: v.year,
+            seats: v.seats,
             transmission: v.transmission,
+            dailyRate: parseFloat(v.dailyRate || 0),
+            img: 'https://picsum.photos/seed/' + v.model + '/400/220',
+            description: `${v.brand} ${v.model} (${v.category})`,
             fuel: 'Nafta',
-            description: `${v.brand} ${v.model} (${v.category?.name || v.category})`,
-            // 👇 lo que envía el back
-            unitsAvailable: typeof v.unitsAvailable === 'number' ? v.unitsAvailable : undefined
+
+            // 📌 USAMOS LA DISPONIBILIDAD REAL QUE YA VIENE DE LA API
+            unitsAvailable: v.unitsAvailable,
+
+            branchStock: v.branchStock
           }))
         )
       );
   }
 
-  // ✅ Chequear disponibilidad puntual para un vehículo en sucursal+fechas
   checkAvailability(params: {
     vehicleId: number;
     pickupLocationId: number;
-    startAt: string; // YYYY-MM-DD o ISO
-    endAt: string;   // YYYY-MM-DD o ISO
+    startAt: string;
+    endAt: string;
   }): Observable<{ available: boolean; message: string }> {
     const httpParams = new HttpParams()
       .set('vehicle', String(params.vehicleId))
@@ -106,15 +111,14 @@ export class CotizarService {
     );
   }
 
-  // ✅ Crear reserva real en el backend
   crearReserva(payload: {
     vehicleId: number;
     pickupLocationId: number;
     dropoffLocationId: number;
-    startAt: string;   // YYYY-MM-DD
-    endAt: string;     // YYYY-MM-DD
-    totalPrice: string | number;
-    extras: Array<{ name: string; price: string | number }>;
+    startAt: string;
+    endAt: string;
+    totalPrice: number | string;
+    extras: Array<{ name: string; price: number | string }>;
   }): Observable<{ message: string; id: number }> {
     return this.http.post<{ message: string; id: number }>(
       `${this.apiUrl}/reservations`,
@@ -122,4 +126,3 @@ export class CotizarService {
     );
   }
 }
-

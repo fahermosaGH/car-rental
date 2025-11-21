@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 
 import { CotizarService } from '../../services/cotizar.service';
 import { VehicleOption } from '../../models/quote';
+import { AuthService } from '../../../../core/services/auth.service'; // ✅ ruta corregida (3 niveles)
 
 @Component({
   selector: 'app-detalle',
@@ -37,7 +38,8 @@ export class DetalleComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private cotizarService: CotizarService
+    private cotizarService: CotizarService,
+    private auth: AuthService
   ) {}
 
   ngOnInit() {
@@ -105,6 +107,46 @@ export class DetalleComponent implements OnInit {
     return sinFechas || sinCupo || this.checking || this.creating || !this.vehiculo;
   }
 
+  private redirigirALogin() {
+    if (!this.vehiculo) return;
+
+    const redirectUrl = this.router.createUrlTree(
+      ['/cotizar/detalle', this.vehiculo.id],
+      {
+        queryParams: {
+          dias: this.dias,
+          startAt: this.startAt,
+          endAt: this.endAt,
+          pickupLocationId: this.pickupLocationId,
+          dropoffLocationId: this.dropoffLocationId
+        }
+      }
+    ).toString();
+
+    const pendingPayload = {
+      vehicleId: this.vehiculo.id,
+      pickupLocationId: this.pickupLocationId,
+      dropoffLocationId: this.dropoffLocationId,
+      startAt: this.startAt,
+      endAt: this.endAt,
+      totalPrice: this.total,
+      extras: [
+        ...(this.extras.seguro ? [{ name: 'Seguro',          price: this.preciosExtras.seguro }] : []),
+        ...(this.extras.silla  ? [{ name: 'Silla para niño', price: this.preciosExtras.silla  }] : []),
+        ...(this.extras.gps    ? [{ name: 'GPS',             price: this.preciosExtras.gps    }] : []),
+      ],
+    };
+
+    // ⚠️ Ajustá este path si tu pantalla de login es distinta
+    this.router.navigate(
+      ['/auth/login'],
+      {
+        queryParams: { redirectUrl },
+        state: { pendingReservation: pendingPayload }
+      }
+    );
+  }
+
   confirmarReserva() {
     if (!this.vehiculo) return;
     if (!this.startAt || !this.endAt) {
@@ -130,9 +172,9 @@ export class DetalleComponent implements OnInit {
 
         // 2) Crear reserva
         const extrasSeleccionados: Array<{name: string; price: number}> = [];
-        if (this.extras.seguro) extrasSeleccionados.push({ name: 'Seguro',            price: this.preciosExtras.seguro });
-        if (this.extras.silla)  extrasSeleccionados.push({ name: 'Silla para niño',  price: this.preciosExtras.silla });
-        if (this.extras.gps)    extrasSeleccionados.push({ name: 'GPS',              price: this.preciosExtras.gps });
+        if (this.extras.seguro) extrasSeleccionados.push({ name: 'Seguro',          price: this.preciosExtras.seguro });
+        if (this.extras.silla)  extrasSeleccionados.push({ name: 'Silla para niño', price: this.preciosExtras.silla  });
+        if (this.extras.gps)    extrasSeleccionados.push({ name: 'GPS',             price: this.preciosExtras.gps    });
 
         const payload = {
           vehicleId: this.vehiculo!.id,

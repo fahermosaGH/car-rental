@@ -1,14 +1,15 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { VehicleOption } from '../models/quote';
 import { environment } from '../../../../environments/environment';
+import { AuthService } from '../../../core/services/auth.service'; // 👈 importa el AuthService
 
 @Injectable({ providedIn: 'root' })
 export class CotizarService {
   private apiUrl = environment.apiUrl;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private auth: AuthService) {} // 👈 inyecta AuthService
 
   buscarVehiculos(): Observable<VehicleOption[]> {
     return this.http.get<any[]>(`${this.apiUrl}/vehicles`).pipe(
@@ -26,7 +27,8 @@ export class CotizarService {
           img: 'https://picsum.photos/seed/' + v.model + '/400/220',
           description: `${v.brand} ${v.model} (${v.category})`,
           fuel: 'Nafta',
-          unitsAvailable: undefined
+          description: `${v.brand} ${v.model} (${v.category?.name || v.category})`,
+          unitsAvailable: typeof v.unitsAvailable === 'number' ? v.unitsAvailable : undefined
         }))
       )
     );
@@ -53,8 +55,8 @@ export class CotizarService {
 
   getAvailableVehicles(params: {
     pickupLocationId: number;
-    startAt: string;
-    endAt: string;
+    startAt: string; // 'YYYY-MM-DD' o ISO
+    endAt: string;   // 'YYYY-MM-DD' o ISO
     category?: string;
   }): Observable<VehicleOption[]> {
     let httpParams = new HttpParams()
@@ -111,6 +113,7 @@ export class CotizarService {
     );
   }
 
+  // ✅ Crear reserva real en el backend (forzamos Authorization mientras afinamos CORS/interceptor)
   crearReserva(payload: {
     vehicleId: number;
     pickupLocationId: number;
@@ -120,9 +123,14 @@ export class CotizarService {
     totalPrice: number | string;
     extras: Array<{ name: string; price: number | string }>;
   }): Observable<{ message: string; id: number }> {
+    const headers = this.auth.token
+      ? new HttpHeaders({ Authorization: `Bearer ${this.auth.token}` })
+      : undefined;
+
     return this.http.post<{ message: string; id: number }>(
       `${this.apiUrl}/reservations`,
-      payload
+      payload,
+      { headers }
     );
   }
 }

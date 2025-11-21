@@ -1,13 +1,25 @@
 export interface VehicleOption {
   id: number;
   category: string;
-  name: string;
-  dailyRate: number;
-  img: string;
-  description?: string;
+
+  // datos del vehículo
+  brand: string;
+  model: string;
+  name: string; // brand + model
+  year?: number;
+  seats?: number;
   transmission?: string;
+
+  // economía
+  dailyRate: number;
+  description?: string;
   fuel?: string;
 
-  // 👇 nuevo (opcional, solo viene desde /vehicles/available)
+  // imágenes
+  img: string;
+
+  // disponibilidad real
   unitsAvailable?: number;
+  branchStock?: number;
+  taken?: number;
 }

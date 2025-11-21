@@ -3,11 +3,8 @@
 namespace App\Repository;
 
 use App\Entity\Vehicle;
-use App\Entity\Reservation;
-use App\Entity\VehicleLocationStock;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
-use Doctrine\ORM\Query\Expr\Join;
 
 /**
  * @extends ServiceEntityRepository<Vehicle>
@@ -21,10 +18,16 @@ class VehicleRepository extends ServiceEntityRepository
 
     /**
      * Disponibles con info de stock y reservas tomadas, opcionalmente filtrando por categoría.
-     * Devuelve escalares (array) para evitar problemas de hidratación mixta.
+     *
+     * Devuelve filas escalares (array) con:
+     *  - stock en la sucursal (branchStock)
+     *  - reservas que pisan el rango (taken)
+     *
+     * El cálculo de unitsAvailable lo hace el controlador:
+     *    unitsAvailable = max(branchStock - taken, 0)
      *
      * @return array<int, array{
-     *   id:int, brand:string, model:string, year:int, seats:int|null,
+     *   id:int, brand:string, model:string, year:int|null, seats:int|null,
      *   transmission:string|null, dailyRate:string|null, isActive:bool,
      *   category:string|null, branchStock:int, taken:int
      * }>
@@ -59,7 +62,7 @@ class VehicleRepository extends ServiceEntityRepository
                 'v.isActive             AS isActive',
                 'c.name                 AS category',
                 'vls.quantity           AS branchStock',
-                // reservas que pisan el rango en esa sucursal
+                // reservas que pisán el rango en esa sucursal
                 '(SELECT COUNT(r1.id) FROM ' . \App\Entity\Reservation::class . ' r1
                     WHERE r1.vehicle = v
                       AND r1.pickupLocation = :loc
@@ -67,16 +70,18 @@ class VehicleRepository extends ServiceEntityRepository
                       AND (:start < r1.endAt) AND (:end > r1.startAt)
                  ) AS taken',
             ])
-            // importante para poder usar HAVING con escalares
-            ->groupBy('v.id, vls.id, c.id')
-            // mantener solo los que tienen cupo: stock - tomadas > 0
-            ->having('branchStock > taken');
+            ->groupBy('v.id, vls.id, c.id');
 
         // Filtro opcional por nombre exacto de categoría
         if ($categoryName !== null && $categoryName !== '') {
             $qb->andWhere('c.name = :catName')
                ->setParameter('catName', $categoryName);
         }
+
+        // 👇 IMPORTANTE:
+        // NO usamos HAVING branchStock > taken,
+        // así también devolvemos autos con unitsAvailable = 0
+        // y el front puede mostrar "Sin stock".
 
         return $qb->getQuery()->getArrayResult();
     }

@@ -7,9 +7,9 @@ export interface Location {
   id: number;
   name: string;
   address: string;
-  city: string;
-  latitude: number;
-  longitude: number;
+  city: string | null;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -25,9 +25,9 @@ export class LocationService {
           id: l.id,
           name: l.name,
           address: l.address,
-          city: l.city,
-          latitude: l.latitude,
-          longitude: l.longitude,
+          city: l.city ?? '',
+          latitude: l.latitude ?? null,
+          longitude: l.longitude ?? null,
         }))
       )
     );

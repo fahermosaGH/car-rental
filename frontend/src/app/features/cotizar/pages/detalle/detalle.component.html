@@ -1,73 +1,197 @@
-<section class="detalle-wrapper" *ngIf="vehiculo">
-  <button routerLink="/cotizar/resultados" class="btn-volver">
-    ← Volver a resultados
-  </button>
+<section class="detalle-page" *ngIf="vehiculo; else loadingTpl">
+  <!-- Barra superior: volver + badge de disponibilidad -->
+  <header class="detalle-header">
+    <button class="btn-back" routerLink="/cotizar/resultados">
+      ← Volver a resultados
+    </button>
 
-  <div class="detalle-card">
-    <div class="img-wrapper">
-      <img [src]="vehiculo!.img" [alt]="vehiculo!.name" />
+    <div class="header-right">
+      <span
+        *ngIf="checking"
+        class="chip chip-warning"
+      >
+        ⏳ Verificando disponibilidad...
+      </span>
+
+      <span
+        *ngIf="!checking && unitsAvailable !== undefined"
+        class="chip"
+        [class.chip-ok]="unitsAvailable > 0"
+        [class.chip-error]="unitsAvailable <= 0"
+      >
+        {{
+          unitsAvailable > 0
+            ? ('Quedan ' + unitsAvailable + ' unidad' + (unitsAvailable > 1 ? 'es' : ''))
+            : 'Sin stock'
+        }}
+      </span>
     </div>
+  </header>
 
-    <div class="info">
-      <h2 class="title-row">
-        {{ vehiculo!.name }}
-        <span *ngIf="unitsAvailable !== undefined" class="badge-disponibles"
-              [class.no]="unitsAvailable <= 0">
-          {{ unitsAvailable > 0 ? ('Quedan ' + unitsAvailable) : 'Sin stock' }}
-        </span>
-      </h2>
-
-      <p class="categoria">{{ vehiculo!.category }}</p>
-
-      <div class="atributos">
-        <p><strong>Transmisión:</strong> {{ vehiculo!.transmission }}</p>
-        <p><strong>Combustible:</strong> {{ vehiculo!.fuel }}</p>
-        <p><strong>Descripción:</strong> {{ vehiculo!.description }}</p>
+  <!-- Layout principal: info a la izquierda, resumen a la derecha -->
+  <div class="detalle-layout">
+    <!-- Panel principal del vehículo -->
+    <article class="panel panel-main">
+      <div class="hero-image">
+        <img [src]="vehiculo!.img" [alt]="vehiculo!.name" />
       </div>
 
-      <div class="tarifas">
-        <p><strong>Tarifa diaria:</strong> {{ vehiculo!.dailyRate | currency:'ARS' }}</p>
-        <p><strong>Cantidad de días:</strong> {{ dias }}</p>
+      <div class="main-body">
+        <div class="title-row">
+          <div>
+            <h1>{{ vehiculo!.name }}</h1>
+            <p class="categoria">
+              {{ vehiculo!.category || 'Sin categoría' }}
+            </p>
+          </div>
+        </div>
+
+        <div class="meta-row">
+          <span *ngIf="vehiculo!.transmission">
+            ⚙️ {{ vehiculo!.transmission | titlecase }}
+          </span>
+          <span *ngIf="vehiculo!.fuel">
+            ⛽ {{ vehiculo!.fuel }}
+          </span>
+        </div>
+
+        <section class="block">
+          <h2>Descripción</h2>
+          <p>
+            {{ vehiculo!.description || 'Vehículo cómodo y seguro para tu próximo viaje.' }}
+          </p>
+        </section>
+
+        <section class="block block-tarifa">
+          <div class="tarifa-header">
+            <div>
+              <span class="label">Tarifa diaria</span>
+              <div class="tarifa-valor">
+                {{ vehiculo!.dailyRate | currency:'ARS' }}
+              </div>
+            </div>
+            <div class="tarifa-info">
+              <span class="dias">
+                {{ dias }} {{ dias === 1 ? 'día' : 'días' }}
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <section class="block">
+          <h2>Extras disponibles</h2>
+          <div class="extras-grid">
+            <label class="extra-item">
+              <input
+                type="checkbox"
+                [(ngModel)]="extras.seguro"
+                (change)="actualizarTotal()"
+              />
+              <div class="extra-content">
+                <span class="extra-title">Seguro</span>
+                <span class="extra-sub">
+                  Protegé tu viaje (+{{ preciosExtras.seguro | currency:'ARS' }})
+                </span>
+              </div>
+            </label>
+
+            <label class="extra-item">
+              <input
+                type="checkbox"
+                [(ngModel)]="extras.silla"
+                (change)="actualizarTotal()"
+              />
+              <div class="extra-content">
+                <span class="extra-title">Silla para niño</span>
+                <span class="extra-sub">
+                  Ideal para viajar en familia (+{{ preciosExtras.silla | currency:'ARS' }})
+                </span>
+              </div>
+            </label>
+
+            <label class="extra-item">
+              <input
+                type="checkbox"
+                [(ngModel)]="extras.gps"
+                (change)="actualizarTotal()"
+              />
+              <div class="extra-content">
+                <span class="extra-title">GPS</span>
+                <span class="extra-sub">
+                  Llegá sin perderte (+{{ preciosExtras.gps | currency:'ARS' }})
+                </span>
+              </div>
+            </label>
+          </div>
+        </section>
+      </div>
+    </article>
+
+    <!-- Panel lateral: resumen de reserva -->
+    <aside class="panel panel-resumen">
+      <h2>Resumen de tu reserva</h2>
+
+      <div class="resumen-row fechas" *ngIf="startAt && endAt">
+        <div>
+          <span class="label">Retiro</span>
+          <strong>{{ startAt | date:'dd/MM/yyyy' }}</strong>
+        </div>
+        <div>
+          <span class="label">Devolución</span>
+          <strong>{{ endAt | date:'dd/MM/yyyy' }}</strong>
+        </div>
       </div>
 
-      <h3>Extras disponibles</h3>
-      <div class="extras">
-        <label>
-          <input type="checkbox" [(ngModel)]="extras.seguro" (change)="actualizarTotal()" />
-          Seguro (+{{ preciosExtras.seguro | currency:'ARS' }})
-        </label>
-
-        <label>
-          <input type="checkbox" [(ngModel)]="extras.silla" (change)="actualizarTotal()" />
-          Silla para niño (+{{ preciosExtras.silla | currency:'ARS' }})
-        </label>
-
-        <label>
-          <input type="checkbox" [(ngModel)]="extras.gps" (change)="actualizarTotal()" />
-          GPS (+{{ preciosExtras.gps | currency:'ARS' }})
-        </label>
+      <div class="resumen-row">
+        <div>
+          <span class="label">Sucursal de retiro</span>
+          <strong>#{{ pickupLocationId }}</strong>
+        </div>
+        <div>
+          <span class="label">Cantidad de días</span>
+          <strong>{{ dias }}</strong>
+        </div>
       </div>
 
-      <div class="total-box">
-        <h3>Total estimado: {{ total | currency:'ARS' }}</h3>
-        <p class="fechas">
-          <strong>Desde:</strong> {{ startAt | date:'dd/MM/yyyy' }}<br />
-          <strong>Hasta:</strong> {{ endAt   | date:'dd/MM/yyyy' }}
-        </p>
-        <small *ngIf="checking">Verificando disponibilidad…</small>
-        <small *ngIf="errorMsg" class="error">{{ errorMsg }}</small>
+      <div class="resumen-precio">
+        <div class="line">
+          <span>Base (tarifa diaria x {{ dias }})</span>
+          <span>{{ (vehiculo!.dailyRate * dias) | currency:'ARS' }}</span>
+        </div>
+
+        <div class="line">
+          <span>Extras seleccionados</span>
+          <span>+ {{ (total - vehiculo!.dailyRate * dias) | currency:'ARS' }}</span>
+        </div>
+
+        <div class="total-line">
+          <span>Total estimado</span>
+          <strong>{{ total | currency:'ARS' }}</strong>
+        </div>
       </div>
 
-      <button class="btn-reservar"
-              [disabled]="botonDeshabilitado"
-              (click)="confirmarReserva()">
+      <p class="nota">
+        El precio final puede variar según impuestos o cargos locales en la sucursal.
+      </p>
+
+      <p *ngIf="errorMsg" class="error-msg">
+        {{ errorMsg }}
+      </p>
+
+      <button
+        class="btn-primary"
+        [disabled]="botonDeshabilitado"
+        (click)="confirmarReserva()"
+      >
         {{ creating ? 'Creando reserva...' : 'Confirmar reserva' }}
       </button>
-    </div>
+    </aside>
   </div>
 </section>
 
-<!-- Sin datos -->
-<div *ngIf="!vehiculo" class="loading">
-  🚘 Cargando información del vehículo...
-</div>
+<!-- Template de carga -->
+<ng-template #loadingTpl>
+  <div class="loading">
+    🚘 Cargando información del vehículo...
+  </div>
+</ng-template>

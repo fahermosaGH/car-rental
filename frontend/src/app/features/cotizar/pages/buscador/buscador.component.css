@@ -1,262 +1,223 @@
-/* Fondo general centrado */
-.search-container {
+/* ========================= */
+/* HERO PREMIUM */
+/* ========================= */
+.hero {
+  position: relative;
+  height: 70vh;
   display: flex;
-  justify-content: center;
   align-items: center;
-  min-height: calc(100vh - 150px); /* espacio dejando header y footer visibles */
-  background: linear-gradient(135deg, #e3f2fd 0%, #ffffff 100%);
-  padding: 40px 20px;
+  justify-content: center;
+  color: white;
+  padding: 0 1rem;
 }
 
-/* Tarjeta principal */
-.search-card {
-  background: #fff;
-  padding: 2rem 2.5rem;
-  border-radius: 18px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-  max-width: 950px;
-  width: 100%;
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  background: url('/assets/imagenes/banner-auto.jpg') center/cover no-repeat;
+  filter: brightness(0.55);
+}
+
+.hero-content {
+  position: relative;
   text-align: center;
-  transition: transform 0.2s ease, box-shadow 0.3s ease;
+  z-index: 2;
 }
 
-.search-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.1);
+.hero h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.6rem;
 }
 
-/* Título */
-.search-card h1 {
-  font-size: 1.8rem;
-  font-weight: 600;
-  color: #0d47a1;
-  margin-bottom: 1.5rem;
+.hero p {
+  font-size: 1.2rem;
+  opacity: 0.9;
 }
 
-/* Grid del formulario */
-.search-grid {
+/* ========================= */
+/* FORMULARIO FLOTANTE */
+/* ========================= */
+.search-widget {
+  position: absolute;
+  bottom: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  padding: 1.5rem 2rem;
+  border-radius: 18px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem 1.2rem;
-  align-items: end;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1rem;
+  width: 90%;
+  max-width: 1100px;
+  z-index: 10;
 }
 
-/* Campos */
 .field {
   display: flex;
   flex-direction: column;
-  text-align: left;
 }
 
 .field label {
-  font-size: 0.95rem;
   font-weight: 600;
+  font-size: 0.9rem;
   margin-bottom: 0.3rem;
-  color: #333;
+}
+
+.field label span {
+  margin-right: 4px;
 }
 
 input,
 select {
-  border: 1px solid #ccc;
+  padding: 0.6rem;
   border-radius: 8px;
-  padding: 0.6rem 0.8rem;
-  font-size: 0.95rem;
-  transition: border 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid #ccc;
+  transition: all 0.2s ease;
 }
 
 input:focus,
 select:focus {
-  border-color: #0d6efd;
-  box-shadow: 0 0 4px rgba(13, 110, 253, 0.25);
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.35);
   outline: none;
 }
 
-/* Botón */
-.actions {
-  grid-column: 1 / -1;
-  display: flex;
-  justify-content: center;
-  margin-top: 0.5rem;
-}
-
-button {
-  background-color: #0d6efd;
-  color: white;
+.btn-search {
+  background: #007bff;
   border: none;
+  color: white;
   border-radius: 10px;
-  padding: 0.75rem 2rem;
-  font-size: 1rem;
-  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.2s ease;
+  font-weight: 600;
+  transition: 0.2s ease;
+  font-size: 1rem;
 }
 
-button:hover {
-  background-color: #0b5ed7;
+.btn-search:hover {
+  background: #005ecb;
   transform: translateY(-2px);
 }
 
-/* Adaptable para pantallas pequeñas */
-@media (max-width: 900px) {
-  .search-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-@media (max-width: 600px) {
-  .search-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .search-card {
-    padding: 1.5rem;
-  }
-}
-.hero-banner {
-  background: linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45)),
-    url('/assets/imagenes/banner-auto.jpg') center/cover no-repeat;
-  color: white;
-  text-align: center;
-  padding: 4rem 1rem;
-  border-radius: 12px;
-  margin-bottom: 2rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-}
-
-.hero-content h1 {
-  font-size: 2.2rem;
-  margin-bottom: 0.5rem;
-}
-
-.hero-content p {
-  font-size: 1.1rem;
-  margin-bottom: 1rem;
-}
-
-.btn-cta {
-  background: #007bff;
-  border: none;
-  color: #fff;
-  padding: 0.7rem 1.4rem;
-  border-radius: 8px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background 0.3s;
-}
-.btn-cta:hover {
-  background: #0056b3;
-}
-.benefits {
+/* ========================= */
+/* MAPA */
+/* ========================= */
+.map-wrapper {
+  padding: 6rem 1rem 2rem;
   display: flex;
   justify-content: center;
-  flex-wrap: wrap;
-  gap: 2rem;
-  padding: 2rem 0;
-  background: #f8f9fa;
-  border-radius: 12px;
-  margin-top: 2rem;
-}
-.benefit {
-  flex: 1 1 260px;
-  text-align: center;
-  color: #333;
-}
-.benefit h3 {
-  margin-top: 0.5rem;
-  color: #007bff;
-}
-.popular-cities {
-  padding: 2rem 0;
 }
 
-.popular-cities h2 {
+/* ========================= */
+/* APP DOWNLOAD */
+/* ========================= */
+.app-download {
+  margin: 3rem auto;
+  padding: 2.5rem;
+  background: #f4f7fb;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  max-width: 1100px;
+}
+
+.app-download img {
+  max-width: 160px;
+}
+
+.stores img {
+  height: 45px;
+  margin-right: 1rem;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.stores img:hover {
+  transform: scale(1.05);
+}
+
+.phone img {
+  width: 260px;
+}
+
+/* ========================= */
+/* CIUDADES */
+/* ========================= */
+.cities {
+  padding: 3rem 1rem;
   text-align: center;
+}
+
+.cities h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
   color: #003087;
   margin-bottom: 1.5rem;
 }
 
-.city-grid {
+.grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1rem;
+  gap: 1.5rem;
+  max-width: 1100px;
+  margin: auto;
 }
 
-.city-card {
-  border-radius: 12px;
+.city {
+  background: white;
+  border-radius: 16px;
   overflow: hidden;
-  background: #fff;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   transition: transform 0.2s;
 }
 
-.city-card:hover {
-  transform: translateY(-4px);
+.city:hover {
+  transform: translateY(-5px);
 }
 
-.city-card img {
+.city img {
   width: 100%;
-  height: 140px;
+  height: 150px;
   object-fit: cover;
 }
 
-.city-info {
-  padding: 0.8rem;
-  text-align: center;
-}
-
-.city-info h3 {
-  margin: 0;
+.city h3 {
+  margin: 0.6rem 0 0;
   font-size: 1.1rem;
-  color: #007bff;
+  color: #005eb8;
 }
-.city-info p {
-  color: #666;
-  margin: 0.3rem 0 0 0;
+
+.city p {
+  margin-bottom: 0.8rem;
   font-size: 0.9rem;
-}
-.app-promo {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #f8f9fa;
-  border-radius: 16px;
-  padding: 2rem;
-  margin-top: 3rem;
-  flex-wrap: wrap;
+  color: #666;
 }
 
-.app-text {
-  flex: 1 1 300px;
+/* ========================= */
+/* RESPONSIVE */
+/* ========================= */
+@media (max-width: 900px) {
+  .search-widget {
+    grid-template-columns: repeat(2, 1fr);
+    bottom: -80px;
+  }
+
+  .hero {
+    height: 60vh;
+  }
 }
 
-.app-text h2 {
-  color: #003087;
-  font-size: 1.6rem;
-  margin-bottom: 0.5rem;
-}
+@media (max-width: 600px) {
+  .search-widget {
+    grid-template-columns: 1fr;
+    width: 92%;
+  }
 
-.app-text p {
-  color: #444;
-  margin-bottom: 1rem;
-}
-
-.store-buttons img {
-  height: 45px;
-  margin-right: 0.8rem;
-  cursor: pointer;
-  transition: transform 0.2s;
-}
-
-.store-buttons img:hover {
-  transform: scale(1.05);
-}
-
-.app-image {
-  flex: 1 1 280px;
-  text-align: center;
-}
-
-.app-image img {
-  max-width: 240px;
-  width: 100%;
+  .hero h1 {
+    font-size: 1.8rem;
+  }
 }

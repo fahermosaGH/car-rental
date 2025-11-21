@@ -75,7 +75,7 @@ export class DetalleComponent implements OnInit {
 
     this.checking = true;
     this.cotizarService.checkAvailability({
-      vehicleId: this.vehiculo.id,
+      vehicleId: this.vehiculo!.id,
       pickupLocationId: this.pickupLocationId,
       startAt: this.startAt,
       endAt: this.endAt
@@ -154,17 +154,10 @@ export class DetalleComponent implements OnInit {
       return;
     }
 
-    // ✅ si no hay sesión, NO hacemos el POST y redirigimos primero
-    if (!this.auth.isLoggedIn()) {
-      alert('Necesitás iniciar sesión para confirmar la reserva.');
-      this.redirigirALogin();
-      return;
-    }
-
-    // 1) Revalidar disponibilidad por las dudas
+    // 1) Revalidar disponibilidad
     this.checking = true;
     this.cotizarService.checkAvailability({
-      vehicleId: this.vehiculo.id,
+      vehicleId: this.vehiculo!.id,
       pickupLocationId: this.pickupLocationId,
       startAt: this.startAt,
       endAt: this.endAt
@@ -173,11 +166,11 @@ export class DetalleComponent implements OnInit {
         this.checking = false;
         if (!r.available) {
           this.unitsAvailable = 0;
-          alert('❌ Sin stock para esas fechas en esa sucursal.');
+          alert('❌ Sin stock en esas fechas.');
           return;
         }
 
-        // 2) Crear reserva real
+        // 2) Crear reserva
         const extrasSeleccionados: Array<{name: string; price: number}> = [];
         if (this.extras.seguro) extrasSeleccionados.push({ name: 'Seguro',          price: this.preciosExtras.seguro });
         if (this.extras.silla)  extrasSeleccionados.push({ name: 'Silla para niño', price: this.preciosExtras.silla  });
@@ -202,11 +195,10 @@ export class DetalleComponent implements OnInit {
           },
           error: (err) => {
             this.creating = false;
-            if (err.status === 401)       alert('Necesitás iniciar sesión para confirmar la reserva.');
-            else if (err.status === 409)  alert('❌ El vehículo no está disponible en las fechas seleccionadas.');
-            else if (err.status === 422)  alert('⚠️ Datos faltantes o inválidos en la reserva.');
-            else if (err.status === 400)  alert('⚠️ Fechas o formato inválido.');
-            else                          alert('💥 Error inesperado. Intenta de nuevo.');
+            if (err.status === 409)       alert('❌ El vehículo no está disponible.');
+            else if (err.status === 422)  alert('⚠️ Datos inválidos.');
+            else if (err.status === 400)  alert('⚠️ Fechas inválidas.');
+            else                          alert('💥 Error inesperado.');
           }
         });
       },

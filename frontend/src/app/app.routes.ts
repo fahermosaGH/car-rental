@@ -8,7 +8,7 @@ export const routes: Routes = [
     path: '',
     component: LayoutComponent,
     children: [
-      // === Auth (/auth/login) ===
+      // === Auth (/auth/login, /auth/register) ===
       {
         path: 'auth',
         children: [
@@ -17,6 +17,12 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./features/auth/login/login.component')
                 .then(m => m.LoginComponent),
+          },
+          {
+            path: 'register',
+            loadComponent: () =>
+              import('./features/auth/register/register.component')
+                .then(m => m.RegisterComponent),
           },
         ],
       },
@@ -56,5 +62,6 @@ export const routes: Routes = [
 
   { path: '**', redirectTo: 'cotizar' },
 ];
+
 
 

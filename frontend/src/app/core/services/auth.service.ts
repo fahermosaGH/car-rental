@@ -30,6 +30,12 @@ export interface RegisterPayload {
   password: string;
 }
 
+// 👇 Nuevo: modelo de usuario para el front
+export interface AuthUser {
+  email: string;
+  roles: string[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private apiUrl = environment.apiUrl; // ej: http://127.0.0.1:8000/api
@@ -37,7 +43,19 @@ export class AuthService {
   /** Emite true/false cuando cambia el estado de autenticación */
   readonly authChanges = new BehaviorSubject<boolean>(this.isLoggedIn());
 
-  constructor(private http: HttpClient, private router: Router) {}
+  /** Nuevo: emite el usuario actual (email + roles) o null */
+  private readonly userSubject = new BehaviorSubject<AuthUser | null>(null);
+  readonly user$ = this.userSubject.asObservable();
+
+  constructor(private http: HttpClient, private router: Router) {
+    // Si ya hay token al iniciar la app, intentar cargar el usuario
+    if (this.isLoggedIn()) {
+      this.me().subscribe({
+        next: (me) => this.userSubject.next({ email: me.email, roles: me.roles }),
+        error: () => this.userSubject.next(null),
+      });
+    }
+  }
 
   // === Token helpers ===
   get token(): string | null {
@@ -60,6 +78,7 @@ export class AuthService {
 
   logout(): void {
     this.token = null;
+    this.userSubject.next(null); // 👈 limpiar usuario también
   }
 
   // === Return URL helpers (para volver donde estabas tras loguearte) ===
@@ -97,7 +116,17 @@ export class AuthService {
     return this.http
       .post<AuthResponse>(`${this.apiUrl}/login_check`, { email, password })
       .pipe(
-        tap((res) => (this.token = res.token)),
+        tap((res) => {
+          // guardar token
+          this.token = res.token;
+
+          // 👇 una vez que tenemos token, pedimos /me para rellenar user$
+          this.me().subscribe({
+            next: (me) =>
+              this.userSubject.next({ email: me.email, roles: me.roles }),
+            error: () => this.userSubject.next(null),
+          });
+        }),
         map((res) => res.token),
         catchError((err) => throwError(() => err))
       );
@@ -122,4 +151,5 @@ export class AuthService {
       .pipe(catchError((err) => throwError(() => err)));
   }
 }
+
 

@@ -1,13 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router'; // 👈 sumé RouterModule acá
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule], // 👈 y acá lo agregamos
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css'],
 })
@@ -61,4 +61,5 @@ export class LoginComponent implements OnInit {
     });
   }
 }
+
 

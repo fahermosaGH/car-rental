@@ -3,7 +3,7 @@ import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { VehicleOption } from '../models/quote';
 import { environment } from '../../../../environments/environment';
-import { AuthService } from '../../../core/services/auth.service'; 
+import { AuthService } from '../../../core/services/auth.service';
 
 @Injectable({ providedIn: 'root' })
 export class CotizarService {
@@ -16,17 +16,18 @@ export class CotizarService {
       map((data) =>
         data.map((v) => ({
           id: v.id,
-          category: v.category || 'Sin categoría',
+          // si viene objeto, usamos nombre; si viene string, usamos string; si nada, fallback
+          category: v.category?.name ?? v.category ?? 'Sin categoría',
           brand: v.brand,
           model: v.model,
           name: `${v.brand} ${v.model}`,
           year: v.year,
           seats: v.seats,
           transmission: v.transmission,
-          dailyRate: parseFloat(v.dailyRate || 0),
+          dailyRate: parseFloat(v.dailyRate ?? 0),
           img: 'https://picsum.photos/seed/' + v.model + '/400/220',
-          description: `${v.brand} ${v.model} (${v.category?.name || v.category})`,
           fuel: 'Nafta',
+          description: `${v.brand} ${v.model} (${v.category?.name || v.category || 'Sin categoría'})`,
           unitsAvailable:
             typeof v.unitsAvailable === 'number' ? v.unitsAvailable : undefined,
         }))
@@ -55,8 +56,8 @@ export class CotizarService {
 
   getAvailableVehicles(params: {
     pickupLocationId: number;
-    startAt: string;
-    endAt: string;
+    startAt: string; // 'YYYY-MM-DD' o ISO
+    endAt: string;   // 'YYYY-MM-DD' o ISO
     category?: string;
   }): Observable<VehicleOption[]> {
     let httpParams = new HttpParams()
@@ -74,18 +75,21 @@ export class CotizarService {
         map((data) =>
           data.map((v) => ({
             id: v.id,
-            category: v.category || 'Sin categoría',
+            category: v.category?.name ?? v.category ?? 'Sin categoría',
             brand: v.brand,
             model: v.model,
             name: `${v.brand} ${v.model}`,
             year: v.year,
             seats: v.seats,
             transmission: v.transmission,
-            dailyRate: parseFloat(v.dailyRate || 0),
+            dailyRate: parseFloat(v.dailyRate ?? 0),
             img: 'https://picsum.photos/seed/' + v.model + '/400/220',
-            description: `${v.brand} ${v.model} (${v.category})`,
+            description: `${v.brand} ${v.model} (${v.category?.name || v.category || 'Sin categoría'})`,
             fuel: 'Nafta',
+
+            // 📌 USAMOS LA DISPONIBILIDAD REAL QUE YA VIENE DE LA API
             unitsAvailable: v.unitsAvailable,
+
             branchStock: v.branchStock,
           }))
         )
@@ -110,6 +114,7 @@ export class CotizarService {
     );
   }
 
+  // ✅ Crear reserva real en el backend
   crearReserva(payload: {
     vehicleId: number;
     pickupLocationId: number;
@@ -130,3 +135,4 @@ export class CotizarService {
     );
   }
 }
+

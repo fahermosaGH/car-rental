@@ -30,6 +30,17 @@
   font-weight: 600;
 }
 
+/* logo clickable, sin subrayado */
+.logo a {
+  color: white;
+  text-decoration: none;
+}
+
+.logo a:hover {
+  opacity: 0.9;
+}
+
+/* links del nav */
 .nav a {
   color: white;
   margin-left: 1.5rem;
@@ -38,10 +49,28 @@
   transition: opacity 0.3s;
 }
 
+/* quitamos subrayado en hover/active */
 .nav a:hover,
 .nav a.active {
   opacity: 0.8;
-  text-decoration: underline;
+  text-decoration: none;
+}
+
+/* botón Cerrar sesión con mismo estilo que links */
+.nav-logout {
+  margin-left: 1.5rem;
+  background: transparent;
+  border: none;
+  color: white;
+  font-weight: 500;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.nav-logout:hover {
+  opacity: 0.8;
+  text-decoration: none;
 }
 
 /* ----- Contenido principal ----- */
@@ -60,3 +89,5 @@
   border-top: 1px solid #ddd;
   font-size: 0.9rem;
 }
+
+

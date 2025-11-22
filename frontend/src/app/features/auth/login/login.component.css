@@ -13,3 +13,17 @@ button {
 }
 button:disabled { opacity: .7; cursor: not-allowed; }
 .error { color: #c62828; margin-top: 8px; }
+.register-hint {
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.register-hint a {
+  color: #0d6efd;
+  text-decoration: none;
+}
+
+.register-hint a:hover {
+  text-decoration: underline;
+}

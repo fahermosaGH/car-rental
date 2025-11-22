@@ -15,5 +15,11 @@
     <button type="submit" [disabled]="cargando">Entrar</button>
 
     <p class="error" *ngIf="errorMsg">{{ errorMsg }}</p>
+
+    <!-- 👇 Nuevo: link a registro -->
+    <p class="register-hint">
+      ¿Todavía no tenés cuenta?
+      <a routerLink="/auth/register">Registrate acá</a>
+    </p>
   </form>
 </div>

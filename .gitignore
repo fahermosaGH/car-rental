@@ -5,13 +5,14 @@
 composer.lock
 
 # Entornos y secretos locales
+.env          
 .env.local
 .env.*.local
 
 # Caché y logs
 *.log
 .cache/
-.phpunit.result.cache
+/.phpunit.result.cache
 
 # IDEs/OS
 /.idea/
@@ -19,6 +20,8 @@ composer.lock
 /*.code-workspace
 .DS_Store
 Thumbs.db
+
 ###> lexik/jwt-authentication-bundle ###
 /config/jwt/*.pem
+/config/jwt/     
 ###< lexik/jwt-authentication-bundle ###

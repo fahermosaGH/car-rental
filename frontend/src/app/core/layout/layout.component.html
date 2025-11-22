@@ -1,10 +1,26 @@
 <header class="header">
   <div class="container">
-    <h1 class="logo">🚗 Car Rental</h1>
+    <!-- Logo clickable que lleva a Cotizar -->
+    <h1 class="logo">
+      <a routerLink="/cotizar">🚗 Car Rental</a>
+    </h1>
+
     <nav class="nav">
       <a routerLink="/cotizar" routerLinkActive="active">Cotizar</a>
       <a routerLink="/cotizar/resultados" routerLinkActive="active">Resultados</a>
-      <a routerLink="/auth/login">Iniciar sesión</a>
+
+      <!-- Si NO está logueado, mostrar solo "Iniciar sesión" -->
+      <a *ngIf="!isLoggedIn" routerLink="/auth/login">Iniciar sesión</a>
+
+      <!-- Si está logueado, mostrar solo Mis reservas + Cerrar sesión -->
+      <ng-container *ngIf="isLoggedIn">
+        <!-- quitamos el email, ya no es necesario -->
+        <a routerLink="/mis-reservas" routerLinkActive="active">Mis reservas</a>
+
+        <button type="button" class="nav-logout" (click)="logout()">
+          Cerrar sesión
+        </button>
+      </ng-container>
     </nav>
   </div>
 </header>
@@ -18,3 +34,5 @@
     <p>© {{ currentYear }} Car Rental. Todos los derechos reservados.</p>
   </div>
 </footer>
+
+

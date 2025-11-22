@@ -1,0 +1,46 @@
+<div class="reservas-wrapper">
+  <h2>Mis reservas</h2>
+
+  <div *ngIf="loading" class="estado">
+    Cargando tus reservas...
+  </div>
+
+  <div *ngIf="!loading && errorMsg" class="estado error">
+    {{ errorMsg }}
+  </div>
+
+  <div *ngIf="!loading && !errorMsg && reservas.length === 0" class="estado">
+    Todavía no tenés reservas.
+  </div>
+
+  <table
+    *ngIf="!loading && !errorMsg && reservas.length > 0"
+    class="tabla-reservas"
+  >
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Vehículo</th>
+        <th>Retiro</th>
+        <th>Devolución</th>
+        <th>Desde</th>
+        <th>Hasta</th>
+        <th>Total</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let r of reservas">
+        <td>{{ r.id }}</td>
+        <td>{{ r.vehicleName }}</td>
+        <td>{{ r.pickupLocation }}</td>
+        <td>{{ r.dropoffLocation }}</td>
+        <td>{{ r.startAt | date: 'shortDate' }}</td>
+        <td>{{ r.endAt | date: 'shortDate' }}</td>
+        <td>{{ r.totalPrice | currency:'ARS':'symbol' }}</td>
+        <td>{{ r.status || 'Confirmada' }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+

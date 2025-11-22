@@ -1,0 +1,39 @@
+.reservas-wrapper {
+  background: #ffffff;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.reservas-wrapper h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.estado {
+  font-size: 0.95rem;
+  color: #444;
+}
+
+.estado.error {
+  color: #c92a2a;
+}
+
+.tabla-reservas {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+.tabla-reservas th,
+.tabla-reservas td {
+  padding: 0.5rem 0.6rem;
+  border: 1px solid #ddd;
+}
+
+.tabla-reservas thead th {
+  background: #4e5155;
+  color: #fff;
+  text-align: left;
+}

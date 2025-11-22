@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { LayoutComponent } from './core/layout/layout.component';
+import { authGuard } from './core/guards/auth.guard'; // 👈 nuevo
 
 export const routes: Routes = [
   { path: '', redirectTo: 'cotizar', pathMatch: 'full' },
@@ -57,11 +58,21 @@ export const routes: Routes = [
           },
         ],
       },
+
+      // === Mis reservas (historial del usuario) ===
+      {
+        path: 'mis-reservas',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('./features/reservas/pages/mis-reservas/mis-reservas.component')
+            .then(m => m.MisReservasComponent),
+      },
     ],
   },
 
   { path: '**', redirectTo: 'cotizar' },
 ];
+
 
 
 

@@ -3,13 +3,13 @@ import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { VehicleOption } from '../models/quote';
 import { environment } from '../../../../environments/environment';
-import { AuthService } from '../../../core/services/auth.service'; // 👈 importa el AuthService
+import { AuthService } from '../../../core/services/auth.service'; 
 
 @Injectable({ providedIn: 'root' })
 export class CotizarService {
   private apiUrl = environment.apiUrl;
 
-  constructor(private http: HttpClient, private auth: AuthService) {} // 👈 inyecta AuthService
+  constructor(private http: HttpClient, private auth: AuthService) {}
 
   buscarVehiculos(): Observable<VehicleOption[]> {
     return this.http.get<any[]>(`${this.apiUrl}/vehicles`).pipe(
@@ -25,10 +25,10 @@ export class CotizarService {
           transmission: v.transmission,
           dailyRate: parseFloat(v.dailyRate || 0),
           img: 'https://picsum.photos/seed/' + v.model + '/400/220',
-          description: `${v.brand} ${v.model} (${v.category})`,
-          fuel: 'Nafta',
           description: `${v.brand} ${v.model} (${v.category?.name || v.category})`,
-          unitsAvailable: typeof v.unitsAvailable === 'number' ? v.unitsAvailable : undefined
+          fuel: 'Nafta',
+          unitsAvailable:
+            typeof v.unitsAvailable === 'number' ? v.unitsAvailable : undefined,
         }))
       )
     );
@@ -47,7 +47,7 @@ export class CotizarService {
           id: s.id,
           nombre: s.name || s.nombre,
           ciudad: s.city || '',
-          direccion: s.address || ''
+          direccion: s.address || '',
         }))
       )
     );
@@ -55,8 +55,8 @@ export class CotizarService {
 
   getAvailableVehicles(params: {
     pickupLocationId: number;
-    startAt: string; // 'YYYY-MM-DD' o ISO
-    endAt: string;   // 'YYYY-MM-DD' o ISO
+    startAt: string;
+    endAt: string;
     category?: string;
   }): Observable<VehicleOption[]> {
     let httpParams = new HttpParams()
@@ -85,11 +85,8 @@ export class CotizarService {
             img: 'https://picsum.photos/seed/' + v.model + '/400/220',
             description: `${v.brand} ${v.model} (${v.category})`,
             fuel: 'Nafta',
-
-            // 📌 USAMOS LA DISPONIBILIDAD REAL QUE YA VIENE DE LA API
             unitsAvailable: v.unitsAvailable,
-
-            branchStock: v.branchStock
+            branchStock: v.branchStock,
           }))
         )
       );
@@ -113,7 +110,6 @@ export class CotizarService {
     );
   }
 
-  // ✅ Crear reserva real en el backend (forzamos Authorization mientras afinamos CORS/interceptor)
   crearReserva(payload: {
     vehicleId: number;
     pickupLocationId: number;

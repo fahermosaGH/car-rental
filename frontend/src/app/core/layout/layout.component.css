@@ -8,6 +8,40 @@
   color: #333;
 }
 
+/* ===== MODO OSCURO (aplicado con @HostBinding en el TS) ===== */
+:host.dark-theme {
+  background-color: #111;
+  color: #eee;
+}
+
+/* header en modo oscuro */
+:host.dark-theme .header {
+  background-color: #06234f;
+}
+
+/* contenido: fondo un poco más oscuro */
+:host.dark-theme .content {
+  background-color: #111;
+}
+
+/* footer en modo oscuro */
+:host.dark-theme .footer {
+  background-color: #151515;
+  color: #ddd;
+  border-top-color: #333;
+}
+
+/* links del footer en dark (si hay) */
+:host.dark-theme .footer a {
+  color: #ddd;
+}
+
+/* links del nav en dark: seguimos usando blanco */
+:host.dark-theme .nav a,
+:host.dark-theme .nav-logout {
+  color: #fff;
+}
+
 /* ----- Header ----- */
 .header {
   background-color: #0d6efd;
@@ -41,6 +75,11 @@
 }
 
 /* links del nav */
+.nav {
+  display: flex;
+  align-items: center;
+}
+
 .nav a {
   color: white;
   margin-left: 1.5rem;
@@ -73,6 +112,35 @@
   text-decoration: none;
 }
 
+/* 🔘 Botón de tema */
+.btn-theme {
+  margin-left: 1.5rem;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  background: #ffffff;
+  color: #0d6efd;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+}
+
+.btn-theme:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* botón de tema en modo oscuro */
+:host.dark-theme .btn-theme {
+  background: #333;
+  color: #f5f5f5;
+}
+
 /* ----- Contenido principal ----- */
 .content {
   flex: 1;
@@ -89,5 +157,3 @@
   border-top: 1px solid #ddd;
   font-size: 0.9rem;
 }
-
-

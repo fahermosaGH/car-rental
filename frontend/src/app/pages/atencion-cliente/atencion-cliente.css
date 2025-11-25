@@ -1,0 +1,14 @@
+.atencion-cliente {
+  padding: 20px;
+  background-color: #f9f9f9;
+}
+
+h2 {
+  color: #003087;
+  font-size: 2rem;
+}
+
+p {
+  color: #555;
+  font-size: 1.1rem;
+}

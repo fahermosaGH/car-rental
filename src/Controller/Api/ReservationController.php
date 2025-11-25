@@ -4,14 +4,16 @@ namespace App\Controller\Api;
 
 use App\Entity\Reservation;
 use App\Entity\ReservationExtra;
+use App\Entity\User;
 use App\Repository\VehicleRepository;
 use App\Repository\LocationRepository;
-use App\Service\ReservationValidator; // ✅ usar el validador unificado
+use App\Service\ReservationValidator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 #[Route('/api/reservations')]
 class ReservationController extends AbstractController
@@ -22,7 +24,8 @@ class ReservationController extends AbstractController
         EntityManagerInterface $em,
         VehicleRepository $vehicleRepo,
         LocationRepository $locationRepo,
-        ReservationValidator $validator // ✅ inyectado
+        ReservationValidator $validator,
+        #[CurrentUser] ?User $user = null
     ): Response {
         $data = json_decode($request->getContent(), true);
 
@@ -30,7 +33,13 @@ class ReservationController extends AbstractController
             return $this->json(['error' => 'JSON inválido'], 400);
         }
 
-        if (!isset($data['vehicleId'], $data['pickupLocationId'], $data['dropoffLocationId'], $data['startAt'], $data['endAt'])) {
+        if (!isset(
+            $data['vehicleId'],
+            $data['pickupLocationId'],
+            $data['dropoffLocationId'],
+            $data['startAt'],
+            $data['endAt']
+        )) {
             return $this->json(['error' => 'Faltan campos obligatorios'], 422);
         }
 
@@ -42,7 +51,7 @@ class ReservationController extends AbstractController
             return $this->json(['error' => 'Datos de vehículo o sucursal inválidos'], 422);
         }
 
-        // 🕒 Parsear fechas (día completo / ISO)
+        // 🕒 Parsear fechas
         try {
             $startAt = new \DateTimeImmutable($data['startAt']);
             $endAt   = new \DateTimeImmutable($data['endAt']);
@@ -50,22 +59,23 @@ class ReservationController extends AbstractController
             return $this->json(['error' => 'Formato de fecha inválido'], 400);
         }
 
-        // ✅ Rango válido (fin EXCLUSIVO, consistente con Availability)
         if ($startAt >= $endAt) {
             return $this->json(['error' => 'La fecha de fin debe ser posterior a la de inicio'], 422);
         }
 
-        // 🔍 Revalidar disponibilidad con el mismo criterio del sistema (stock por sucursal + solape fin exclusivo)
+        // 🔍 Revalidar disponibilidad
         $available = $validator->isAvailable(
             $vehicle->getId(),
             $pickup->getId(),
             $startAt,
             $endAt,
-            null // alta (sin excluir id)
+            null
         );
 
         if (!$available) {
-            return $this->json(['error' => 'El vehículo no está disponible en las fechas seleccionadas (sucursal/stock).'], 409);
+            return $this->json([
+                'error' => 'El vehículo no está disponible en las fechas seleccionadas (sucursal/stock).'
+            ], 409);
         }
 
         // 🚗 Crear reserva
@@ -77,6 +87,11 @@ class ReservationController extends AbstractController
         $reservation->setEndAt($endAt);
         $reservation->setStatus('confirmed');
         $reservation->setTotalPrice($data['totalPrice'] ?? 0);
+
+        // 👤 Asociar usuario web (User) si está logueado
+        if ($user instanceof User) {
+            $reservation->setUser($user);
+        }
 
         // 🧾 Extras
         if (!empty($data['extras']) && is_array($data['extras'])) {
@@ -104,7 +119,7 @@ class ReservationController extends AbstractController
     {
         $reservas = $em->getRepository(Reservation::class)->findAll();
 
-        $data = array_map(fn($r) => [
+        $data = array_map(fn(Reservation $r) => [
             'id' => $r->getId(),
             'vehicle' => (string)$r->getVehicle(),
             'pickupLocation' => (string)$r->getPickupLocation(),

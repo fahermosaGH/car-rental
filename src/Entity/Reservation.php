@@ -8,6 +8,8 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
+use App\Entity\User;
+
 
 #[ORM\Entity(repositoryClass: ReservationRepository::class)]
 #[ORM\Table(name: 'reservation')]
@@ -22,6 +24,11 @@ class Reservation
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: true)]
     private ?Customer $customer = null;
+
+    // Usuario de la cuenta web que realiza la reserva
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(nullable: true)]
+    private ?User $user = null;
 
     // Vehículo reservado
     #[ORM\ManyToOne]
@@ -75,6 +82,17 @@ class Reservation
     public function setCustomer(?Customer $customer): static
     {
         $this->customer = $customer;
+        return $this;
+    }
+
+        public function getUser(): ?User
+    {
+        return $this->user;
+    }
+
+    public function setUser(?User $user): static
+    {
+        $this->user = $user;
         return $this;
     }
 

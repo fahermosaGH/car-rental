@@ -32,46 +32,52 @@ export class MisReservasComponent implements OnInit {
   constructor(private http: HttpClient, private auth: AuthService) {}
 
   ngOnInit(): void {
-    this.cargarReservas();
-  }
+  console.log('[MisReservas] ngOnInit');
+  this.cargarReservas();
+}
 
-  private cargarReservas(): void {
-    this.loading = true;
-    this.errorMsg = '';
+private cargarReservas(): void {
+  console.log('[MisReservas] cargarReservas()');
+  this.loading = true;
+  this.errorMsg = '';
 
-    const headers = this.auth.token
-      ? new HttpHeaders({ Authorization: `Bearer ${this.auth.token}` })
-      : undefined;
+  const headers = this.auth.token
+    ? new HttpHeaders({ Authorization: `Bearer ${this.auth.token}` })
+    : undefined;
 
-    this.http
-      .get<any[]>(`${this.apiUrl}/my-reservations`, { headers })
-      .subscribe({
-        next: (data) => {
-          this.reservas = data.map((r) => ({
-            id: r.id,
-            vehicleName:
-              r.vehicleName ??
-              `${r.vehicle?.brand ?? ''} ${r.vehicle?.model ?? ''}`.trim(),
-            pickupLocation:
-              r.pickupLocationName ??
-              r.pickupLocation?.name ??
-              'Sucursal origen',
-            dropoffLocation:
-              r.dropoffLocationName ??
-              r.dropoffLocation?.name ??
-              'Sucursal destino',
-            startAt: r.startAt,
-            endAt: r.endAt,
-            totalPrice: Number(r.totalPrice ?? 0),
-            status: r.status,
-          }));
-          this.loading = false;
-        },
-        error: () => {
-          this.loading = false;
-          this.errorMsg = 'No se pudieron cargar tus reservas.';
-        },
-      });
-  }
+  console.log('[MisReservas] headers', headers);
+
+  this.http
+    .get<any[]>(`${this.apiUrl}/my-reservations`, { headers })
+    .subscribe({
+      next: (data) => {
+        console.log('[MisReservas] respuesta OK', data);
+        this.reservas = data.map((r) => ({
+          id: r.id,
+          vehicleName:
+            r.vehicleName ??
+            `${r.vehicle?.brand ?? ''} ${r.vehicle?.model ?? ''}`.trim(),
+          pickupLocation:
+            r.pickupLocationName ??
+            r.pickupLocation?.name ??
+            'Sucursal origen',
+          dropoffLocation:
+            r.dropoffLocationName ??
+            r.dropoffLocation?.name ??
+            'Sucursal destino',
+          startAt: r.startAt,
+          endAt: r.endAt,
+          totalPrice: Number(r.totalPrice ?? 0),
+          status: r.status,
+        }));
+        this.loading = false;
+      },
+      error: (err) => {
+        console.log('[MisReservas] error', err);
+        this.loading = false;
+        this.errorMsg = 'No se pudieron cargar tus reservas.';
+      },
+    });
+}
 }
 

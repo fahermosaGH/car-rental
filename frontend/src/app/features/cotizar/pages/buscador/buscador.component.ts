@@ -1,18 +1,24 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { RouterModule } from '@angular/router'; // ✅ IMPORTANTE
 import { LocationService, Location } from '../../services/location.service';
 import { MapaSucursalesComponent } from '../../components/mapa-sucursales/mapa-sucursales.component';
 
 @Component({
   selector: 'app-buscador',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MapaSucursalesComponent],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MapaSucursalesComponent,
+    RouterModule // ✅ NECESARIO PARA routerLink
+  ],
   templateUrl: './buscador.component.html',
   styleUrls: ['./buscador.component.css'],
 })
-export class BuscadorComponent implements OnInit {
+export class BuscadorComponent implements OnInit, AfterViewInit {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private locationService = inject(LocationService);
@@ -32,11 +38,45 @@ export class BuscadorComponent implements OnInit {
   });
 
   ciudades = [
-  { nombre: 'Buenos Aires', region: 'CABA', img: '/assets/imagenes/ba.jpg' },
-  { nombre: 'Mendoza', region: 'MZ', img: '/assets/imagenes/mendoza.jpg' },
-  { nombre: 'Salta', region: 'SA', img: '/assets/imagenes/salta.jpg' },
-  { nombre: 'Córdoba', region: 'CB', img: '/assets/imagenes/cordoba.jpg' },
-];
+    { nombre: 'Buenos Aires', region: 'CABA', img: '/assets/imagenes/ba.jpg' },
+    { nombre: 'Mendoza', region: 'MZ', img: '/assets/imagenes/mendoza.jpg' },
+    { nombre: 'Salta', region: 'SA', img: '/assets/imagenes/salta.jpg' },
+    { nombre: 'Córdoba', region: 'CB', img: '/assets/imagenes/cordoba.jpg' },
+  ];
+
+  tab: string = 'populares';
+
+  destinosPopulares = [
+    'El Calafate',
+    'San Juan',
+    'Neuquén',
+    'Río Gallegos',
+    'Ushuaia',
+    'Bahía Blanca'
+  ];
+
+  aeropuertos = [
+    'Aeropuerto de Ezeiza (EZE)',
+    'Aeropuerto de Córdoba (COR)',
+    'Aeropuerto de Mendoza (MDZ)',
+    'Aeropuerto de Cancún (CUN)',
+    'Aeropuerto de Miami (MIA)'
+  ];
+
+  categoriasAutos = [
+    'Económicos',
+    'Compactos',
+    'Intermedios',
+    'SUV',
+    'Pickups',
+    'Premium'
+  ];
+
+  promociones = [
+    '10% OFF pagando online',
+    'Promo fin de semana',
+    'Upgrade gratis sujeto a disponibilidad'
+  ];
 
   ngOnInit() {
     this.locationService.obtenerSucursales().subscribe({
@@ -51,6 +91,17 @@ export class BuscadorComponent implements OnInit {
     });
   }
 
+  ngAfterViewInit() {
+    const items = document.querySelectorAll('.faq-item');
+
+    items.forEach(item => {
+      const btn = item.querySelector('.faq-question');
+      btn?.addEventListener('click', () => {
+        item.classList.toggle('open');
+      });
+    });
+  }
+
   buscar() {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -59,7 +110,6 @@ export class BuscadorComponent implements OnInit {
     }
 
     const values = this.form.value;
-    console.log('🔍 Enviando búsqueda:', values);
 
     this.router.navigate(['/cotizar/resultados'], {
       queryParams: {

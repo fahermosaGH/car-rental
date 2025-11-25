@@ -1,0 +1,63 @@
+.sobre-nosotros {
+  text-align: center;
+  padding: 2rem;
+  background: #f4f4f4;
+}
+
+.sobre-nosotros-intro h1 {
+  font-size: 2rem;
+  color: #333;
+}
+
+.sobre-nosotros-intro p {
+  font-size: 1.1rem;
+  color: #666;
+  margin-bottom: 1.5rem;
+}
+
+.sobre-nosotros-info h2,
+.sobre-nosotros-equipo h2 {
+  font-size: 1.5rem;
+  color: #333;
+  margin-top: 2rem;
+}
+
+.sobre-nosotros-info p {
+  font-size: 1.2rem;
+  color: #555;
+  margin-bottom: 1rem;
+}
+
+.sobre-nosotros-equipo {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.team-member img {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  margin-bottom: 0.5rem;
+}
+
+.sobre-nosotros-contacto {
+  background-color: #003087;
+  padding: 1.5rem;
+  color: white;
+  margin-top: 2rem;
+}
+
+.sobre-nosotros-contacto .btn-contacto {
+  padding: 0.7rem 1.5rem;
+  background-color: #ff8a00;
+  color: white;
+  border-radius: 5px;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.sobre-nosotros-contacto .btn-contacto:hover {
+  background-color: #e07b00;
+}

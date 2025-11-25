@@ -10,7 +10,6 @@
 
   <!-- FORMULARIO FLOTANTE PREMIUM -->
   <form [formGroup]="form" (ngSubmit)="buscar()" class="search-widget">
-
     <div class="field">
       <label><span>📍</span> Retiro</label>
       <select formControlName="pickupLocationId">
@@ -58,6 +57,7 @@
   <div class="text">
     <h2>📱 Llevanos con vos</h2>
     <p>Descargá la app y alquilá autos al mejor precio estés donde estés.</p>
+
     <div class="stores">
       <img src="/assets/imagenes/cel1.jpg" alt="Google Play" />
       <img src="/assets/imagenes/cel2.jpg" alt="App Store" />
@@ -81,5 +81,164 @@
       <h3>{{ city.nombre }}</h3>
       <p>{{ city.region }}</p>
     </div>
+  </div>
+</section>
+
+<!-- ========================= -->
+<!-- FAQ -->
+<!-- ========================= -->
+<section class="faq-section">
+  <h2>❓ Preguntas frecuentes</h2>
+
+  <div class="faq-item">
+    <button class="faq-question">
+      ¿Cuáles son los requisitos mínimos para alquilar un auto?
+    </button>
+    <div class="faq-answer">
+      Debés tener 18 años, DNI y licencia vigente. Puede variar según el vehículo.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-question">
+      ¿Cómo funciona el depósito de garantía?
+    </button>
+    <div class="faq-answer">
+      Se bloquea un monto en tu tarjeta y se libera al devolver el auto en condiciones.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-question">
+      ¿Qué está incluido en el alquiler del auto?
+    </button>
+    <div class="faq-answer">
+      Kilometraje libre, seguro básico, asistencia y el auto seleccionado.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-question">
+      ¿Cómo funcionan las coberturas?
+    </button>
+    <div class="faq-answer">
+      Incluyen responsabilidad civil y daños. Podés sumar coberturas extra.
+    </div>
+  </div>
+</section>
+<!-- ========================= -->
+<!-- BENEFICIOS -->
+<!-- ========================= -->
+<section class="beneficios">
+  <h2>⭐ Beneficios de alquilar con Car Rental</h2>
+
+  <div class="beneficios-grid">
+
+    <div class="beneficio-card">
+      <div class="icono">💲</div>
+      <h3>Mejores precios y descuentos</h3>
+      <p>
+        Accedé a las mejores ofertas de las principales empresas de alquiler,
+        disfrutá de descuentos y recibí ofertas exclusivas.
+      </p>
+    </div>
+
+    <div class="beneficio-card">
+      <div class="icono">💰</div>
+      <h3>Reservas con cashback</h3>
+      <p>
+        Hacé tu reserva y recibí hasta un 10% de cashback para tu próximo alquiler.
+      </p>
+    </div>
+
+    <div class="beneficio-card">
+      <div class="icono">🌍</div>
+      <h3>Estamos en todo el mundo</h3>
+      <p>
+        Compará opciones de más de 350 compañías en 7.000 ciudades y 40.000 puntos de retiro.
+      </p>
+    </div>
+
+    <div class="beneficio-card">
+      <div class="icono">📞</div>
+      <h3>Atención al cliente 24/7</h3>
+      <p>
+        Obtené ayuda siempre que la necesites con nuestro soporte especializado.
+      </p>
+    </div>
+
+  </div>
+</section>
+<!-- ========================= -->
+<!-- DESTINOS Y OFERTAS (TABS) -->
+<!-- ========================= -->
+<section class="destinos-tabs">
+  <h2>Destinos de moda y ofertas de alquiler de autos</h2>
+  <p class="subtitle">
+    Descubrí los destinos favoritos de nuestros clientes para alquilar un auto
+  </p>
+
+  <!-- CABECERA DE TABS -->
+  <div class="tabs-header">
+
+    <button class="tab-btn" 
+      [class.active]="tab === 'populares'"
+      (click)="tab = 'populares'">
+      🌐 Destinos populares
+    </button>
+
+    <button class="tab-btn" 
+      [class.active]="tab === 'aeropuertos'"
+      (click)="tab = 'aeropuertos'">
+      ✈️ Aeropuertos
+    </button>
+
+    <button class="tab-btn" 
+      [class.active]="tab === 'categorias'"
+      (click)="tab = 'categorias'">
+      🚗 Categorías de autos
+    </button>
+
+    <button class="tab-btn" 
+      [class.active]="tab === 'promos'"
+      (click)="tab = 'promos'">
+      ⭐ Promociones
+    </button>
+
+  </div>
+
+  <!-- CONTENIDO DE CADA TAB -->
+  <div class="tabs-content">
+
+    <!-- POPULARES -->
+    <div *ngIf="tab === 'populares'" class="tab-panel">
+      <p *ngFor="let item of destinosPopulares">{{ item }}</p>
+    </div>
+
+    <!-- AEROPUERTOS -->
+    <div *ngIf="tab === 'aeropuertos'" class="tab-panel">
+      <p *ngFor="let item of aeropuertos">{{ item }}</p>
+    </div>
+
+    <!-- CATEGORÍAS -->
+    <div *ngIf="tab === 'categorias'" class="tab-panel">
+      <p *ngFor="let item of categoriasAutos">{{ item }}</p>
+    </div>
+
+    <!-- PROMOS -->
+    <div *ngIf="tab === 'promos'" class="tab-panel">
+      <p *ngFor="let item of promociones">{{ item }}</p>
+    </div>
+
+<div class="sobre-nosotros-container">
+  <a routerLink="/sobre-nosotros" routerLinkActive="active">Sobre Nosotros</a>
+  <a routerLink="/atencion-al-cliente" routerLinkActive="active">Atención al Cliente</a>
+  <a routerLink="/login" routerLinkActive="active">Iniciar sesión o Crear cuenta</a>
+  <a routerLink="/mis-reservas" routerLinkActive="active">Gestionar mi reserva</a>
+  <a routerLink="/centro-de-ayuda" routerLinkActive="active">Centro de Ayuda</a>
+  <a routerLink="/preguntas-frecuentes" routerLinkActive="active">Preguntas frecuentes</a>
+  <a routerLink="/requisitos-alquiler" routerLinkActive="active">Requisitos para el alquiler de autos</a>
+  <a routerLink="/mejor-precio" routerLinkActive="active">Mejor Precio Garantizado</a>
+</div>
   </div>
 </section>

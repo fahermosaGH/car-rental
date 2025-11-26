@@ -1,14 +1,25 @@
-.atencion-cliente {
-  padding: 20px;
-  background-color: #f9f9f9;
+.page {
+  max-width: 900px;
+  margin: 3rem auto;
+  padding: 2rem;
 }
 
-h2 {
+h1 {
+  text-align: center;
   color: #003087;
-  font-size: 2rem;
+  margin-bottom: 1.5rem;
 }
 
-p {
-  color: #555;
-  font-size: 1.1rem;
+.intro {
+  text-align: center;
+  font-size: 1.2rem;
+  margin-bottom: 2rem;
+}
+
+.info-box {
+  background: white;
+  padding: 1.8rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }

@@ -12,15 +12,20 @@ h1 {
 
 .intro {
   text-align: center;
-  font-size: 1.2rem;
   margin-bottom: 2rem;
-  color: #666;
+  font-size: 1.2rem;
+  color: #444;
 }
 
-.info-box {
-  background: white;
-  padding: 1.8rem;
+.faq-box {
+  background: #ffffff;
+  padding: 1.6rem;
+  margin-bottom: 1rem;
   border-radius: 12px;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 3px 12px rgba(0,0,0,0.09);
+}
+
+.faq-box h3 {
+  color: #005eb8;
+  margin-bottom: 0.5rem;
 }

@@ -442,3 +442,67 @@ body.dark-theme .icono {
     grid-template-columns: 1fr; /* En móvil vuelve a 1 columna */
   }
 }
+/* ========================= */
+/* MEJORA SECCIÓN APP-DOWNLOAD */
+/* ========================= */
+
+.app-download {
+  margin: 4rem auto;
+  padding: 3.5rem;
+  background: #ffffff;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3rem;
+  max-width: 1300px; /* MÁS ANCHO */
+  box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+}
+
+/* Texto más grande */
+.app-download .text h2 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.app-download .text p {
+  font-size: 1.2rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Tienda — imágenes más grandes */
+.stores img {
+  height: 70px;        /* AUMENTADO */
+  margin-right: 1.2rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+}
+
+.stores img:hover {
+  transform: scale(1.1);
+}
+
+/* Imagen del teléfono más grande */
+.phone img {
+  width: 360px;       /* ANTES 260px */
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .app-download {
+    flex-direction: column-reverse;
+    text-align: center;
+    padding: 3rem 2rem;
+  }
+
+  .phone img {
+    width: 300px;
+  }
+
+  .stores img {
+    height: 60px;
+  }
+}

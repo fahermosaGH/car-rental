@@ -19,11 +19,7 @@
         [class.chip-ok]="unitsAvailable > 0"
         [class.chip-error]="unitsAvailable <= 0"
       >
-        {{
-          unitsAvailable > 0
-            ? ('Quedan ' + unitsAvailable + ' unidad' + (unitsAvailable > 1 ? 'es' : ''))
-            : 'Sin stock'
-        }}
+    {{ unitsAvailable > 0 ? 'Disponible' : 'Sin stock' }}
       </span>
     </div>
   </header>

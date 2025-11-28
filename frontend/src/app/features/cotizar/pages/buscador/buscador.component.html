@@ -25,19 +25,23 @@
     </div>
 
     <div class="field">
-      <label><span>📅</span> Retiro</label>
-      <input type="date" formControlName="startAt" />
-    </div>
+  <label><span>📅</span> Retiro</label>
+  <input
+    type="date"
+    formControlName="startAt"
+    [min]="todayISO"
+    (change)="onStartDateChange()"
+  />
+</div>
 
-    <div class="field">
-      <label><span>📅</span> Devolución</label>
-      <input type="date" formControlName="endAt" />
-    </div>
-
-    <div class="field">
-      <label><span>👤</span> Edad</label>
-      <input type="number" min="18" formControlName="driverAge" />
-    </div>
+<div class="field">
+  <label><span>📅</span> Devolución</label>
+  <input
+    type="date"
+    formControlName="endAt"
+    [min]="minEndDate"
+  />
+</div>
 
     <button type="submit" class="btn-search">🔍 Buscar</button>
   </form>

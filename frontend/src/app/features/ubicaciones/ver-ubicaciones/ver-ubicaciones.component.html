@@ -1,0 +1,41 @@
+<section class="page-ubicaciones">
+  <header class="page-header">
+    <h2>Ubicaciones</h2>
+    <p class="page-subtitle">
+      Sucursales donde podés retirar y devolver vehículos.
+    </p>
+  </header>
+
+  <div *ngIf="loading" class="state state-info">
+    Cargando ubicaciones...
+  </div>
+
+  <div *ngIf="error" class="state state-error">
+    {{ error }}
+  </div>
+
+  <table
+    *ngIf="!loading && !error && locations.length"
+    class="data-table"
+  >
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Dirección</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let loc of locations">
+        <td><strong>{{ loc.name }}</strong></td>
+        <td>{{ loc.address }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p
+    *ngIf="!loading && !error && !locations.length"
+    class="state state-info"
+  >
+    No hay ubicaciones cargadas en el sistema.
+  </p>
+</section>

@@ -2,16 +2,21 @@
   <div class="container">
     <h1 class="logo">
       <div class="logo">
-  <img src="assets/imagenes/logo.jpg" alt="Car Rental" />
-</div>
+        <img src="assets/imagenes/logo.jpg" alt="Car Rental" />
+      </div>
     </h1>
 
     <nav class="nav">
       <a routerLink="/cotizar" routerLinkActive="active">Cotizar</a>
-      <a routerLink="/cotizar/resultados" routerLinkActive="active">Resultados</a>
 
+      <!-- NUEVOS BOTONES -->
+      <a routerLink="/flota" routerLinkActive="active">Ver flota</a>
+      <a routerLink="/ubicaciones" routerLinkActive="active">Ver ubicaciones</a>
+
+      <!-- Si NO está logueado -->
       <a *ngIf="!isLoggedIn" routerLink="/auth/login">Iniciar sesión</a>
 
+      <!-- Si está logueado -->
       <ng-container *ngIf="isLoggedIn">
         <a routerLink="/mis-reservas" routerLinkActive="active">Mis reservas</a>
         <button type="button" class="nav-logout" (click)="logout()">Cerrar sesión</button>

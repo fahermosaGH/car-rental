@@ -2,7 +2,7 @@ import { Component, inject, OnInit, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { RouterModule } from '@angular/router'; // ✅ IMPORTANTE
+import { RouterModule } from '@angular/router';
 import { LocationService, Location } from '../../services/location.service';
 import { MapaSucursalesComponent } from '../../components/mapa-sucursales/mapa-sucursales.component';
 
@@ -13,7 +13,7 @@ import { MapaSucursalesComponent } from '../../components/mapa-sucursales/mapa-s
     CommonModule,
     ReactiveFormsModule,
     MapaSucursalesComponent,
-    RouterModule // ✅ NECESARIO PARA routerLink
+    RouterModule
   ],
   templateUrl: './buscador.component.html',
   styleUrls: ['./buscador.component.css'],
@@ -28,6 +28,9 @@ export class BuscadorComponent implements OnInit, AfterViewInit {
 
   todayISO = new Date().toISOString().slice(0, 10);
   tomorrowISO = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+
+  // 🔹 mínimo permitido para la devolución (se actualiza cuando cambia el retiro)
+  minEndDate = this.tomorrowISO;
 
   form = this.fb.group({
     pickupLocationId: [1, Validators.required],
@@ -102,6 +105,28 @@ export class BuscadorComponent implements OnInit, AfterViewInit {
     });
   }
 
+  // 🔹 Cuando cambia la fecha de retiro
+  onStartDateChange(): void {
+    const start = this.form.value.startAt || this.todayISO;
+
+    // Si por alguna razón el usuario pone algo anterior a hoy (manualmente), lo corregimos
+    if (start < this.todayISO) {
+      this.form.patchValue({ startAt: this.todayISO });
+    }
+
+    // Recalcular mínimo de devolución: al menos 1 día después del retiro
+    const startDate = new Date(this.form.value.startAt || this.todayISO);
+    const nextDay = new Date(startDate.getTime() + 24 * 60 * 60 * 1000);
+    const nextDayISO = nextDay.toISOString().slice(0, 10);
+
+    this.minEndDate = nextDayISO;
+
+    const end = this.form.value.endAt || '';
+    if (!end || end <= this.form.value.startAt!) {
+      this.form.patchValue({ endAt: nextDayISO });
+    }
+  }
+
   buscar() {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -110,6 +135,16 @@ export class BuscadorComponent implements OnInit, AfterViewInit {
     }
 
     const values = this.form.value;
+
+    // 🔒 Validación extra por si escribe a mano fechas raras
+    if (values.startAt! < this.todayISO) {
+      alert('⚠️ La fecha de retiro no puede ser anterior a hoy.');
+      return;
+    }
+    if (values.endAt! <= values.startAt!) {
+      alert('⚠️ La fecha de devolución debe ser posterior a la de retiro.');
+      return;
+    }
 
     this.router.navigate(['/cotizar/resultados'], {
       queryParams: {
@@ -122,3 +157,4 @@ export class BuscadorComponent implements OnInit, AfterViewInit {
     });
   }
 }
+

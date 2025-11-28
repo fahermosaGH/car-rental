@@ -35,6 +35,7 @@ export const routes: Routes = [
           },
         ],
       },
+
       {
         path: 'cotizar',
         children: [
@@ -61,6 +62,22 @@ export const routes: Routes = [
         ],
       },
 
+      // 🔹 NUEVAS RUTAS PARA VER FLOTA Y VER UBICACIONES
+      {
+        path: 'flota',
+        loadComponent: () =>
+          import('./features/flota/ver-flota/ver-flota.component').then(
+            (m) => m.VerFlotaComponent
+          ),
+      },
+      {
+        path: 'ubicaciones',
+        loadComponent: () =>
+          import('./features/ubicaciones/ver-ubicaciones/ver-ubicaciones.component').then(
+            (m) => m.VerUbicacionesComponent
+          ),
+      },
+
       {
         path: 'mis-reservas',
         canActivate: [authGuard],
@@ -85,3 +102,4 @@ export const routes: Routes = [
 
   { path: '**', redirectTo: 'cotizar' },
 ];
+

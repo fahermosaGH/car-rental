@@ -137,7 +137,6 @@ export class DetalleComponent implements OnInit {
       ],
     };
 
-    // ⚠️ Ajustá este path si tu pantalla de login es distinta
     this.router.navigate(
       ['/auth/login'],
       {
@@ -149,12 +148,20 @@ export class DetalleComponent implements OnInit {
 
   confirmarReserva() {
     if (!this.vehiculo) return;
+
     if (!this.startAt || !this.endAt) {
       alert('⚠️ Faltan las fechas de reserva.');
       return;
     }
 
-    // 1) Revalidar disponibilidad
+    // 🔑 1) Si NO está logueado, no pegamos al backend: avisamos y lo mandamos a login
+    if (!this.auth.isLoggedIn()) {
+      alert('🔐 Necesitás iniciar sesión para continuar con la reserva.');
+      this.redirigirALogin();
+      return;
+    }
+
+    // 2) Revalidar disponibilidad
     this.checking = true;
     this.cotizarService.checkAvailability({
       vehicleId: this.vehiculo!.id,
@@ -170,7 +177,7 @@ export class DetalleComponent implements OnInit {
           return;
         }
 
-        // 2) Crear reserva
+        // 3) Crear reserva
         const extrasSeleccionados: Array<{name: string; price: number}> = [];
         if (this.extras.seguro) extrasSeleccionados.push({ name: 'Seguro',          price: this.preciosExtras.seguro });
         if (this.extras.silla)  extrasSeleccionados.push({ name: 'Silla para niño', price: this.preciosExtras.silla  });
@@ -195,10 +202,17 @@ export class DetalleComponent implements OnInit {
           },
           error: (err) => {
             this.creating = false;
+
             if (err.status === 409)       alert('❌ El vehículo no está disponible.');
             else if (err.status === 422)  alert('⚠️ Datos inválidos.');
             else if (err.status === 400)  alert('⚠️ Fechas inválidas.');
-            else                          alert('💥 Error inesperado.');
+            else if (err.status === 401 || err.status === 403) {
+              // Sesión inválida o no logueado (backup si el token expiró en el medio)
+              alert('🔐 Necesitás iniciar sesión para continuar con la reserva.');
+              this.redirigirALogin();
+            } else {
+              alert('💥 Error inesperado.');
+            }
           }
         });
       },
@@ -209,3 +223,4 @@ export class DetalleComponent implements OnInit {
     });
   }
 }
+

@@ -43,16 +43,17 @@
   bottom: -60px;
   left: 50%;
   transform: translateX(-50%);
-  background: white;
+  background: rgb(168, 168, 168);
   padding: 1.5rem 2rem;
   border-radius: 18px;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(5, minmax(0, 1fr)); /* 🔹 ahora 5 columnas */
   gap: 1rem;
   width: 90%;
   max-width: 1100px;
   z-index: 10;
+  align-items: end; /* 🔹 alinear todos los inputs y el botón al borde inferior */
 }
 
 .field {
@@ -74,7 +75,7 @@ input,
 select {
   padding: 0.6rem;
   border-radius: 8px;
-  border: 1px solid #ccc;
+  border: 1px solid #000000;
   transition: all 0.2s ease;
 }
 
@@ -88,18 +89,22 @@ select:focus {
 .btn-search {
   background: #007bff;
   border: none;
-  color: white;
+  color: #ffffff;
   border-radius: 10px;
   cursor: pointer;
   font-weight: 600;
   transition: 0.2s ease;
   font-size: 1rem;
+  padding: 0.9rem 1rem;
+  width: 100%;       /* 🔹 mismo ancho que los inputs */
+  align-self: stretch; /* ocupa toda la columna */
 }
 
 .btn-search:hover {
   background: #005ecb;
   transform: translateY(-2px);
 }
+
 
 /* ========================= */
 /* MAPA */

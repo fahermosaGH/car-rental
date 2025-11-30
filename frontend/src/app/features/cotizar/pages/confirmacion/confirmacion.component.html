@@ -1,51 +1,99 @@
-<div class="confirmacion-container" *ngIf="vehiculo">
-  <h2>Confirmar reserva</h2>
+<section class="confirmacion-page">
+  <ng-container *ngIf="!loading && reserva; else loadingTpl">
+    <header class="conf-header">
+      <div class="icon-ok">✅</div>
+      <div>
+        <h1>Reserva creada correctamente</h1>
+        <p>Tu código de reserva es <strong>#{{ reserva.id }}</strong>.</p>
+      </div>
+    </header>
 
-  <div class="resumen">
-    <img [src]="vehiculo.img" [alt]="vehiculo.name" />
-    <div>
-      <h3>{{ vehiculo.name }}</h3>
-      <p>Categoría: {{ vehiculo.category }}</p>
-      <p>Días: {{ dias }}</p>
-      <p>Tarifa diaria: {{ vehiculo.dailyRate | currency:'ARS':'symbol' }}</p>
-      <p><strong>Subtotal: {{ totalBase | currency:'ARS':'symbol' }}</strong></p>
+    <div class="conf-layout">
+      <!-- Columna izquierda: detalle -->
+      <article class="conf-detalle">
+        <h2>{{ reserva.vehicleName }}</h2>
+        <p class="categoria">{{ reserva.category || 'Sin categoría' }}</p>
+
+        <div class="fila">
+          <div>
+            <h3>Retiro</h3>
+            <p>{{ reserva.startAt | date: 'dd/MM/yyyy' }}</p>
+            <p>{{ reserva.pickupLocationName }}</p>
+          </div>
+          <div>
+            <h3>Devolución</h3>
+            <p>{{ reserva.endAt | date: 'dd/MM/yyyy' }}</p>
+            <p>{{ reserva.dropoffLocationName }}</p>
+          </div>
+        </div>
+
+        <div class="fila">
+          <div>
+            <h3>Estado</h3>
+            <p>{{ reserva.status | titlecase }}</p>
+          </div>
+          <div>
+            <h3>Total</h3>
+            <p>{{ reserva.totalPrice || 0 | currency: 'ARS' }}</p>
+          </div>
+        </div>
+
+        <section class="extras" *ngIf="reserva.extras?.length">
+          <h3>Extras incluidos</h3>
+          <ul>
+            <li *ngFor="let e of reserva.extras">
+              <span>{{ e.name }}</span>
+              <span>{{ e.price | currency: 'ARS' }}</span>
+            </li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- Columna derecha: comprobante -->
+      <aside class="conf-comprobante">
+        <h2>Comprobante de reserva</h2>
+        <p>
+          Ingresá un correo electrónico para recibir un comprobante con el
+          detalle de tu viaje.
+        </p>
+
+        <input
+          type="email"
+          [(ngModel)]="emailComprobante"
+          placeholder="tu-correo@ejemplo.com"
+        />
+
+        <button
+          type="button"
+          class="btn-primary"
+          (click)="enviarComprobante()"
+          [disabled]="enviando"
+        >
+          {{ enviando ? 'Enviando...' : 'Enviar comprobante' }}
+        </button>
+
+        <p class="msg-ok" *ngIf="mensajeEnvio">{{ mensajeEnvio }}</p>
+        <p class="msg-error" *ngIf="errorEnvio">{{ errorEnvio }}</p>
+
+        <div class="acciones">
+          <button type="button" (click)="volverACotizar()">
+            ← Volver a cotizar
+          </button>
+          <button type="button" (click)="irAMisReservas()">
+            Ver mis reservas
+          </button>
+        </div>
+      </aside>
     </div>
+  </ng-container>
+
+  <ng-template #loadingTpl>
+    <div class="loading">Cargando reserva...</div>
+  </ng-template>
+
+  <div *ngIf="!loading && error" class="error">
+    {{ error }}
   </div>
+</section>
 
-  <h3>Extras disponibles</h3>
-  <ul>
-    <li *ngFor="let e of extras">
-      <label>
-        <input type="checkbox" [(ngModel)]="e.seleccionado" (change)="calcularTotal()" />
-        {{ e.nombre }} (+{{ e.precio | currency:'ARS':'symbol' }})
-      </label>
-    </li>
-  </ul>
 
-  <h3>Datos del cliente</h3>
-  <form #formCliente="ngForm" class="form-cliente">
-    <label>
-      Nombre completo:
-      <input type="text" [(ngModel)]="cliente.nombre" name="nombre" required />
-    </label>
-
-    <label>
-      Email:
-      <input type="email" [(ngModel)]="cliente.email" name="email" required />
-    </label>
-
-    <label>
-      Edad:
-      <input type="number" [(ngModel)]="cliente.edad" name="edad" required min="18" />
-    </label>
-  </form>
-
-  <h3>Total final: {{ totalFinal | currency:'ARS':'symbol' }}</h3>
-
-  <div class="acciones">
-    <button routerLink="/cotizar/resultados" class="btn-volver">← Volver</button>
-    <button (click)="confirmarReserva()" class="btn-confirmar">
-      Confirmar reserva
-    </button>
-  </div>
-</div>

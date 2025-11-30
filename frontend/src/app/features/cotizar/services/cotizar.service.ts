@@ -9,7 +9,7 @@ import { AuthService } from '../../../core/services/auth.service';
 export class CotizarService {
   private apiUrl = environment.apiUrl;
 
-  constructor(private http: HttpClient, private auth: AuthService) {}
+  constructor(private http: HttpClient, private auth: AuthService) { }
 
   buscarVehiculos(): Observable<VehicleOption[]> {
     return this.http.get<any[]>(`${this.apiUrl}/vehicles`).pipe(
@@ -134,5 +134,37 @@ export class CotizarService {
       { headers }
     );
   }
+
+  getReservationById(id: number) {
+    const headers = this.auth.token
+      ? new HttpHeaders({ Authorization: `Bearer ${this.auth.token}` })
+      : undefined;
+
+    return this.http.get<{
+      id: number;
+      vehicleName: string;
+      category: string | null;
+      pickupLocationName: string;
+      dropoffLocationName: string;
+      startAt: string;
+      endAt: string;
+      totalPrice: string | null;
+      status: string;
+      extras: { name: string; price: string }[];
+    }>(`${this.apiUrl}/reservations/${id}`, { headers });
+  }
+
+  enviarComprobante(reservationId: number, email: string) {
+    const headers = this.auth.token
+      ? new HttpHeaders({ Authorization: `Bearer ${this.auth.token}` })
+      : undefined;
+
+    return this.http.post<{ message: string; email: string }>(
+      `${this.apiUrl}/reservations/${reservationId}/send-voucher`,
+      { email },
+      { headers }
+    );
+  }
+
 }
 

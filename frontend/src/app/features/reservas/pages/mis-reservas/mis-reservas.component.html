@@ -13,13 +13,57 @@
     Todavía no tenés reservas.
   </div>
 
+  <!-- Toolbar de orden -->
+  <div
+    class="toolbar"
+    *ngIf="!loading && !errorMsg && reservas.length > 0"
+  >
+    <span class="toolbar-label">Ordenar por:</span>
+
+    <button
+      type="button"
+      class="toolbar-btn"
+      [class.active]="sortField === 'startAt'"
+      (click)="setSort('startAt')"
+    >
+      Fecha de retiro
+      <span *ngIf="sortField === 'startAt'">
+        {{ sortDirection === 'asc' ? '↑' : '↓' }}
+      </span>
+    </button>
+
+    <button
+      type="button"
+      class="toolbar-btn"
+      [class.active]="sortField === 'endAt'"
+      (click)="setSort('endAt')"
+    >
+      Fecha de devolución
+      <span *ngIf="sortField === 'endAt'">
+        {{ sortDirection === 'asc' ? '↑' : '↓' }}
+      </span>
+    </button>
+
+    <button
+      type="button"
+      class="toolbar-btn"
+      [class.active]="sortField === 'status'"
+      (click)="setSort('status')"
+    >
+      Estado
+      <span *ngIf="sortField === 'status'">
+        {{ sortDirection === 'asc' ? '↑' : '↓' }}
+      </span>
+    </button>
+  </div>
+
   <table
     *ngIf="!loading && !errorMsg && reservas.length > 0"
     class="tabla-reservas"
   >
     <thead>
       <tr>
-        <th>#</th>
+        <th>N.º de reserva</th>
         <th>Vehículo</th>
         <th>Retiro</th>
         <th>Devolución</th>
@@ -27,20 +71,45 @@
         <th>Hasta</th>
         <th>Total</th>
         <th>Estado</th>
+        <th>Acciones</th>
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let r of reservas">
+      <tr *ngFor="let r of reservasOrdenadas">
         <td>{{ r.id }}</td>
         <td>{{ r.vehicleName }}</td>
         <td>{{ r.pickupLocation }}</td>
         <td>{{ r.dropoffLocation }}</td>
         <td>{{ r.startAt | date: 'shortDate' }}</td>
         <td>{{ r.endAt | date: 'shortDate' }}</td>
-        <td>{{ r.totalPrice | currency:'ARS':'symbol' }}</td>
-        <td>{{ r.status || 'Confirmada' }}</td>
+        <td>{{ r.totalPrice | currency: 'ARS':'symbol' }}</td>
+        <td>
+          <span
+            class="badge-estado"
+            [ngClass]="{
+              'badge-activa': r.estadoLegible === 'Activa',
+              'badge-pendiente': r.estadoLegible === 'Pendiente',
+              'badge-finalizada': r.estadoLegible === 'Finalizada',
+              'badge-cancelada': r.estadoLegible === 'Cancelada'
+            }"
+          >
+            {{ r.estadoLegible }}
+          </span>
+        </td>
+        <td>
+          <button
+            type="button"
+            class="btn-link"
+            (click)="verDetalle(r)"
+          >
+            Ver detalle
+          </button>
+
+          <!-- Acá más adelante va el botón "Cancelar reserva" -->
+        </td>
       </tr>
     </tbody>
   </table>
 </div>
+
 

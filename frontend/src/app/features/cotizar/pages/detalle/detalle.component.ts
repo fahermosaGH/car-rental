@@ -128,7 +128,7 @@ export class DetalleComponent implements OnInit {
     private router: Router,
     private cotizarService: CotizarService,
     private auth: AuthService
-  ) {}
+  ) { }
 
   ngOnInit() {
     const id = Number(this.route.snapshot.paramMap.get('id'));
@@ -136,8 +136,8 @@ export class DetalleComponent implements OnInit {
     this.route.queryParamMap.subscribe(params => {
       this.dias = +(params.get('dias') || 1);
       this.startAt = params.get('startAt') || '';
-      this.endAt   = params.get('endAt') || '';
-      this.pickupLocationId  = +(params.get('pickupLocationId') || 1);
+      this.endAt = params.get('endAt') || '';
+      this.pickupLocationId = +(params.get('pickupLocationId') || 1);
       this.dropoffLocationId = +(params.get('dropoffLocationId') || 1);
 
       if (this.vehiculo) this.actualizarTotal();
@@ -261,7 +261,7 @@ export class DetalleComponent implements OnInit {
 
   get botonDeshabilitado(): boolean {
     const sinFechas = !this.startAt || !this.endAt;
-    const sinCupo   = this.unitsAvailable !== undefined && this.unitsAvailable <= 0;
+    const sinCupo = this.unitsAvailable !== undefined && this.unitsAvailable <= 0;
     return sinFechas || sinCupo || this.checking || this.creating || !this.vehiculo;
   }
 
@@ -345,15 +345,19 @@ export class DetalleComponent implements OnInit {
         this.cotizarService.crearReserva(payload).subscribe({
           next: (res) => {
             this.creating = false;
-            alert('✅ Reserva creada correctamente (ID ' + res.id + ').');
-            this.router.navigate(['/cotizar']);
+
+            // 🔹 En vez de volver al buscador, vamos a la pantalla de confirmación REAL
+            this.router.navigate(
+              ['/cotizar/confirmacion', res.id]
+            );
           },
+
           error: (err) => {
             this.creating = false;
 
-            if (err.status === 409)       alert('❌ El vehículo no está disponible.');
-            else if (err.status === 422)  alert('⚠️ Datos inválidos.');
-            else if (err.status === 400)  alert('⚠️ Fechas inválidas.');
+            if (err.status === 409) alert('❌ El vehículo no está disponible.');
+            else if (err.status === 422) alert('⚠️ Datos inválidos.');
+            else if (err.status === 400) alert('⚠️ Fechas inválidas.');
             else if (err.status === 401 || err.status === 403) {
               alert('🔐 Necesitás iniciar sesión para continuar con la reserva.');
               this.redirigirALogin();

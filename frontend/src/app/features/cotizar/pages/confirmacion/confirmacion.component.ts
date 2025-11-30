@@ -1,15 +1,25 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { CotizarService } from '../../services/cotizar.service';
-import { VehicleOption } from '../../models/quote';
 
-interface Extra {
-  id: string;
-  nombre: string;
-  precio: number;
-  seleccionado: boolean;
+interface ReservationExtraDto {
+  name: string;
+  price: string;
+}
+
+interface ReservationDetailDto {
+  id: number;
+  vehicleName: string;
+  category: string | null;
+  pickupLocationName: string;
+  dropoffLocationName: string;
+  startAt: string;
+  endAt: string;
+  totalPrice: string | null;
+  status: string;
+  extras: ReservationExtraDto[];
 }
 
 @Component({
@@ -17,25 +27,22 @@ interface Extra {
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './confirmacion.component.html',
-  styleUrls: ['./confirmacion.component.css']
+  styleUrls: ['./confirmacion.component.css'],
 })
 export class ConfirmacionComponent implements OnInit {
-  vehiculo?: VehicleOption;
-  dias: number = 1;
-  totalBase: number = 0;
-  totalFinal: number = 0;
+  reserva?: ReservationDetailDto;
 
-  cliente = {
-    nombre: '',
-    email: '',
-    edad: null as number | null,
-  };
+  // 👇 estos nombres matchean el HTML
+  loading = true;
+  error = '';
 
-  extras: Extra[] = [
-    { id: 'gps', nombre: 'GPS', precio: 4000, seleccionado: false },
-    { id: 'babyseat', nombre: 'Silla para bebé', precio: 3500, seleccionado: false },
-    { id: 'insurance', nombre: 'Seguro adicional', precio: 8000, seleccionado: false },
-  ];
+  // email para enviar comprobante (coincide con [(ngModel)]="emailComprobante")
+  emailComprobante: string = '';
+
+  // estado de envío
+  enviando = false;
+  mensajeEnvio = '';
+  errorEnvio = '';
 
   constructor(
     private route: ActivatedRoute,
@@ -43,41 +50,74 @@ export class ConfirmacionComponent implements OnInit {
     private cotizarService: CotizarService
   ) {}
 
-  ngOnInit() {
+  ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
-    this.dias = Number(this.route.snapshot.queryParamMap.get('dias')) || 1;
-
-    this.cotizarService.obtenerVehiculoPorId(id).subscribe(v => {
-      if (!v) {
-        this.router.navigate(['/cotizar/resultados']);
-        return;
-      }
-      this.vehiculo = v;
-      this.totalBase = v.dailyRate * this.dias;
-      this.calcularTotal();
-    });
-  }
-
-  calcularTotal() {
-    const extrasSeleccionados = this.extras
-      .filter(e => e.seleccionado)
-      .reduce((acc, e) => acc + e.precio, 0);
-    this.totalFinal = this.totalBase + extrasSeleccionados;
-  }
-
-  confirmarReserva() {
-    if (!this.cliente.nombre || !this.cliente.email || !this.cliente.edad) {
-      alert('⚠️ Por favor completá todos los datos del cliente.');
+    if (!id || Number.isNaN(id)) {
+      this.error = 'ID de reserva inválido.';
+      this.loading = false;
       return;
     }
 
-    alert(`
-✅ Reserva confirmada (simulada)
-👤 Cliente: ${this.cliente.nombre}
-📧 Email: ${this.cliente.email}
-🧾 Total: ARS ${this.totalFinal.toLocaleString()}
-`);
+    this.cotizarService.getReservationById(id).subscribe({
+      next: (data) => {
+        this.reserva = data;
+        this.loading = false;
+      },
+      error: () => {
+        this.error = 'No se pudo cargar la información de la reserva.';
+        this.loading = false;
+      },
+    });
+  }
 
+  volverACotizar() {
     this.router.navigate(['/cotizar']);
+  }
+
+  irAMisReservas() {
+    this.router.navigate(['/mis-reservas']);
+  }
+
+  // 👉 versión real, llama al backend /api/reservations/{id}/send-voucher
+  enviarComprobante() {
+    this.errorEnvio = '';
+    this.mensajeEnvio = '';
+
+    if (!this.reserva) {
+      this.errorEnvio = 'No se encontró la reserva.';
+      return;
+    }
+
+    const email = this.emailComprobante.trim();
+    if (!email) {
+      this.errorEnvio = 'Ingresá un email para enviar el comprobante.';
+      return;
+    }
+
+    // validación mínima de formato
+    const simpleRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!simpleRegex.test(email)) {
+      this.errorEnvio = 'El formato del email no es válido.';
+      return;
+    }
+
+    this.enviando = true;
+
+    this.cotizarService.enviarComprobante(this.reserva.id, email).subscribe({
+      next: (res) => {
+        this.enviando = false;
+        this.mensajeEnvio = res.message || `Comprobante enviado a ${res.email || email}.`;
+      },
+      error: () => {
+        this.enviando = false;
+        this.errorEnvio =
+          'No se pudo enviar el comprobante. Intentá nuevamente en unos minutos.';
+      },
+    });
+  }
+
+  // alias por si algo viejo llamaba a este método
+  enviarComprobanteSimulado() {
+    this.enviarComprobante();
   }
 }

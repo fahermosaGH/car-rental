@@ -1,62 +1,96 @@
 <section class="page-flota">
+
   <header class="page-header">
     <h2>Flota de vehículos</h2>
-    <p class="page-subtitle">
-      Consulta el listado completo de vehículos disponibles en el sistema.
-    </p>
+    <p class="page-subtitle">Consultá todo el catálogo disponible del sistema.</p>
   </header>
 
   <div *ngIf="loading" class="state state-info">
-    Cargando flota...
+    <span class="spinner"></span> Cargando flota...
   </div>
 
-  <div *ngIf="error" class="state state-error">
-    {{ error }}
+  <div *ngIf="error" class="state state-error">{{ error }}</div>
+
+  <div class="layout" *ngIf="!loading && !error">
+
+    <!-- LOADING POR FILTRO -->
+    <div *ngIf="loadingFilter" class="state state-loading" style="grid-column:1 / -1; text-align:center; padding:40px 0;">
+      <span class="spinner"></span>
+      <p>Actualizando listado...</p>
+    </div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" *ngIf="!loadingFilter">
+
+      <!-- Buscador: aplica filtro SOLO al presionar ENTER -->
+      <input
+        class="search-box"
+        type="text"
+        placeholder="Buscar vehículo..."
+        [(ngModel)]="searchText"
+        (keyup.enter)="onSearchEnter()"
+      />
+
+      <h3 class="sidebar-title">Filtrar por categoría</h3>
+
+      <ul class="cat-list">
+        <li *ngFor="let cat of categories">
+          <button
+            class="cat-chip"
+            [class.active]="selectedCategory === cat"
+            (click)="selectCategory(cat)">
+            {{ cat }}
+          </button>
+        </li>
+      </ul>
+
+      <div class="sidebar-order">
+        <h4>Ordenar</h4>
+
+        <button
+          class="btn-sort"
+          [class.active]="sort === 'az'"
+          (click)="changeSort('az')">
+          A → Z
+        </button>
+
+        <button
+          class="btn-sort"
+          [class.active]="sort === 'za'"
+          (click)="changeSort('za')">
+          Z → A
+        </button>
+      </div>
+
+    </aside>
+
+    <!-- GRID -->
+    <main class="content" *ngIf="!loadingFilter">
+
+      <div class="grid">
+        <article class="card" *ngFor="let v of filtered">
+
+          <div class="card-media">
+            <img
+              [src]="v.img || ('https://source.unsplash.com/600x400/?' + (v.category || 'car'))"
+              alt="Vehículo"
+            />
+          </div>
+
+          <div class="card-body">
+            <h3>{{ v.brand }} {{ v.model }}</h3>
+            <span class="chip-categoria">{{ v.category || 'Sin categoría' }}</span>
+          </div>
+
+        </article>
+      </div>
+
+      <p *ngIf="filtered.length === 0" class="state state-info">
+        No hay vehículos que coincidan con tu búsqueda.
+      </p>
+
+    </main>
+
   </div>
 
-  <table
-    *ngIf="!loading && !error && vehicles.length"
-    class="data-table"
-  >
-    <thead>
-      <tr>
-        <th>Vehículo</th>
-        <th>Categoría</th>
-        <th>Año</th>
-        <th>Pasajeros</th>
-        <th>Transmisión</th>
-        <th>Tarifa diaria</th>
-        <th>Estado</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let v of vehicles">
-        <td>
-          <strong>{{ v.brand }} {{ v.model }}</strong>
-        </td>
-        <td>{{ v.category || 'Sin categoría' }}</td>
-        <td>{{ v.year || '—' }}</td>
-        <td>{{ v.seats || '—' }}</td>
-        <td>{{ v.transmission || '—' }}</td>
-        <td>
-          <span *ngIf="v.dailyRate !== null; else sinTarifa">
-            {{ v.dailyRate | currency : 'ARS' : 'symbol-narrow' : '1.0-0' }}
-          </span>
-          <ng-template #sinTarifa> — </ng-template>
-        </td>
-        <td>
-          <span class="badge" [class.badge-ok]="v.isActive" [class.badge-off]="!v.isActive">
-            {{ v.isActive ? 'Activo' : 'Inactivo' }}
-          </span>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-
-  <p
-    *ngIf="!loading && !error && !vehicles.length"
-    class="state state-info"
-  >
-    No hay vehículos cargados en el sistema.
-  </p>
 </section>

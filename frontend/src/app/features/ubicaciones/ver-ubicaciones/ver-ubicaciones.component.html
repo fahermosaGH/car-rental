@@ -1,41 +1,51 @@
 <section class="page-ubicaciones">
+
   <header class="page-header">
     <h2>Ubicaciones</h2>
-    <p class="page-subtitle">
-      Sucursales donde podés retirar y devolver vehículos.
-    </p>
+    <p class="page-subtitle">Sucursales donde podés retirar y devolver vehículos.</p>
   </header>
 
-  <div *ngIf="loading" class="state state-info">
-    Cargando ubicaciones...
+  <!-- BUSCADOR (ENTER para buscar) -->
+  <input
+    type="text"
+    class="search-box"
+    placeholder="Buscar ubicación..."
+    [(ngModel)]="searchText"
+    (keyup.enter)="onSearchEnter()"
+  />
+
+  <!-- ESTADOS -->
+  <div *ngIf="loading" class="state">
+    <span class="spinner"></span>
+    <p>Cargando ubicaciones...</p>
   </div>
 
-  <div *ngIf="error" class="state state-error">
-    {{ error }}
+  <div *ngIf="error" class="state state-error">{{ error }}</div>
+
+  <!-- GRID -->
+  <div *ngIf="!loading && !error">
+
+    <div class="grid">
+      <article class="card" *ngFor="let loc of filtered">
+
+        <h3>
+          <span class="icon">📍</span>
+          {{ loc.name }}
+        </h3>
+
+        <p>{{ loc.address }}</p>
+
+        <button class="btn-mapa"
+          (click)="openInMaps(loc)">
+          Ver en Google Maps
+        </button>
+
+      </article>
+    </div>
+
+    <p *ngIf="filtered.length === 0" class="state">
+      No hay ubicaciones que coincidan con tu búsqueda.
+    </p>
   </div>
 
-  <table
-    *ngIf="!loading && !error && locations.length"
-    class="data-table"
-  >
-    <thead>
-      <tr>
-        <th>Nombre</th>
-        <th>Dirección</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let loc of locations">
-        <td><strong>{{ loc.name }}</strong></td>
-        <td>{{ loc.address }}</td>
-      </tr>
-    </tbody>
-  </table>
-
-  <p
-    *ngIf="!loading && !error && !locations.length"
-    class="state state-info"
-  >
-    No hay ubicaciones cargadas en el sistema.
-  </p>
 </section>

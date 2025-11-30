@@ -229,7 +229,8 @@
   box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
 }
 
-.extra-item input[type="checkbox"] {
+.extra-item input[type="checkbox"],
+.extra-item input[type="radio"] {
   margin-top: 0.2rem;
   transform: scale(1.15);
   cursor: pointer;
@@ -397,4 +398,131 @@
   .main-body h1 {
     font-size: 1.4rem;
   }
+}
+
+/* -------------------- EXTENSIONES NUEVAS PARA HERTZ-STYLE -------------------- */
+
+.block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.block-tag {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #3730a3;
+  border: 1px solid rgba(79, 70, 229, 0.3);
+}
+
+.block-subtitle {
+  margin-top: 0.3rem;
+  font-size: 0.86rem;
+  color: #6b7280;
+}
+
+/* Seguros */
+.extras-seguros .extra-item {
+  align-items: center;
+}
+
+.extra-seguro {
+  padding: 0.75rem 0.85rem;
+}
+
+.extra-seguro--selected {
+  border-color: #2563eb;
+  background: #eff6ff;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.15);
+}
+
+.seguro-title {
+  color: #0b3b91;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+}
+
+.extra-price {
+  margin-left: auto;
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.1rem;
+  font-size: 0.85rem;
+}
+
+.extra-price-main {
+  font-weight: 700;
+  color: #111827;
+}
+
+.extra-price-sub {
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+.extra-note {
+  font-size: 0.78rem;
+  color: #6b7280;
+  padding: 0.4rem 0.1rem 0;
+}
+
+/* Adicionales */
+.extra-adicional {
+  align-items: center;
+  justify-content: space-between;
+}
+
+.extra-sub-price {
+  margin-top: 0.15rem;
+  font-weight: 500;
+}
+
+.extra-qty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2rem;
+}
+
+.quantity-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  background: #e5edff;
+  padding: 0.15rem 0.4rem;
+}
+
+.quantity-control button {
+  border: none;
+  background: transparent;
+  padding: 0.05rem 0.4rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+  font-weight: 700;
+  color: #1d4ed8;
+}
+
+.quantity-control button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.quantity-control span {
+  min-width: 1.2rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #111827;
+}
+
+.qty-hint {
+  font-size: 0.75rem;
+  color: #6b7280;
 }

@@ -6,10 +6,7 @@
     </button>
 
     <div class="header-right">
-      <span
-        *ngIf="checking"
-        class="chip chip-warning"
-      >
+      <span *ngIf="checking" class="chip chip-warning">
         ⏳ Verificando disponibilidad...
       </span>
 
@@ -19,7 +16,7 @@
         [class.chip-ok]="unitsAvailable > 0"
         [class.chip-error]="unitsAvailable <= 0"
       >
-    {{ unitsAvailable > 0 ? 'Disponible' : 'Sin stock' }}
+        {{ unitsAvailable > 0 ? 'Disponible' : 'Sin stock' }}
       </span>
     </div>
   </header>
@@ -74,50 +71,95 @@
           </div>
         </section>
 
+        <!-- SEGMENTO NUEVO: seguros estilo Hertz -->
         <section class="block">
-          <h2>Extras disponibles</h2>
-          <div class="extras-grid">
-            <label class="extra-item">
+          <div class="block-header">
+            <h2>Seguros</h2>
+            <span class="block-tag">Por reserva</span>
+          </div>
+          <p class="block-subtitle">
+            Elegí una cobertura opcional para reducir la franquicia por daños en tu alquiler.
+          </p>
+
+          <div class="extras-grid extras-seguros">
+            <label
+              class="extra-item extra-seguro"
+              *ngFor="let s of seguros"
+              [class.extra-seguro--selected]="selectedSeguroId === s.id"
+            >
               <input
-                type="checkbox"
-                [(ngModel)]="extras.seguro"
+                type="radio"
+                name="seguro"
+                [value]="s.id"
+                [(ngModel)]="selectedSeguroId"
                 (change)="actualizarTotal()"
               />
               <div class="extra-content">
-                <span class="extra-title">Seguro</span>
-                <span class="extra-sub">
-                  Protegé tu viaje (+{{ preciosExtras.seguro | currency:'ARS' }})
-                </span>
+                <span class="extra-title seguro-title">{{ s.label }}</span>
+                <span class="extra-sub">{{ s.description }}</span>
+              </div>
+              <div class="extra-price">
+                <div class="extra-price-main">
+                  {{ s.price | currency:'ARS' }}
+                </div>
+                <div class="extra-price-sub">Por reserva</div>
               </div>
             </label>
 
-            <label class="extra-item">
-              <input
-                type="checkbox"
-                [(ngModel)]="extras.silla"
-                (change)="actualizarTotal()"
-              />
-              <div class="extra-content">
-                <span class="extra-title">Silla para niño</span>
-                <span class="extra-sub">
-                  Ideal para viajar en familia (+{{ preciosExtras.silla | currency:'ARS' }})
-                </span>
-              </div>
-            </label>
+            <div class="extra-note">
+              Podés continuar sin seguro adicional, pero se aplicará la franquicia estándar
+              de la sucursal.
+            </div>
+          </div>
+        </section>
 
-            <label class="extra-item">
-              <input
-                type="checkbox"
-                [(ngModel)]="extras.gps"
-                (change)="actualizarTotal()"
-              />
+        <!-- SEGMENTO NUEVO: adicionales estilo Hertz -->
+        <section class="block">
+          <div class="block-header">
+            <h2>Adicionales</h2>
+            <span class="block-tag">Opcionales</span>
+          </div>
+          <p class="block-subtitle">
+            Sumá servicios y equipamiento para hacer tu viaje más cómodo y seguro.
+          </p>
+
+          <div class="extras-grid extras-adicionales">
+            <div
+              class="extra-item extra-adicional"
+              *ngFor="let a of adicionales"
+            >
               <div class="extra-content">
-                <span class="extra-title">GPS</span>
-                <span class="extra-sub">
-                  Llegá sin perderte (+{{ preciosExtras.gps | currency:'ARS' }})
+                <span class="extra-title">{{ a.label }}</span>
+                <span class="extra-sub">{{ a.description }}</span>
+                <span class="extra-sub extra-sub-price">
+                  {{ a.price | currency:'ARS' }}
+                  {{ a.billing === 'per_day' ? ' por día' : ' por reserva' }}
                 </span>
               </div>
-            </label>
+
+              <div class="extra-qty">
+                <div class="quantity-control">
+                  <button
+                    type="button"
+                    (click)="changeAdicionalCantidad(a.id, -1)"
+                    [disabled]="a.quantity === 0"
+                  >
+                    –
+                  </button>
+                  <span>{{ a.quantity }}</span>
+                  <button
+                    type="button"
+                    (click)="changeAdicionalCantidad(a.id, 1)"
+                    [disabled]="a.quantity >= a.maxQuantity"
+                  >
+                    +
+                  </button>
+                </div>
+                <span class="qty-hint" *ngIf="a.maxQuantity === 1">
+                  Máx. 1
+                </span>
+              </div>
+            </div>
           </div>
         </section>
       </div>
@@ -152,12 +194,17 @@
       <div class="resumen-precio">
         <div class="line">
           <span>Base (tarifa diaria x {{ dias }})</span>
-          <span>{{ (vehiculo!.dailyRate * dias) | currency:'ARS' }}</span>
+          <span>{{ baseAmount | currency:'ARS' }}</span>
         </div>
 
         <div class="line">
-          <span>Extras seleccionados</span>
-          <span>+ {{ (total - vehiculo!.dailyRate * dias) | currency:'ARS' }}</span>
+          <span>Seguro seleccionado</span>
+          <span>+ {{ seguroAmount | currency:'ARS' }}</span>
+        </div>
+
+        <div class="line">
+          <span>Adicionales seleccionados</span>
+          <span>+ {{ adicionalesAmount | currency:'ARS' }}</span>
         </div>
 
         <div class="total-line">

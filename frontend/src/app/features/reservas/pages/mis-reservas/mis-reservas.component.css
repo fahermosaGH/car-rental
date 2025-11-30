@@ -147,3 +147,45 @@
   }
 }
 
+.acciones-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.btn-link {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+  border-radius: 999px;
+  border: 1px solid #4e5155;
+  background: #ffffff;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-link:hover {
+  background: #4e5155;
+  color: #ffffff;
+}
+
+.btn-cancelar {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+  border-radius: 999px;
+  border: 1px solid #c92a2a;
+  background: #ffffff;
+  color: #c92a2a;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-cancelar:hover {
+  background: #c92a2a;
+  color: #ffffff;
+}
+
+.btn-cancelar:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+

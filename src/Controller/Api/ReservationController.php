@@ -262,5 +262,75 @@ class ReservationController extends AbstractController
             'email'   => $emailTo,
         ]);
     }
+
+        #[Route('/{id}/cancel', name: 'api_reservations_cancel', methods: ['POST'])]
+    public function cancel(
+        int $id,
+        EntityManagerInterface $em,
+        #[CurrentUser] ?User $user = null
+    ): JsonResponse {
+        // 1) Usuario debe estar logueado
+        if (!$user) {
+            return $this->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $repo = $em->getRepository(Reservation::class);
+        /** @var Reservation|null $reservation */
+        $reservation = $repo->find($id);
+
+        // 2) Reserva debe existir y pertenecer al usuario
+        if (!$reservation || $reservation->getUser()?->getId() !== $user->getId()) {
+            return $this->json(['message' => 'Reserva no encontrada'], 404);
+        }
+
+        // 3) Ya cancelada
+        if ($reservation->getStatus() === 'cancelled') {
+            return $this->json(['message' => 'La reserva ya está cancelada.'], 409);
+        }
+
+        // 4) Regla de negocio basada en días hasta el inicio
+        $now     = new \DateTimeImmutable('now');
+        $startAt = $reservation->getStartAt();
+
+        // diff en días (signed)
+        $diff          = $now->diff($startAt);
+        $daysToStart   = (int) $diff->format('%r%a'); // puede ser negativo
+        $total         = $reservation->getTotalPrice() !== null ? (float) $reservation->getTotalPrice() : 0.0;
+        $penaltyPercent = 0;
+        $penaltyAmount  = '0.00';
+
+        // < 2 días → no se puede cancelar online
+        if ($daysToStart < 2) {
+            return $this->json([
+                'message' =>
+                    'No podés cancelar la reserva desde la web con menos de 48 horas de anticipación. ' .
+                    'Comunicate con atención al cliente; podrían aplicarse cargos según la política de la agencia.'
+            ], 422);
+        }
+
+        // entre 2 y 15 días → 20 % de cargo
+        if ($daysToStart <= 15) {
+            $penaltyPercent = 20;
+            $penaltyAmount  = number_format($total * 0.20, 2, '.', '');
+        }
+
+        // 5) Cambiar estado a cancelada
+        $reservation->setStatus('cancelled');
+        $em->flush();
+
+        $message = $penaltyPercent > 0
+            ? 'Reserva cancelada con un cargo del 20 % sobre el total.'
+            : 'Reserva cancelada sin cargo.';
+
+        return $this->json([
+            'message'        => $message,
+            'id'             => $reservation->getId(),
+            'status'         => $reservation->getStatus(),
+            'penaltyPercent' => $penaltyPercent,
+            'penaltyAmount'  => $penaltyAmount,
+            'daysToStart'    => $daysToStart,
+        ]);
+    }
+
 }
 

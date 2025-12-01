@@ -1,18 +1,16 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MejorPrecioComponent } from './mejor-precio';
 
-import { MejorPrecio } from './mejor-precio';
-
-describe('MejorPrecio', () => {
-  let component: MejorPrecio;
-  let fixture: ComponentFixture<MejorPrecio>;
+describe('MejorPrecioComponent', () => {
+  let component: MejorPrecioComponent;
+  let fixture: ComponentFixture<MejorPrecioComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [MejorPrecio]
-    })
-    .compileComponents();
+      declarations: [MejorPrecioComponent],
+    }).compileComponents();
 
-    fixture = TestBed.createComponent(MejorPrecio);
+    fixture = TestBed.createComponent(MejorPrecioComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

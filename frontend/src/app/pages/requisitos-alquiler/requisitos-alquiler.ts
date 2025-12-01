@@ -5,6 +5,4 @@ import { Component } from '@angular/core';
   templateUrl: './requisitos-alquiler.html',
   styleUrls: ['./requisitos-alquiler.css']
 })
-export class RequisitosAlquilerComponent {
-  // Lógica del componente
-}
+export class RequisitosAlquilerComponent {}

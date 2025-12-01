@@ -1,0 +1,27 @@
+[ req ]
+default_bits        = 2048
+default_keyfile     = privkey.pem
+distinguished_name  = req_distinguished_name
+req_extensions      = v3_req
+string_mask         = utf8only
+
+[ req_distinguished_name ]
+countryName                 = Country Name (2 letter code)
+countryName_default         = AR
+stateOrProvinceName         = State or Province Name
+stateOrProvinceName_default = Buenos Aires
+localityName                = Locality Name
+localityName_default        = CABA
+organizationName            = Organization Name
+organizationName_default    = CarRental
+commonName                  = Common Name
+commonName_default          = car-rental.local
+
+[ v3_req ]
+basicConstraints = CA:FALSE
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+subjectAltName = @alt_names
+
+[ alt_names ]
+DNS.1   = localhost
+DNS.2   = 127.0.0.1

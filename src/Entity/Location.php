@@ -19,14 +19,21 @@ class Location
     #[ORM\Column(length: 120)]
     private string $name;
 
-    #[ORM\Column(length: 120)]
+    #[ORM\Column(length: 120, nullable: true)]
     private ?string $city = null;
 
     #[ORM\Column(length: 255)]
     private ?string $address = null;
 
     #[ORM\Column]
-    private ?bool $isActive = null;
+    private ?bool $isActive = true;
+
+    // 🔥 NUEVOS CAMPOS PARA EL MAPA
+    #[ORM\Column(type: 'float', nullable: true)]
+    private ?float $latitude = null;
+
+    #[ORM\Column(type: 'float', nullable: true)]
+    private ?float $longitude = null;
 
     /**
      * @var Collection<int, VehicleLocationStock>
@@ -57,7 +64,6 @@ class Location
     public function setName(string $name): static
     {
         $this->name = $name;
-
         return $this;
     }
 
@@ -66,10 +72,9 @@ class Location
         return $this->city;
     }
 
-    public function setCity(string $city): static
+    public function setCity(?string $city): static
     {
         $this->city = $city;
-
         return $this;
     }
 
@@ -81,7 +86,6 @@ class Location
     public function setAddress(string $address): static
     {
         $this->address = $address;
-
         return $this;
     }
 
@@ -93,7 +97,29 @@ class Location
     public function setIsActive(bool $isActive): static
     {
         $this->isActive = $isActive;
+        return $this;
+    }
 
+    // 🔥 GETTERS Y SETTERS DE LAT/LON
+    public function getLatitude(): ?float
+    {
+        return $this->latitude;
+    }
+
+    public function setLatitude(?float $latitude): static
+    {
+        $this->latitude = $latitude;
+        return $this;
+    }
+
+    public function getLongitude(): ?float
+    {
+        return $this->longitude;
+    }
+
+    public function setLongitude(?float $longitude): static
+    {
+        $this->longitude = $longitude;
         return $this;
     }
 
@@ -111,26 +137,21 @@ class Location
             $this->stocks->add($stock);
             $stock->setLocation($this);
         }
-
         return $this;
     }
 
     public function removeStock(VehicleLocationStock $stock): static
     {
         if ($this->stocks->removeElement($stock)) {
-            // set the owning side to null (unless already changed)
             if ($stock->getLocation() === $this) {
                 $stock->setLocation(null);
             }
         }
-
         return $this;
     }
 
-    // Opcional: mejora la visualización en selects/tablas del admin
     public function __toString(): string
     {
         return $this->name ?? 'Ubicación #' . ($this->id ?? 0);
     }
 }
-

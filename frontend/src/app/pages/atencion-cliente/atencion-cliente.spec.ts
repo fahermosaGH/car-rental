@@ -7,12 +7,9 @@ describe('AtencionClienteComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ AtencionClienteComponent ]
-    })
-    .compileComponents();
-  });
+      imports: [AtencionClienteComponent]
+    }).compileComponents();
 
-  beforeEach(() => {
     fixture = TestBed.createComponent(AtencionClienteComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();

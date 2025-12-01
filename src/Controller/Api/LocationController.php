@@ -2,31 +2,28 @@
 
 namespace App\Controller\Api;
 
+use App\Entity\Location;
 use App\Repository\LocationRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
 
 #[Route('/api/locations')]
 class LocationController extends AbstractController
 {
     #[Route('', name: 'api_locations_list', methods: ['GET'])]
-    public function list(LocationRepository $locationRepository): Response
+    public function list(LocationRepository $locationRepository): JsonResponse
     {
-        $locations = $locationRepository->findAll();
+        $locations = $locationRepository->findBy(['isActive' => true]);
 
-        $data = array_map(function ($l) {
+        $data = array_map(function (Location $l) {
             return [
                 'id'        => $l->getId(),
                 'name'      => $l->getName(),
                 'address'   => $l->getAddress(),
-
-                // ❗ No existe esta columna, devolvemos string vacío
-                'city'      => '',
-
-                // ❗ Tampoco existen en tu entidad ni DB → devolvemos null
-                'latitude'  => null,
-                'longitude' => null,
+                'city'      => $l->getCity(),
+                'latitude'  => $l->getLatitude(),
+                'longitude' => $l->getLongitude(),
             ];
         }, $locations);
 

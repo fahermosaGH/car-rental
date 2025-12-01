@@ -30,15 +30,12 @@ security:
       jwt: ~
 
   access_control:
-    # Públicos
     - { path: ^/api/login_check, roles: PUBLIC_ACCESS }
     - { path: ^/api/register, roles: PUBLIC_ACCESS }
 
-    # GET públicos necesarios para la app sin login (CORS incluye OPTIONS)
     - { path: ^/api/locations, roles: PUBLIC_ACCESS, methods: [GET, OPTIONS] }
     - { path: ^/api/vehicles/available, roles: PUBLIC_ACCESS, methods: [GET, OPTIONS] }
     - { path: ^/api/vehicles, roles: PUBLIC_ACCESS, methods: [GET, OPTIONS] }
     - { path: ^/api/check-availability, roles: PUBLIC_ACCESS, methods: [GET, OPTIONS] }
 
-    # Resto del API: requiere JWT
     - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }

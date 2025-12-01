@@ -13,23 +13,18 @@
 
   <div class="layout" *ngIf="!loading && !error">
 
-    <!-- LOADING POR FILTRO -->
-    <div *ngIf="loadingFilter" class="state state-loading" style="grid-column:1 / -1; text-align:center; padding:40px 0;">
-      <span class="spinner"></span>
-      <p>Actualizando listado...</p>
-    </div>
-
     <!-- SIDEBAR -->
-    <aside class="sidebar" *ngIf="!loadingFilter">
+    <aside class="sidebar">
 
-      <!-- Buscador: aplica filtro SOLO al presionar ENTER -->
-      <input
-        class="search-box"
-        type="text"
-        placeholder="Buscar vehículo..."
-        [(ngModel)]="searchText"
-        (keyup.enter)="onSearchEnter()"
-      />
+      <div class="search-wrapper">
+        <input
+          class="search-box"
+          type="text"
+          placeholder="Buscar vehículo..."
+          [(ngModel)]="searchText"
+          (keyup.enter)="onSearchEnter()"
+        />
+      </div>
 
       <h3 class="sidebar-title">Filtrar por categoría</h3>
 
@@ -64,25 +59,24 @@
 
     </aside>
 
-    <!-- GRID -->
-    <main class="content" *ngIf="!loadingFilter">
+    <!-- CONTENT GRID -->
+    <main class="content">
 
       <div class="grid">
+
         <article class="card" *ngFor="let v of filtered">
 
           <div class="card-media">
-            <img
-              [src]="v.img || ('https://source.unsplash.com/600x400/?' + (v.category || 'car'))"
-              alt="Vehículo"
-            />
+            <img [src]="v.img" alt="Vehículo" />
           </div>
 
           <div class="card-body">
             <h3>{{ v.brand }} {{ v.model }}</h3>
-            <span class="chip-categoria">{{ v.category || 'Sin categoría' }}</span>
+            <span class="chip-categoria">{{ v.category }}</span>
           </div>
 
         </article>
+
       </div>
 
       <p *ngIf="filtered.length === 0" class="state state-info">

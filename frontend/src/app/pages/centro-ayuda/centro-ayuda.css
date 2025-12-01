@@ -7,18 +7,34 @@
 h1 {
   text-align: center;
   color: #003087;
+  margin-bottom: 1.8rem;
 }
 
 .intro {
   text-align: center;
   font-size: 1.2rem;
-  margin: 1rem 0 2rem;
+  color: #444;
+  margin-bottom: 2rem;
+  line-height: 1.6;
 }
 
 .faq-box {
   background: #fff;
-  padding: 1.5rem;
-  border-radius: 10px;
-  margin-bottom: 1rem;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+  padding: 1.7rem;
+  border-radius: 12px;
+  margin-bottom: 1.3rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.07);
+  border-left: 5px solid #0d6efd;
+}
+
+.faq-box h3 {
+  margin-top: 0;
+  margin-bottom: 0.6rem;
+  color: #003087;
+}
+
+.faq-box p {
+  margin: 0;
+  color: #555;
+  font-size: 1.05rem;
 }

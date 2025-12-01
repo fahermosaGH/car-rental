@@ -1,22 +1,8 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-
-interface VehicleDto {
-  id: number;
-  brand: string;
-  model: string;
-  year: number | null;
-  seats: number | null;
-  transmission: string | null;
-  dailyRate: string | null;
-  isActive: boolean;
-  category: string | null;
-  img?: string | null;
-}
-
-const API_BASE = 'http://localhost:8000/api';
+import { CotizarService } from '../../cotizar/services/cotizar.service';
 
 @Component({
   selector: 'app-ver-flota',
@@ -26,23 +12,26 @@ const API_BASE = 'http://localhost:8000/api';
   styleUrls: ['./ver-flota.component.css'],
 })
 export class VerFlotaComponent implements OnInit {
-  private http = inject(HttpClient);
+
+  private cotizarService = inject(CotizarService);
 
   loading = false;
   loadingFilter = false;
-
   error: string | null = null;
-  vehicles: VehicleDto[] = [];
-  filtered: VehicleDto[] = [];
 
-  categories = ['Todos', 'Económico', 'Compacto', 'SUV', 'Camioneta', 'Sedán', 'Premium', 'Largos'];
+  vehicles: any[] = [];
+  filtered: any[] = [];
+
+  categories = [
+    'Todos', 'Económico', 'Compacto', 'SUV',
+    'Camioneta', 'Sedán', 'Premium', 'Largos'
+  ];
+
   selectedCategory = 'Todos';
-
   sort: 'az' | 'za' = 'az';
 
-  // texto del buscador (pero NO filtra hasta apretar ENTER)
   searchText: string = '';
-  searchTrigger: string = ''; // 👈 se usa para filtrar al presionar ENTER
+  searchTrigger: string = '';
 
   ngOnInit(): void {
     this.loadVehicles();
@@ -52,17 +41,22 @@ export class VerFlotaComponent implements OnInit {
     this.loading = true;
     this.error = null;
 
-    this.http.get<VehicleDto[]>(`${API_BASE}/vehicles`).subscribe({
+    this.cotizarService.buscarVehiculos().subscribe({
       next: (data) => {
-        this.vehicles = data || [];
+        this.vehicles = data;
         this.applyFilters(false);
         this.loading = false;
       },
       error: () => {
         this.error = 'No se pudo cargar la flota de vehículos.';
         this.loading = false;
-      },
+      }
     });
+  }
+
+  onSearchEnter() {
+    this.searchTrigger = this.searchText.trim().toLowerCase();
+    this.applyFilters(true);
   }
 
   selectCategory(cat: string) {
@@ -75,19 +69,13 @@ export class VerFlotaComponent implements OnInit {
     this.applyFilters(true);
   }
 
-  // SOLO FILTRA AL APRETAR ENTER
-  onSearchEnter() {
-    this.searchTrigger = this.searchText.trim().toLowerCase();
-    this.applyFilters(true);
-  }
-
-  applyFilters(withAnimation: boolean = true) {
-    if (withAnimation) {
+  applyFilters(animated: boolean = true) {
+    if (animated) {
       this.loadingFilter = true;
       setTimeout(() => {
         this.runFiltering();
         this.loadingFilter = false;
-      }, 400);
+      }, 350);
     } else {
       this.runFiltering();
     }
@@ -96,22 +84,16 @@ export class VerFlotaComponent implements OnInit {
   private runFiltering() {
     let items = [...this.vehicles];
 
-    // CATEGORÍA
     if (this.selectedCategory !== 'Todos') {
-      items = items.filter(v =>
-        (v.category || '').toLowerCase() === this.selectedCategory.toLowerCase()
-      );
+      items = items.filter(v => (v.category || '').toLowerCase() === this.selectedCategory.toLowerCase());
     }
 
-    // BUSCADOR (ACTÚA SOLO AL APRETAR ENTER)
     if (this.searchTrigger !== '') {
       items = items.filter(v =>
-        `${v.brand} ${v.model}`.toLowerCase().includes(this.searchTrigger) ||
-        (v.category || '').toLowerCase().includes(this.searchTrigger)
+        `${v.brand} ${v.model}`.toLowerCase().includes(this.searchTrigger)
       );
     }
 
-    // ORDEN
     if (this.sort === 'az') {
       items.sort((a, b) => (a.brand + a.model).localeCompare(b.brand + b.model));
     } else {

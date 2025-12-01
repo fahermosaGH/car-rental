@@ -1,18 +1,16 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { RequisitosAlquilerComponent } from './requisitos-alquiler';
 
-import { RequisitosAlquiler } from './requisitos-alquiler';
-
-describe('RequisitosAlquiler', () => {
-  let component: RequisitosAlquiler;
-  let fixture: ComponentFixture<RequisitosAlquiler>;
+describe('RequisitosAlquilerComponent', () => {
+  let component: RequisitosAlquilerComponent;
+  let fixture: ComponentFixture<RequisitosAlquilerComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [RequisitosAlquiler]
-    })
-    .compileComponents();
+      declarations: [RequisitosAlquilerComponent],
+    }).compileComponents();
 
-    fixture = TestBed.createComponent(RequisitosAlquiler);
+    fixture = TestBed.createComponent(RequisitosAlquilerComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

@@ -1,0 +1,64 @@
+<section class="perfil-page" *ngIf="!loading; else loadingTpl">
+  <h1>Mi perfil</h1>
+  <p class="subtitle">
+    Estos son los datos personales asociados a tu cuenta para realizar reservas.
+  </p>
+
+  <div class="perfil-card">
+    <div class="perfil-row">
+      <span class="label">Nombre completo</span>
+      <span class="value">{{ perfil.fullName || 'No especificado' }}</span>
+    </div>
+
+    <div class="perfil-row">
+      <span class="label">Correo electrónico</span>
+      <span class="value">{{ perfil.email || 'No especificado' }}</span>
+    </div>
+
+    <div class="perfil-row">
+      <span class="label">Número de teléfono</span>
+      <span class="value">{{ perfil.phone || 'No especificado' }}</span>
+    </div>
+
+    <div class="perfil-row">
+      <span class="label">DNI o Pasaporte</span>
+      <span class="value">{{ perfil.documentNumber || 'No especificado' }}</span>
+    </div>
+
+    <div class="perfil-row">
+      <span class="label">Fecha de nacimiento</span>
+      <span class="value">{{ perfil.birthDate || 'No especificado' }}</span>
+    </div>
+
+    <div class="perfil-row">
+      <span class="label">Dirección de residencia</span>
+      <span class="value">{{ perfil.address || 'No especificado' }}</span>
+    </div>
+
+    <div class="perfil-row">
+      <span class="label">Número de licencia de conducir</span>
+      <span class="value">{{ perfil.licenseNumber || 'No especificado' }}</span>
+    </div>
+
+    <div class="perfil-row">
+      <span class="label">Fecha de vencimiento de la licencia</span>
+      <span class="value">{{ perfil.licenseExpiry || 'No especificado' }}</span>
+    </div>
+
+    <div class="perfil-row">
+      <span class="label">País de emisión de la licencia</span>
+      <span class="value">{{ perfil.licenseCountry || 'No especificado' }}</span>
+    </div>
+
+    <div class="perfil-footer">
+      <p>
+        Para modificar estos datos, usá la opción
+        <strong>"Actualizar datos personales"</strong>, que corresponde al CU 13.
+      </p>
+    </div>
+  </div>
+</section>
+
+<ng-template #loadingTpl>
+  <div class="loading">Cargando tu perfil...</div>
+</ng-template>

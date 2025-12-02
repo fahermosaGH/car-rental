@@ -85,6 +85,15 @@ export const routes: Routes = [
           import('./features/reservas/pages/mis-reservas/mis-reservas.component').then((m) => m.MisReservasComponent),
       },
 
+      {
+        path: 'perfil',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('./features/cotizar/pages/perfil/perfil.component').then(
+            (m) => m.PerfilComponent
+          ),
+      },
+
       { path: 'sobre-nosotros', component: SobreNosotrosComponent },
       { path: 'atencion-al-cliente', component: AtencionClienteComponent },
       { path: 'login', component: LoginComponent },

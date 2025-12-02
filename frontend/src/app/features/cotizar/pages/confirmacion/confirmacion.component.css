@@ -639,3 +639,48 @@
 .link-atencion:hover {
   color: #1d4ed8;
 }
+
+/* Botón secundario (imprimir) */
+.btn-secondary {
+  margin-top: 0.6rem;
+  width: 100%;
+  border: 1px solid #1d4ed8;
+  border-radius: 999px;
+  padding: 0.8rem 1.2rem;
+  background: #ffffff;
+  color: #1d4ed8;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease,
+    color 0.18s ease;
+}
+
+.btn-secondary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.2);
+  background: #eff4ff;
+}
+
+/* Ajustes mínimos para modo impresión */
+@media print {
+  .confirmacion-page {
+    background: #ffffff !important;
+    box-shadow: none !important;
+    padding: 0.5rem !important;
+  }
+
+  .conf-header {
+    box-shadow: none !important;
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .acciones button {
+    display: none !important; /* no imprimimos los botones */
+  }
+}

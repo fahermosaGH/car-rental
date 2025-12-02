@@ -139,4 +139,9 @@ export class ConfirmacionComponent implements OnInit {
       },
     });
   }
+
+    imprimirComprobante() {
+    // Usamos la función nativa del navegador
+    window.print();
+  }
 }

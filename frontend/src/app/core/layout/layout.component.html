@@ -18,8 +18,11 @@
 
       <!-- Si está logueado -->
       <ng-container *ngIf="isLoggedIn">
+        <a routerLink="/perfil" routerLinkActive="active">Perfil</a>
         <a routerLink="/mis-reservas" routerLinkActive="active">Mis reservas</a>
-        <button type="button" class="nav-logout" (click)="logout()">Cerrar sesión</button>
+        <button type="button" class="nav-logout" (click)="logout()">
+          Cerrar sesión
+        </button>
       </ng-container>
 
       <button type="button" class="btn-theme" (click)="toggleDark()">🌓 Tema</button>
@@ -36,3 +39,4 @@
     <p>© {{ currentYear }} Car Rental. Todos los derechos reservados.</p>
   </div>
 </footer>
+

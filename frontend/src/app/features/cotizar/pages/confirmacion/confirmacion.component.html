@@ -87,10 +87,28 @@
         <h2>Comprobante de reserva</h2>
         <p>Ingresá un correo electrónico para recibir el comprobante.</p>
 
-        <input type="email" [(ngModel)]="emailComprobante" placeholder="tu-correo@ejemplo.com" />
+        <input
+          type="email"
+          [(ngModel)]="emailComprobante"
+          placeholder="tu-correo@ejemplo.com"
+        />
 
-        <button type="button" class="btn-primary" (click)="enviarComprobante()" [disabled]="enviando">
+        <button
+          type="button"
+          class="btn-primary"
+          (click)="enviarComprobante()"
+          [disabled]="enviando"
+        >
           {{ enviando ? 'Enviando...' : 'Enviar comprobante' }}
+        </button>
+
+        <!-- 🔹 Nuevo botón: imprimir / guardar como PDF -->
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="imprimirComprobante()"
+        >
+          Imprimir / guardar comprobante
         </button>
 
         <p class="msg-ok" *ngIf="mensajeEnvio">{{ mensajeEnvio }}</p>

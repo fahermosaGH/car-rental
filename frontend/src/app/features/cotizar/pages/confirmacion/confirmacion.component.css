@@ -608,3 +608,34 @@
   color: #b91c1c;
   margin-top: 5px;
 }
+
+.horarios {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px dashed #e5e7eb;
+  font-size: 0.9rem;
+  color: #4b5563;
+}
+
+.horarios h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.horarios p {
+  margin: 0.15rem 0;
+  line-height: 1.4;
+}
+
+.link-atencion {
+  font-weight: 600;
+  color: #2563eb;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.link-atencion:hover {
+  color: #1d4ed8;
+}

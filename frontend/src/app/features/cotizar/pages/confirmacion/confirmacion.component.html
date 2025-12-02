@@ -9,7 +9,7 @@
     </header>
 
     <div class="conf-layout">
-      
+
       <!-- Panel Izquierdo -->
       <article class="conf-detalle">
         <h2>{{ reserva.vehicleName }}</h2>
@@ -42,42 +42,43 @@
         </div>
 
         <!-- ⭐ CALIFICACIÓN SOLO SI FINALIZADA -->
-        <section 
-          class="rating-box" 
-          *ngIf="estadoDesdeMisReservas === 'Finalizada'"
-        >
+        <section class="rating-box" *ngIf="estadoDesdeMisReservas === 'Finalizada'">
           <h3>Calificá tu experiencia</h3>
 
           <!-- ESTRELLAS CLICKEABLES -->
           <div class="stars">
-            <span 
-              *ngFor="let s of [1,2,3,4,5]"
-              class="star"
-              [class.filled]="rating >= s"
-              (click)="setRating(s)"
-            >
+            <span *ngFor="let s of [1,2,3,4,5]" class="star" [class.filled]="rating >= s" (click)="setRating(s)">
               ★
             </span>
           </div>
 
-          <textarea
-            [(ngModel)]="ratingComment"
-            placeholder="Comentario opcional..."
-            rows="3"
-            class="rating-comment"
-          ></textarea>
+          <textarea [(ngModel)]="ratingComment" placeholder="Comentario opcional..." rows="3"
+            class="rating-comment"></textarea>
 
-          <button 
-            class="btn-rate" 
-            (click)="guardarRating()" 
-            [disabled]="ratingEnviando"
-          >
+          <button class="btn-rate" (click)="guardarRating()" [disabled]="ratingEnviando">
             {{ ratingEnviando ? 'Guardando...' : 'Guardar calificación' }}
           </button>
 
           <p class="rating-msg" *ngIf="ratingMensaje">{{ ratingMensaje }}</p>
           <p class="rating-error" *ngIf="ratingError">{{ ratingError }}</p>
         </section>
+
+        <!-- 🕒 Horarios de retiro y devolución -->
+        <section class="horarios">
+          <h3>🕒 Horarios de retiro y devolución</h3>
+          <p>Las reservas se manejan por día completo.</p>
+          <p>
+            El retiro y la devolución del vehículo se realizan entre las
+            09:00 y las 18:00 hs en la sucursal seleccionada.
+          </p>
+          <p>
+            Si necesitás coordinar un horario especial, comunicate con
+            <a routerLink="/atencion-al-cliente" class="link-atencion">
+              Atención al Cliente
+            </a>.
+          </p>
+        </section>
+
 
       </article>
 
@@ -86,18 +87,9 @@
         <h2>Comprobante de reserva</h2>
         <p>Ingresá un correo electrónico para recibir el comprobante.</p>
 
-        <input
-          type="email"
-          [(ngModel)]="emailComprobante"
-          placeholder="tu-correo@ejemplo.com"
-        />
+        <input type="email" [(ngModel)]="emailComprobante" placeholder="tu-correo@ejemplo.com" />
 
-        <button
-          type="button"
-          class="btn-primary"
-          (click)="enviarComprobante()"
-          [disabled]="enviando"
-        >
+        <button type="button" class="btn-primary" (click)="enviarComprobante()" [disabled]="enviando">
           {{ enviando ? 'Enviando...' : 'Enviar comprobante' }}
         </button>
 

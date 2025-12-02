@@ -2,10 +2,10 @@
   "entrypoints": {
     "app": {
       "css": [
-        "/app.54fc226c.css"
+        "/app.769fc123.css"
       ],
       "js": [
-        "/app.92065ad6.js"
+        "/app.c075c74f.js"
       ]
     },
     "form": {
@@ -53,7 +53,7 @@
     },
     "field-slug": {
       "js": [
-        "/field-slug.ba7fb8e5.js"
+        "/field-slug.cfe3a8f7.js"
       ]
     },
     "field-textarea": {

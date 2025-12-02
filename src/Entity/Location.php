@@ -4,6 +4,9 @@ namespace App\Entity;
 
 use App\Repository\LocationRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
+use App\Entity\VehicleLocationStock;
 
 #[ORM\Entity(repositoryClass: LocationRepository::class)]
 class Location
@@ -30,6 +33,19 @@ class Location
 
     #[ORM\Column(type: 'float', nullable: true)]
     private ?float $longitude = null;
+
+    // 🔹 Relación inversa con VehicleLocationStock
+    #[ORM\OneToMany(
+        mappedBy: 'location',
+        targetEntity: VehicleLocationStock::class,
+        cascade: ['remove']
+    )]
+    private Collection $stocks;
+
+    public function __construct()
+    {
+        $this->stocks = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -101,4 +117,13 @@ class Location
         $this->longitude = $lon;
         return $this;
     }
+
+    /**
+     * @return Collection<int, VehicleLocationStock>
+     */
+    public function getStocks(): Collection
+    {
+        return $this->stocks;
+    }
 }
+

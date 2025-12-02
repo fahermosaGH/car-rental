@@ -20,6 +20,9 @@ interface ReservationDetailDto {
   totalPrice: string | null;
   status: string;
   extras: ReservationExtraDto[];
+
+  rating?: number;
+  ratingComment?: string;
 }
 
 @Component({
@@ -30,19 +33,25 @@ interface ReservationDetailDto {
   styleUrls: ['./confirmacion.component.css'],
 })
 export class ConfirmacionComponent implements OnInit {
+
   reserva?: ReservationDetailDto;
 
-  // 👇 estos nombres matchean el HTML
   loading = true;
   error = '';
 
-  // email para enviar comprobante (coincide con [(ngModel)]="emailComprobante")
-  emailComprobante: string = '';
-
-  // estado de envío
+  emailComprobante = '';
   enviando = false;
   mensajeEnvio = '';
   errorEnvio = '';
+
+  estadoDesdeMisReservas = '';
+
+  // RATING
+  rating = 0;
+  ratingComment = '';
+  ratingEnviando = false;
+  ratingMensaje = '';
+  ratingError = '';
 
   constructor(
     private route: ActivatedRoute,
@@ -52,21 +61,48 @@ export class ConfirmacionComponent implements OnInit {
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
-    if (!id || Number.isNaN(id)) {
-      this.error = 'ID de reserva inválido.';
-      this.loading = false;
-      return;
-    }
+    this.estadoDesdeMisReservas =
+      this.route.snapshot.queryParamMap.get('estado') || '';
 
     this.cotizarService.getReservationById(id).subscribe({
       next: (data) => {
         this.reserva = data;
+
+        if (data.rating) this.rating = data.rating;
+        if (data.ratingComment) this.ratingComment = data.ratingComment;
+
         this.loading = false;
       },
       error: () => {
-        this.error = 'No se pudo cargar la información de la reserva.';
+        this.error = 'No se pudo cargar la reserva.';
         this.loading = false;
       },
+    });
+  }
+
+  setRating(value: number) {
+    this.rating = value;
+  }
+
+  guardarRating() {
+    if (!this.reserva) return;
+
+    this.ratingEnviando = true;
+    this.ratingMensaje = '';
+    this.ratingError = '';
+
+    this.cotizarService.calificarReserva(this.reserva.id, {
+      rating: this.rating,
+      comment: this.ratingComment,
+    }).subscribe({
+      next: () => {
+        this.ratingEnviando = false;
+        this.ratingMensaje = '¡Gracias por tu calificación!';
+      },
+      error: () => {
+        this.ratingEnviando = false;
+        this.ratingError = 'No se pudo guardar la calificación.';
+      }
     });
   }
 
@@ -78,26 +114,15 @@ export class ConfirmacionComponent implements OnInit {
     this.router.navigate(['/mis-reservas']);
   }
 
-  // 👉 versión real, llama al backend /api/reservations/{id}/send-voucher
   enviarComprobante() {
     this.errorEnvio = '';
     this.mensajeEnvio = '';
 
-    if (!this.reserva) {
-      this.errorEnvio = 'No se encontró la reserva.';
-      return;
-    }
+    if (!this.reserva) return;
 
     const email = this.emailComprobante.trim();
-    if (!email) {
-      this.errorEnvio = 'Ingresá un email para enviar el comprobante.';
-      return;
-    }
-
-    // validación mínima de formato
-    const simpleRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!simpleRegex.test(email)) {
-      this.errorEnvio = 'El formato del email no es válido.';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      this.errorEnvio = 'Ingresá un email válido.';
       return;
     }
 
@@ -106,18 +131,12 @@ export class ConfirmacionComponent implements OnInit {
     this.cotizarService.enviarComprobante(this.reserva.id, email).subscribe({
       next: (res) => {
         this.enviando = false;
-        this.mensajeEnvio = res.message || `Comprobante enviado a ${res.email || email}.`;
+        this.mensajeEnvio = res.message || 'Comprobante enviado.';
       },
       error: () => {
         this.enviando = false;
-        this.errorEnvio =
-          'No se pudo enviar el comprobante. Intentá nuevamente en unos minutos.';
+        this.errorEnvio = 'No se pudo enviar el comprobante.';
       },
     });
-  }
-
-  // alias por si algo viejo llamaba a este método
-  enviarComprobanteSimulado() {
-    this.enviarComprobante();
   }
 }

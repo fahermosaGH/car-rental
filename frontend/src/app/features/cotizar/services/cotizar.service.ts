@@ -136,23 +136,27 @@ export class CotizarService {
   }
 
   getReservationById(id: number) {
-    const headers = this.auth.token
-      ? new HttpHeaders({ Authorization: `Bearer ${this.auth.token}` })
-      : undefined;
+  const headers = this.auth.token
+    ? new HttpHeaders({ Authorization: `Bearer ${this.auth.token}` })
+    : undefined;
 
-    return this.http.get<{
-      id: number;
-      vehicleName: string;
-      category: string | null;
-      pickupLocationName: string;
-      dropoffLocationName: string;
-      startAt: string;
-      endAt: string;
-      totalPrice: string | null;
-      status: string;
-      extras: { name: string; price: string }[];
-    }>(`${this.apiUrl}/reservations/${id}`, { headers });
-  }
+  return this.http.get<{
+    id: number;
+    vehicleName: string;
+    category: string | null;
+    pickupLocationName: string;
+    dropoffLocationName: string;
+    startAt: string;
+    endAt: string;
+    totalPrice: string | null;
+    status: string;
+    extras: { name: string; price: string }[];
+
+    rating?: number;
+    ratingComment?: string;
+  }>(`${this.apiUrl}/reservations/${id}`, { headers });
+}
+
 
   enviarComprobante(reservationId: number, email: string) {
     const headers = this.auth.token
@@ -165,6 +169,15 @@ export class CotizarService {
       { headers }
     );
   }
+calificarReserva(reservationId: number, payload: { rating: number; comment: string }) {
+  const headers = this.auth.token
+    ? new HttpHeaders({ Authorization: `Bearer ${this.auth.token}` })
+    : undefined;
 
+  return this.http.post(
+    `${this.apiUrl}/reservations/${reservationId}/rating`,
+    payload,
+    { headers }
+  );
 }
-
+}

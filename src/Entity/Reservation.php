@@ -10,7 +10,6 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 use App\Entity\User;
 
-
 #[ORM\Entity(repositoryClass: ReservationRepository::class)]
 #[ORM\Table(name: 'reservation')]
 class Reservation
@@ -20,42 +19,33 @@ class Reservation
     #[ORM\Column]
     private ?int $id = null;
 
-    // Cliente que realiza la reserva (puede ser null)
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: true)]
     private ?Customer $customer = null;
 
-    // Usuario de la cuenta web que realiza la reserva
     #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(nullable: true)]
     private ?User $user = null;
 
-    // Vehículo reservado
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
     private ?Vehicle $vehicle = null;
 
-    // Retiro
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
     private ?Location $pickupLocation = null;
 
-    // Devolución
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
     private ?Location $dropoffLocation = null;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
-    #[Assert\NotNull(message: 'La fecha/hora de inicio es obligatoria.')]
     private ?\DateTimeImmutable $startAt = null;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
-    #[Assert\NotNull(message: 'La fecha/hora de fin es obligatoria.')]
-    #[Assert\GreaterThan(propertyPath: 'startAt', message: 'La fecha/hora de fin debe ser posterior a la de inicio.')]
     private ?\DateTimeImmutable $endAt = null;
 
     #[ORM\Column(length: 20)]
-    #[Assert\Choice(choices: ['pending', 'confirmed', 'cancelled'], message: 'Estado inválido.')]
     private string $status = 'pending';
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true)]
@@ -64,123 +54,46 @@ class Reservation
     #[ORM\OneToMany(mappedBy: 'reservation', targetEntity: ReservationExtra::class, cascade: ['persist', 'remove'])]
     private Collection $extras;
 
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $rating = null;
+
+    #[ORM\Column(type: 'string', length: 500, nullable: true)]
+    private ?string $ratingComment = null;
+
     public function __construct()
     {
         $this->extras = new ArrayCollection();
     }
 
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
+    public function getId(): ?int { return $this->id; }
 
-    public function getCustomer(): ?Customer
-    {
-        return $this->customer;
-    }
+    public function getUser(): ?User { return $this->user; }
+    public function setUser(?User $user): static { $this->user = $user; return $this; }
 
-    public function setCustomer(?Customer $customer): static
-    {
-        $this->customer = $customer;
-        return $this;
-    }
+    public function getVehicle(): ?Vehicle { return $this->vehicle; }
+    public function setVehicle(?Vehicle $vehicle): static { $this->vehicle = $vehicle; return $this; }
 
-        public function getUser(): ?User
-    {
-        return $this->user;
-    }
+    public function getPickupLocation(): ?Location { return $this->pickupLocation; }
+    public function setPickupLocation(?Location $pickupLocation): static { $this->pickupLocation = $pickupLocation; return $this; }
 
-    public function setUser(?User $user): static
-    {
-        $this->user = $user;
-        return $this;
-    }
+    public function getDropoffLocation(): ?Location { return $this->dropoffLocation; }
+    public function setDropoffLocation(?Location $dropoffLocation): static { $this->dropoffLocation = $dropoffLocation; return $this; }
 
-    public function getVehicle(): ?Vehicle
-    {
-        return $this->vehicle;
-    }
+    public function getStartAt(): ?\DateTimeImmutable { return $this->startAt; }
+    public function setStartAt(\DateTimeImmutable $startAt): static { $this->startAt = $startAt; return $this; }
 
-    public function setVehicle(?Vehicle $vehicle): static
-    {
-        $this->vehicle = $vehicle;
-        return $this;
-    }
+    public function getEndAt(): ?\DateTimeImmutable { return $this->endAt; }
+    public function setEndAt(\DateTimeImmutable $endAt): static { $this->endAt = $endAt; return $this; }
 
-    public function getPickupLocation(): ?Location
-    {
-        return $this->pickupLocation;
-    }
+    public function getStatus(): string { return $this->status; }
+    public function setStatus(string $status): static { $this->status = $status; return $this; }
 
-    public function setPickupLocation(?Location $pickupLocation): static
-    {
-        $this->pickupLocation = $pickupLocation;
-        return $this;
-    }
+    public function getTotalPrice(): ?string { return $this->totalPrice; }
+    public function setTotalPrice(?string $totalPrice): static { $this->totalPrice = $totalPrice; return $this; }
 
-    public function getDropoffLocation(): ?Location
-    {
-        return $this->dropoffLocation;
-    }
+    public function getExtras(): Collection { return $this->extras; }
 
-    public function setDropoffLocation(?Location $dropoffLocation): static
-    {
-        $this->dropoffLocation = $dropoffLocation;
-        return $this;
-    }
-
-    public function getStartAt(): ?\DateTimeImmutable
-    {
-        return $this->startAt;
-    }
-
-    public function setStartAt(\DateTimeImmutable $startAt): static
-    {
-        $this->startAt = $startAt;
-        return $this;
-    }
-
-    public function getEndAt(): ?\DateTimeImmutable
-    {
-        return $this->endAt;
-    }
-
-    public function setEndAt(\DateTimeImmutable $endAt): static
-    {
-        $this->endAt = $endAt;
-        return $this;
-    }
-
-    public function getStatus(): string
-    {
-        return $this->status;
-    }
-
-    public function setStatus(string $status): static
-    {
-        $this->status = $status;
-        return $this;
-    }
-
-    public function getTotalPrice(): ?string
-    {
-        return $this->totalPrice;
-    }
-
-    public function setTotalPrice(?string $totalPrice): static
-    {
-        $this->totalPrice = $totalPrice;
-        return $this;
-    }
-
-    /** @return Collection<int, ReservationExtra> */
-    public function getExtras(): Collection
-    {
-        return $this->extras;
-    }
-
-    public function addExtra(ReservationExtra $extra): static
-    {
+    public function addExtra(ReservationExtra $extra): static {
         if (!$this->extras->contains($extra)) {
             $this->extras->add($extra);
             $extra->setReservation($this);
@@ -188,18 +101,11 @@ class Reservation
         return $this;
     }
 
-    public function removeExtra(ReservationExtra $extra): static
-    {
-        if ($this->extras->removeElement($extra)) {
-            if ($extra->getReservation() === $this) {
-                $extra->setReservation(null);
-            }
-        }
-        return $this;
-    }
+    public function getRating(): ?int { return $this->rating; }
+    public function setRating(?int $rating): static { $this->rating = $rating; return $this; }
 
-    public function __toString(): string
-    {
-        return 'Reserva #' . ($this->id ?? 0);
-    }
+    public function getRatingComment(): ?string { return $this->ratingComment; }
+    public function setRatingComment(?string $ratingComment): static { $this->ratingComment = $ratingComment; return $this; }
+
+    public function __toString(): string { return 'Reserva #' . ($this->id ?? 0); }
 }

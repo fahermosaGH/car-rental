@@ -3,10 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\LocationRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use App\Entity\VehicleLocationStock;
 
 #[ORM\Entity(repositoryClass: LocationRepository::class)]
 class Location
@@ -25,31 +22,14 @@ class Location
     #[ORM\Column(length: 255)]
     private ?string $address = null;
 
-    #[ORM\Column]
+    #[ORM\Column(name: "is_active", type: "boolean")]
     private ?bool $isActive = true;
 
-    // 🔥 NUEVOS CAMPOS PARA EL MAPA
     #[ORM\Column(type: 'float', nullable: true)]
     private ?float $latitude = null;
 
     #[ORM\Column(type: 'float', nullable: true)]
     private ?float $longitude = null;
-
-    /**
-     * @var Collection<int, VehicleLocationStock>
-     */
-    #[ORM\OneToMany(
-        targetEntity: VehicleLocationStock::class,
-        mappedBy: 'location',
-        cascade: ['persist', 'remove'],
-        orphanRemoval: true
-    )]
-    private Collection $stocks;
-
-    public function __construct()
-    {
-        $this->stocks = new ArrayCollection();
-    }
 
     public function getId(): ?int
     {
@@ -89,26 +69,25 @@ class Location
         return $this;
     }
 
-    public function isActive(): ?bool
+    public function isActive(): bool
     {
-        return $this->isActive;
+        return $this->isActive === true;
     }
 
-    public function setIsActive(bool $isActive): static
+    public function setIsActive(bool $active): static
     {
-        $this->isActive = $isActive;
+        $this->isActive = $active;
         return $this;
     }
 
-    // 🔥 GETTERS Y SETTERS DE LAT/LON
     public function getLatitude(): ?float
     {
         return $this->latitude;
     }
 
-    public function setLatitude(?float $latitude): static
+    public function setLatitude(?float $lat): static
     {
-        $this->latitude = $latitude;
+        $this->latitude = $lat;
         return $this;
     }
 
@@ -117,41 +96,9 @@ class Location
         return $this->longitude;
     }
 
-    public function setLongitude(?float $longitude): static
+    public function setLongitude(?float $lon): static
     {
-        $this->longitude = $longitude;
+        $this->longitude = $lon;
         return $this;
-    }
-
-    /**
-     * @return Collection<int, VehicleLocationStock>
-     */
-    public function getStocks(): Collection
-    {
-        return $this->stocks;
-    }
-
-    public function addStock(VehicleLocationStock $stock): static
-    {
-        if (!$this->stocks->contains($stock)) {
-            $this->stocks->add($stock);
-            $stock->setLocation($this);
-        }
-        return $this;
-    }
-
-    public function removeStock(VehicleLocationStock $stock): static
-    {
-        if ($this->stocks->removeElement($stock)) {
-            if ($stock->getLocation() === $this) {
-                $stock->setLocation(null);
-            }
-        }
-        return $this;
-    }
-
-    public function __toString(): string
-    {
-        return $this->name ?? 'Ubicación #' . ($this->id ?? 0);
     }
 }

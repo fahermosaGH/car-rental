@@ -331,6 +331,42 @@ class ReservationController extends AbstractController
             'daysToStart'    => $daysToStart,
         ]);
     }
+#[Route('/{id}/rating', name: 'api_reservations_rating', methods: ['POST'])]
+public function rating(
+    int $id,
+    Request $request,
+    EntityManagerInterface $em,
+    #[CurrentUser] ?User $user = null
+): JsonResponse {
 
+    if (!$user) {
+        return $this->json(['error' => 'Unauthorized'], 401);
+    }
+
+    /** @var Reservation|null $reservation */
+    $reservation = $em->getRepository(Reservation::class)->find($id);
+    if (!$reservation) {
+        return $this->json(['error' => 'Reserva no encontrada'], 404);
+    }
+
+    if ($reservation->getUser()?->getId() !== $user->getId()) {
+        return $this->json(['error' => 'Forbidden'], 403);
+    }
+
+    $data = json_decode($request->getContent(), true);
+    $rating  = $data['rating'] ?? null;
+    $comment = $data['comment'] ?? null;
+
+    if (!$rating || $rating < 1 || $rating > 5) {
+        return $this->json(['error' => 'Rating inválido (1-5)'], 422);
+    }
+
+    $reservation->setRating($rating);
+    $reservation->setRatingComment($comment);
+
+    $em->flush();
+
+    return $this->json(['message' => 'Calificación guardada']);
+}
 }
 

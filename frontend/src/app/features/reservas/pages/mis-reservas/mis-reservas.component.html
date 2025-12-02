@@ -1,9 +1,7 @@
 <div class="reservas-wrapper">
   <h2>Mis reservas</h2>
 
-  <div *ngIf="loading" class="estado">
-    Cargando tus reservas...
-  </div>
+  <div *ngIf="loading" class="estado">Cargando tus reservas...</div>
 
   <div *ngIf="!loading && errorMsg" class="estado error">
     {{ errorMsg }}
@@ -13,15 +11,10 @@
     Todavía no tenés reservas.
   </div>
 
-  <!-- Toolbar de orden -->
-  <div
-    class="toolbar"
-    *ngIf="!loading && !errorMsg && reservas.length > 0"
-  >
+  <div *ngIf="!loading && reservas.length > 0" class="toolbar">
     <span class="toolbar-label">Ordenar por:</span>
 
     <button
-      type="button"
       class="toolbar-btn"
       [class.active]="sortField === 'startAt'"
       (click)="setSort('startAt')"
@@ -33,7 +26,6 @@
     </button>
 
     <button
-      type="button"
       class="toolbar-btn"
       [class.active]="sortField === 'endAt'"
       (click)="setSort('endAt')"
@@ -45,7 +37,6 @@
     </button>
 
     <button
-      type="button"
       class="toolbar-btn"
       [class.active]="sortField === 'status'"
       (click)="setSort('status')"
@@ -58,7 +49,7 @@
   </div>
 
   <table
-    *ngIf="!loading && !errorMsg && reservas.length > 0"
+    *ngIf="!loading && reservas.length > 0"
     class="tabla-reservas"
   >
     <thead>
@@ -74,6 +65,7 @@
         <th>Acciones</th>
       </tr>
     </thead>
+
     <tbody>
       <tr *ngFor="let r of reservasOrdenadas">
         <td>#{{ r.id }}</td>
@@ -82,7 +74,8 @@
         <td>{{ r.dropoffLocation }}</td>
         <td>{{ r.startAt | date: 'shortDate' }}</td>
         <td>{{ r.endAt | date: 'shortDate' }}</td>
-        <td>{{ r.totalPrice | currency: 'ARS':'symbol' }}</td>
+        <td>{{ r.totalPrice | currency: 'ARS' }}</td>
+
         <td>
           <span
             class="badge-estado"
@@ -96,7 +89,10 @@
             {{ r.estadoLegible }}
           </span>
         </td>
+
         <td class="acciones-cell">
+
+          <!-- 👉 AQUÍ VA LA NAVEGACIÓN CON QUERY PARAM -->
           <button
             type="button"
             class="btn-link"
@@ -119,6 +115,3 @@
     </tbody>
   </table>
 </div>
-
-
-

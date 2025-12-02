@@ -13,8 +13,8 @@ interface ReservaItem {
   startAt: string;
   endAt: string;
   totalPrice: number;
-  rawStatus: string;      // estado "técnico": confirmed/cancelled
-  estadoLegible: string;  // Activa / Finalizada / Cancelada / Pendiente
+  rawStatus: string;
+  estadoLegible: string;
   daysToStart: number;
   canCancel: boolean;
 }
@@ -36,13 +36,10 @@ export class MisReservasComponent implements OnInit {
   loading = true;
   errorMsg = '';
 
-  // orden actual
   sortField: SortField = 'startAt';
   sortDirection: SortDirection = 'asc';
 
-  // estado de cancelación
   cancelandoId: number | null = null;
-
   private apiUrl = environment.apiUrl;
 
   constructor(
@@ -55,9 +52,6 @@ export class MisReservasComponent implements OnInit {
     this.cargarReservas();
   }
 
-  // =========================
-  // Carga de datos
-  // =========================
   private cargarReservas(): void {
     this.loading = true;
     this.errorMsg = '';
@@ -106,10 +100,9 @@ export class MisReservasComponent implements OnInit {
           this.aplicarOrden();
           this.loading = false;
         },
-        error: (err) => {
-          console.error('[MisReservas] error', err);
-          this.loading = false;
+        error: () => {
           this.errorMsg = 'No se pudieron cargar tus reservas.';
+          this.loading = false;
         },
       });
   }
@@ -117,8 +110,6 @@ export class MisReservasComponent implements OnInit {
   private calcularDiasHastaInicio(startAt: string): number {
     const today = new Date();
     const start = new Date(startAt);
-
-    // Normalizamos a medianoche
     today.setHours(0, 0, 0, 0);
     start.setHours(0, 0, 0, 0);
 
@@ -131,33 +122,24 @@ export class MisReservasComponent implements OnInit {
     startAt: string,
     endAt: string
   ): string {
-    const base = rawStatus || 'confirmed';
-    if (base === 'cancelled') return 'Cancelada';
-    if (base === 'pending') return 'Pendiente';
+    if (rawStatus === 'cancelled') return 'Cancelada';
+    if (rawStatus === 'pending') return 'Pendiente';
 
     const hoy = new Date();
     const fin = new Date(endAt);
-
-    if (fin.getTime() < hoy.getTime()) {
-      return 'Finalizada';
-    }
+    if (fin.getTime() < hoy.getTime()) return 'Finalizada';
 
     return 'Activa';
   }
 
   private puedeCancelar(rawStatus: string, daysToStart: number): boolean {
     if (rawStatus === 'cancelled') return false;
-    // Menos de 2 días → no se puede cancelar online
     if (daysToStart < 2) return false;
     return true;
   }
 
-  // =========================
-  // Ordenamiento
-  // =========================
   setSort(field: SortField): void {
     if (this.sortField === field) {
-      // mismo campo → toggle asc/desc
       this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
     } else {
       this.sortField = field;
@@ -194,19 +176,21 @@ export class MisReservasComponent implements OnInit {
     });
   }
 
-  // =========================
-  // Acciones
-  // =========================
+  // ======================================
+  // 👉 ACÁ VIENE EL CAMBIO PARA ENVIAR ESTADO
+  // ======================================
   verDetalle(reserva: ReservaItem): void {
-    // Reutilizamos /cotizar/confirmacion/:id como detalle de reserva
-    this.router.navigate(['/cotizar/confirmacion', reserva.id]);
+    this.router.navigate(['/cotizar/confirmacion', reserva.id], {
+      queryParams: {
+        estado: reserva.estadoLegible
+      }
+    });
   }
 
   confirmarCancelacion(reserva: ReservaItem): void {
     if (!reserva.canCancel) {
       alert(
-        'Esta reserva ya no puede cancelarse desde la web. ' +
-          'Si necesitás ayuda, contactá a atención al cliente.'
+        'Esta reserva ya no puede cancelarse desde la web. Contactá a atención al cliente.'
       );
       return;
     }
@@ -216,28 +200,19 @@ export class MisReservasComponent implements OnInit {
       ? Math.round(reserva.totalPrice * 0.2)
       : 0;
 
-    let politicaLinea = '';
-    if (masDe15Dias) {
-      politicaLinea =
-        'Política: la cancelación es sin cargo (reembolso total del importe abonado).';
-    } else {
-      politicaLinea =
-        'Política: se aplicará un cargo del 20 % sobre el total de tu reserva.';
-    }
+    const politicaLinea = masDe15Dias
+      ? 'Política: la cancelación es sin cargo.'
+      : 'Política: se aplicará un cargo del 20% del total.';
 
     const mensaje =
-      `Estás por cancelar la reserva N.º ${reserva.id}.\n\n` +
-      `Vehículo: ${reserva.vehicleName}\n` +
-      `Retiro: ${reserva.startAt} - ${reserva.pickupLocation}\n` +
-      `Devolución: ${reserva.endAt} - ${reserva.dropoffLocation}\n\n` +
-      `${politicaLinea}\n` +
+      `Estás por cancelar la reserva N.º ${reserva.id}\n\n` +
+      `${politicaLinea}\n\n` +
       (!masDe15Dias
-        ? `Cargo estimado: ARS ${cargoEstimado.toLocaleString('es-AR')}.\n\n`
-        : '\n') +
-      '¿Confirmás que querés cancelar la reserva?';
+        ? `Cargo estimado: ARS ${cargoEstimado.toLocaleString('es-AR')}\n\n`
+        : '') +
+      '¿Confirmás la cancelación?';
 
-    const ok = window.confirm(mensaje);
-    if (!ok) return;
+    if (!confirm(mensaje)) return;
 
     this.ejecutarCancelacion(reserva);
   }
@@ -250,46 +225,20 @@ export class MisReservasComponent implements OnInit {
     this.cancelandoId = reserva.id;
 
     this.http
-      .post<{
-        message: string;
-        status: string;
-        penaltyPercent?: number;
-        penaltyAmount?: string;
-      }>(
-        `${this.apiUrl}/reservations/${reserva.id}/cancel`,
-        {},
-        { headers }
-      )
+      .post(`${this.apiUrl}/reservations/${reserva.id}/cancel`, {}, { headers })
       .subscribe({
-        next: (res) => {
-          this.cancelandoId = null;
-
-          reserva.rawStatus = res.status ?? 'cancelled';
+        next: () => {
+          reserva.rawStatus = 'cancelled';
           reserva.estadoLegible = 'Cancelada';
           reserva.canCancel = false;
-
-          // refrescamos el orden por si cambia la posición
           this.aplicarOrden();
-
-          alert(res.message || 'Reserva cancelada correctamente.');
-        },
-        error: (err) => {
-          console.error('[MisReservas] cancelar error', err);
           this.cancelandoId = null;
-
-          if (err.status === 422 || err.status === 409) {
-            alert(err.error?.message || 'No se pudo cancelar la reserva.');
-          } else if (err.status === 401) {
-            alert(
-              'Tu sesión expiró. Iniciá sesión nuevamente para gestionar reservas.'
-            );
-          } else {
-            alert('Error inesperado al cancelar la reserva.');
-          }
+          alert('Reserva cancelada correctamente.');
+        },
+        error: () => {
+          this.cancelandoId = null;
+          alert('No se pudo cancelar la reserva.');
         },
       });
   }
 }
-
-
-

@@ -9,7 +9,8 @@
     </header>
 
     <div class="conf-layout">
-      <!-- Columna izquierda: detalle -->
+      
+      <!-- Panel Izquierdo -->
       <article class="conf-detalle">
         <h2>{{ reserva.vehicleName }}</h2>
         <p class="categoria">{{ reserva.category || 'Sin categoría' }}</p>
@@ -20,6 +21,7 @@
             <p>{{ reserva.startAt | date: 'dd/MM/yyyy' }}</p>
             <p>{{ reserva.pickupLocationName }}</p>
           </div>
+
           <div>
             <h3>Devolución</h3>
             <p>{{ reserva.endAt | date: 'dd/MM/yyyy' }}</p>
@@ -32,30 +34,57 @@
             <h3>Estado</h3>
             <p>{{ reserva.status | titlecase }}</p>
           </div>
+
           <div>
             <h3>Total</h3>
             <p>{{ reserva.totalPrice || 0 | currency: 'ARS' }}</p>
           </div>
         </div>
 
-        <section class="extras" *ngIf="reserva.extras?.length">
-          <h3>Extras incluidos</h3>
-          <ul>
-            <li *ngFor="let e of reserva.extras">
-              <span>{{ e.name }}</span>
-              <span>{{ e.price | currency: 'ARS' }}</span>
-            </li>
-          </ul>
+        <!-- ⭐ CALIFICACIÓN SOLO SI FINALIZADA -->
+        <section 
+          class="rating-box" 
+          *ngIf="estadoDesdeMisReservas === 'Finalizada'"
+        >
+          <h3>Calificá tu experiencia</h3>
+
+          <!-- ESTRELLAS CLICKEABLES -->
+          <div class="stars">
+            <span 
+              *ngFor="let s of [1,2,3,4,5]"
+              class="star"
+              [class.filled]="rating >= s"
+              (click)="setRating(s)"
+            >
+              ★
+            </span>
+          </div>
+
+          <textarea
+            [(ngModel)]="ratingComment"
+            placeholder="Comentario opcional..."
+            rows="3"
+            class="rating-comment"
+          ></textarea>
+
+          <button 
+            class="btn-rate" 
+            (click)="guardarRating()" 
+            [disabled]="ratingEnviando"
+          >
+            {{ ratingEnviando ? 'Guardando...' : 'Guardar calificación' }}
+          </button>
+
+          <p class="rating-msg" *ngIf="ratingMensaje">{{ ratingMensaje }}</p>
+          <p class="rating-error" *ngIf="ratingError">{{ ratingError }}</p>
         </section>
+
       </article>
 
-      <!-- Columna derecha: comprobante -->
+      <!-- Panel Derecho -->
       <aside class="conf-comprobante">
         <h2>Comprobante de reserva</h2>
-        <p>
-          Ingresá un correo electrónico para recibir un comprobante con el
-          detalle de tu viaje.
-        </p>
+        <p>Ingresá un correo electrónico para recibir el comprobante.</p>
 
         <input
           type="email"
@@ -76,14 +105,11 @@
         <p class="msg-error" *ngIf="errorEnvio">{{ errorEnvio }}</p>
 
         <div class="acciones">
-          <button type="button" (click)="volverACotizar()">
-            ← Volver a cotizar
-          </button>
-          <button type="button" (click)="irAMisReservas()">
-            Ver mis reservas
-          </button>
+          <button type="button" (click)="volverACotizar()">← Volver a cotizar</button>
+          <button type="button" (click)="irAMisReservas()">Ver mis reservas</button>
         </div>
       </aside>
+
     </div>
   </ng-container>
 
@@ -95,5 +121,3 @@
     {{ error }}
   </div>
 </section>
-
-

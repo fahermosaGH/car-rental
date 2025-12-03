@@ -9,10 +9,9 @@ import { VehicleOption } from '../../models/quote';
   standalone: true,
   imports: [CommonModule, RouterModule],
   templateUrl: './resultados.component.html',
-  styleUrls: ['./resultados.component.css']
+  styleUrls: ['./resultados.component.css'],
 })
 export class ResultadosComponent implements OnInit {
-
   resultados: VehicleOption[] = [];
   dias = 1;
 
@@ -25,7 +24,8 @@ export class ResultadosComponent implements OnInit {
 
   order: 'asc' | 'desc' = 'asc';
 
-  availableCategories = ['Todos', 'Económico', 'Compacto', 'SUV', 'Camioneta', 'Sedán', 'Premium', 'Largos'];
+  // 🔥 Ahora se rellenan dinámicamente según los autos cargados
+  availableCategories: string[] = ['Todos'];
   selectedCategory: string = 'Todos';
 
   constructor(
@@ -35,7 +35,7 @@ export class ResultadosComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.route.queryParamMap.subscribe(params => {
+    this.route.queryParamMap.subscribe((params) => {
       this.startAt = params.get('startAt') || '';
       this.endAt = params.get('endAt') || '';
       this.pickupLocationId = +(params.get('pickupLocationId') || 1);
@@ -45,7 +45,8 @@ export class ResultadosComponent implements OnInit {
       this.selectedCategory = cat && cat.trim() !== '' ? cat : 'Todos';
 
       if (this.startAt && this.endAt) {
-        const diffMs = new Date(this.endAt).getTime() - new Date(this.startAt).getTime();
+        const diffMs =
+          new Date(this.endAt).getTime() - new Date(this.startAt).getTime();
         this.dias = Math.max(1, Math.ceil(diffMs / 86400000));
       }
 
@@ -53,47 +54,68 @@ export class ResultadosComponent implements OnInit {
     });
   }
 
+  private refrescarCategoriasDisponibles(): void {
+    const categoriasUnicas = Array.from(
+      new Set(
+        this.resultados
+          .map((r) => r.category)
+          .filter((c): c is string => !!c && c.trim() !== '')
+      )
+    );
+
+    this.availableCategories = ['Todos', ...categoriasUnicas];
+
+    // Si estoy parado en una categoría que ya no existe en los resultados, vuelvo a "Todos"
+    if (
+      this.selectedCategory !== 'Todos' &&
+      !categoriasUnicas.includes(this.selectedCategory)
+    ) {
+      this.selectedCategory = 'Todos';
+    }
+  }
+
   private cargarResultados() {
     this.cargando = true;
 
-    // ⛔ SI ES "Todos" → NO LLAMAR /available
     if (this.selectedCategory === 'Todos') {
-      console.log('Cargar todos los vehículos sin filtro de disponibilidad');
-
       this.cotizarService.buscarVehiculos().subscribe({
         next: (all) => {
           this.resultados = all;
+          this.refrescarCategoriasDisponibles();
           this.ordenarPorPrecio(this.order);
           this.cargando = false;
         },
         error: () => {
           this.resultados = [];
+          this.refrescarCategoriasDisponibles();
           this.cargando = false;
-        }
+        },
       });
-
       return;
     }
 
-    // SI ES OTRA CATEGORÍA → usar disponibilidad real
-    const category = this.selectedCategory !== 'Todos' ? this.selectedCategory : undefined;
+    const category = this.selectedCategory;
 
-    this.cotizarService.getAvailableVehicles({
-      pickupLocationId: this.pickupLocationId,
-      startAt: this.startAt,
-      endAt: this.endAt,
-      category
-    }).subscribe({
-      next: (data) => {
-        this.resultados = data;
-        this.ordenarPorPrecio(this.order);
-        this.cargando = false;
-      },
-      error: () => {
-        this.resultados = [];
-        this.cargando = false;
-      }
-    });
+    this.cotizarService
+      .getAvailableVehicles({
+        pickupLocationId: this.pickupLocationId,
+        startAt: this.startAt,
+        endAt: this.endAt,
+        category,
+      })
+      .subscribe({
+        next: (data) => {
+          this.resultados = data;
+          this.refrescarCategoriasDisponibles();
+          this.ordenarPorPrecio(this.order);
+          this.cargando = false;
+        },
+        error: () => {
+          this.resultados = [];
+          this.refrescarCategoriasDisponibles();
+          this.cargando = false;
+        },
+      });
   }
 
   ordenarPorPrecio(dir: 'asc' | 'desc') {
@@ -111,7 +133,7 @@ export class ResultadosComponent implements OnInit {
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { category: cat !== 'Todos' ? cat : null },
-      queryParamsHandling: 'merge'
+      queryParamsHandling: 'merge',
     });
   }
 
@@ -126,8 +148,8 @@ export class ResultadosComponent implements OnInit {
         startAt: this.startAt,
         endAt: this.endAt,
         pickupLocationId: this.pickupLocationId,
-        dropoffLocationId: this.dropoffLocationId
-      }
+        dropoffLocationId: this.dropoffLocationId,
+      },
     });
   }
 }

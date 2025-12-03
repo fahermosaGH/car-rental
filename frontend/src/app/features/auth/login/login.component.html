@@ -12,14 +12,20 @@
       <input type="password" name="password" [(ngModel)]="password" required />
     </label>
 
+    <!-- 🔹 Nuevo: link de "Olvidaste tu contraseña?" -->
+    <p class="forgot-hint">
+      <a routerLink="/auth/forgot-password">¿Olvidaste tu contraseña?</a>
+    </p>
+
     <button type="submit" [disabled]="cargando">Entrar</button>
 
     <p class="error" *ngIf="errorMsg">{{ errorMsg }}</p>
 
-    <!-- 👇 Nuevo: link a registro -->
+    <!-- 👇 Ya lo tenías -->
     <p class="register-hint">
       ¿Todavía no tenés cuenta?
       <a routerLink="/auth/register">Registrate acá</a>
     </p>
   </form>
 </div>
+

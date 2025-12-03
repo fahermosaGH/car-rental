@@ -162,6 +162,13 @@ export class AuthService {
       .pipe(catchError((err) => throwError(() => err)));
   }
 
+  resetPassword(email: string, newPassword: string) {
+    return this.http.post(`${this.apiUrl}/forgot-password`, {
+      email,
+      newPassword,
+    });
+  }
+
   me(): Observable<MeResponse> {
     const headers = this.token
       ? new HttpHeaders({ Authorization: `Bearer ${this.token}` })

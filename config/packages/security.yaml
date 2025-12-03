@@ -56,6 +56,8 @@ security:
     - { path: ^/api/login_check, roles: PUBLIC_ACCESS }
     - { path: ^/api/register, roles: PUBLIC_ACCESS }
 
+    - { path: ^/api/forgot-password, roles: PUBLIC_ACCESS, methods: [POST, OPTIONS] }
+
     - { path: ^/api/locations, roles: PUBLIC_ACCESS, methods: [GET, OPTIONS] }
     - { path: ^/api/vehicles/available, roles: PUBLIC_ACCESS, methods: [GET, OPTIONS] }
     - { path: ^/api/vehicles, roles: PUBLIC_ACCESS, methods: [GET, OPTIONS] }

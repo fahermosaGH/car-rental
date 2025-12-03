@@ -1,64 +1,123 @@
-<section class="perfil-page" *ngIf="!loading; else loadingTpl">
-  <h1>Mi perfil</h1>
-  <p class="subtitle">
-    Estos son los datos personales asociados a tu cuenta para realizar reservas.
-  </p>
+<div class="perfil-wrapper">
+  <h2>Mi perfil</h2>
 
-  <div class="perfil-card">
-    <div class="perfil-row">
-      <span class="label">Nombre completo</span>
-      <span class="value">{{ perfil.fullName || 'No especificado' }}</span>
+  <div *ngIf="loading" class="estado">Cargando perfil...</div>
+  <div *ngIf="!loading && error" class="estado error">{{ error }}</div>
+
+  <form
+    *ngIf="!loading && !error && perfil"
+    (ngSubmit)="guardar()"
+    novalidate
+  >
+    <div class="grid">
+      <div class="field">
+        <label>Nombre *</label>
+        <input
+          type="text"
+          [(ngModel)]="perfil.firstName"
+          name="firstName"
+        />
+      </div>
+      <div class="field">
+        <label>Apellido *</label>
+        <input
+          type="text"
+          [(ngModel)]="perfil.lastName"
+          name="lastName"
+        />
+      </div>
     </div>
 
-    <div class="perfil-row">
-      <span class="label">Correo electrónico</span>
-      <span class="value">{{ perfil.email || 'No especificado' }}</span>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" [value]="perfil.email" disabled />
+      <small class="help">
+        El email se usa para iniciar sesión y no puede cambiarse desde aquí.
+      </small>
     </div>
 
-    <div class="perfil-row">
-      <span class="label">Número de teléfono</span>
-      <span class="value">{{ perfil.phone || 'No especificado' }}</span>
+    <div class="grid">
+      <div class="field">
+        <label>Teléfono móvil *</label>
+        <input
+          type="text"
+          [(ngModel)]="perfil.phone"
+          name="phone"
+        />
+      </div>
+      <div class="field">
+        <label>DNI / Pasaporte *</label>
+        <input
+          type="text"
+          [(ngModel)]="perfil.documentNumber"
+          name="documentNumber"
+        />
+      </div>
     </div>
 
-    <div class="perfil-row">
-      <span class="label">DNI o Pasaporte</span>
-      <span class="value">{{ perfil.documentNumber || 'No especificado' }}</span>
+    <div class="field">
+      <label>Fecha de nacimiento *</label>
+      <input
+        type="date"
+        [(ngModel)]="perfil.birthDate"
+        name="birthDate"
+      />
+      <small class="help">
+        Debés tener al menos 21 años para alquilar.
+      </small>
     </div>
 
-    <div class="perfil-row">
-      <span class="label">Fecha de nacimiento</span>
-      <span class="value">{{ perfil.birthDate || 'No especificado' }}</span>
+    <div class="field">
+      <label>Dirección de residencia</label>
+      <input
+        type="text"
+        [(ngModel)]="perfil.address"
+        name="address"
+      />
     </div>
 
-    <div class="perfil-row">
-      <span class="label">Dirección de residencia</span>
-      <span class="value">{{ perfil.address || 'No especificado' }}</span>
+    <h3>Licencia de conducir</h3>
+
+    <div class="grid">
+      <div class="field">
+        <label>Número de licencia *</label>
+        <input
+          type="text"
+          [(ngModel)]="perfil.licenseNumber"
+          name="licenseNumber"
+        />
+      </div>
+      <div class="field">
+        <label>País de emisión *</label>
+        <input
+          type="text"
+          [(ngModel)]="perfil.licenseCountry"
+          name="licenseCountry"
+        />
+      </div>
     </div>
 
-    <div class="perfil-row">
-      <span class="label">Número de licencia de conducir</span>
-      <span class="value">{{ perfil.licenseNumber || 'No especificado' }}</span>
+    <div class="field">
+      <label>Fecha de vencimiento *</label>
+      <input
+        type="date"
+        [(ngModel)]="perfil.licenseExpiry"
+        name="licenseExpiry"
+      />
     </div>
 
-    <div class="perfil-row">
-      <span class="label">Fecha de vencimiento de la licencia</span>
-      <span class="value">{{ perfil.licenseExpiry || 'No especificado' }}</span>
+    <div class="mensajes">
+      <p class="ok" *ngIf="successMsg">{{ successMsg }}</p>
+      <p class="error" *ngIf="!successMsg && error">{{ error }}</p>
     </div>
 
-    <div class="perfil-row">
-      <span class="label">País de emisión de la licencia</span>
-      <span class="value">{{ perfil.licenseCountry || 'No especificado' }}</span>
-    </div>
+    <button
+      type="submit"
+      class="btn-primary"
+      [disabled]="saving"
+    >
+      {{ saving ? 'Guardando...' : 'Guardar cambios' }}
+    </button>
+  </form>
+</div>
 
-    <div class="perfil-footer">
-      <p>
-        Para modificar estos datos, usá la opción
-        <strong>"Actualizar datos personales"</strong>, que corresponde al CU 13.
-      </p>
-    </div>
-  </div>
-</section>
-
-<ng-template #loadingTpl>
-  <div class="loading">Cargando tu perfil...</div>
-</ng-template>

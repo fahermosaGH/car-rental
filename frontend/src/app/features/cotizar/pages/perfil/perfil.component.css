@@ -1,65 +1,88 @@
-.perfil-page {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 2rem 1.5rem;
-}
-
-.perfil-page h1 {
-  margin: 0 0 0.25rem;
-  font-size: 1.7rem;
-}
-
-.subtitle {
-  margin: 0 0 1.5rem;
-  color: #6b7280;
-  font-size: 0.95rem;
-}
-
-.perfil-card {
+.perfil-wrapper {
   background: #ffffff;
-  border-radius: 16px;
-  padding: 1.5rem 1.7rem;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.1);
-  border: 1px solid rgba(148, 163, 184, 0.4);
+  padding: 1.5rem 2rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.perfil-wrapper h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.field {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.25rem;
 }
 
-.perfil-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px dashed #e5e7eb;
+.field label {
+  font-weight: 600;
+  font-size: 0.9rem;
 }
 
-.perfil-row:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.label {
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #9ca3af;
-}
-
-.value {
+.field input {
+  padding: 0.5rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
   font-size: 0.95rem;
-  color: #111827;
-  font-weight: 500;
 }
 
-.perfil-footer {
-  margin-top: 1.2rem;
-  font-size: 0.85rem;
-  color: #6b7280;
+.field input:disabled {
+  background: #f3f3f3;
+  color: #777;
 }
 
-.loading {
-  padding: 3rem 1rem;
-  text-align: center;
-  color: #6b7280;
+.help {
+  font-size: 0.75rem;
+  color: #666;
 }
+
+h3 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.estado {
+  font-size: 0.95rem;
+}
+
+.estado.error,
+.error {
+  color: #c92a2a;
+}
+
+.ok {
+  color: #0f7b34;
+}
+
+.mensajes {
+  margin-top: 0.75rem;
+  min-height: 1.2rem;
+}
+
+.btn-primary {
+  margin-top: 1rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 999px;
+  border: none;
+  background: #007bff;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-primary:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+

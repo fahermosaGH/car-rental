@@ -30,28 +30,57 @@ export interface RegisterPayload {
   password: string;
 }
 
-// 👇 Nuevo: modelo de usuario para el front
+// Modelo de usuario para el front
 export interface AuthUser {
   email: string;
   roles: string[];
+}
+
+// Perfil que devuelve el backend
+export interface ProfileResponse {
+  email: string;
+  firstName: string;
+  lastName: string;
+  createdAt: string;
+
+  phone: string | null;
+  documentNumber: string | null;
+  birthDate: string | null;
+  address: string | null;
+  licenseNumber: string | null;
+  licenseCountry: string | null;
+  licenseExpiry: string | null;
+
+  profileComplete: boolean;
+}
+
+// Payload para actualizar perfil
+export interface ProfileUpdatePayload {
+  firstName: string;
+  lastName: string;
+  phone: string | null;
+  documentNumber: string | null;
+  birthDate: string | null;
+  address: string | null;
+  licenseNumber: string | null;
+  licenseCountry: string | null;
+  licenseExpiry: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private apiUrl = environment.apiUrl; // ej: http://127.0.0.1:8000/api
 
-  /** Emite true/false cuando cambia el estado de autenticación */
   readonly authChanges = new BehaviorSubject<boolean>(this.isLoggedIn());
 
-  /** Nuevo: emite el usuario actual (email + roles) o null */
   private readonly userSubject = new BehaviorSubject<AuthUser | null>(null);
   readonly user$ = this.userSubject.asObservable();
 
   constructor(private http: HttpClient, private router: Router) {
-    // Si ya hay token al iniciar la app, intentar cargar el usuario
     if (this.isLoggedIn()) {
       this.me().subscribe({
-        next: (me) => this.userSubject.next({ email: me.email, roles: me.roles }),
+        next: (me) =>
+          this.userSubject.next({ email: me.email, roles: me.roles }),
         error: () => this.userSubject.next(null),
       });
     }
@@ -78,10 +107,10 @@ export class AuthService {
 
   logout(): void {
     this.token = null;
-    this.userSubject.next(null); // 👈 limpiar usuario también
+    this.userSubject.next(null);
   }
 
-  // === Return URL helpers (para volver donde estabas tras loguearte) ===
+  // === Return URL helpers ===
   setReturnUrl(url: string): void {
     try {
       sessionStorage.setItem(RETURN_URL_KEY, url);
@@ -98,29 +127,24 @@ export class AuthService {
     }
   }
 
-  /**
-   * Si no hay sesión, guarda returnUrl y redirige a /auth/login.
-   * Devuelve true si ya estás logueado, false si redirigió.
-   */
   requireLoginOrRedirect(currentUrl: string): boolean {
     if (this.isLoggedIn()) return true;
     this.setReturnUrl(currentUrl);
-    this.router.navigate(['/auth/login'], { queryParams: { returnUrl: currentUrl } });
+    this.router.navigate(['/auth/login'], {
+      queryParams: { returnUrl: currentUrl },
+    });
     return false;
   }
 
   // === API calls ===
 
-  /** Login contra /api/login_check (LexikJWT). Guarda el token. */
   login(email: string, password: string): Observable<string> {
     return this.http
       .post<AuthResponse>(`${this.apiUrl}/login_check`, { email, password })
       .pipe(
         tap((res) => {
-          // guardar token
           this.token = res.token;
 
-          // 👇 una vez que tenemos token, pedimos /me para rellenar user$
           this.me().subscribe({
             next: (me) =>
               this.userSubject.next({ email: me.email, roles: me.roles }),
@@ -132,24 +156,44 @@ export class AuthService {
       );
   }
 
-  /** Registro simple contra /api/register. */
   register(payload: RegisterPayload): Observable<{ message: string }> {
     return this.http
       .post<{ message: string }>(`${this.apiUrl}/register`, payload)
       .pipe(catchError((err) => throwError(() => err)));
   }
 
-  /** Devuelve el usuario actual desde /api/me. */
   me(): Observable<MeResponse> {
-    const headers =
-      this.token
-        ? new HttpHeaders({ Authorization: `Bearer ${this.token}` })
-        : undefined;
+    const headers = this.token
+      ? new HttpHeaders({ Authorization: `Bearer ${this.token}` })
+      : undefined;
 
     return this.http
       .get<MeResponse>(`${this.apiUrl}/me`, { headers })
       .pipe(catchError((err) => throwError(() => err)));
   }
+
+  getProfile(): Observable<ProfileResponse> {
+    const headers = this.token
+      ? new HttpHeaders({ Authorization: `Bearer ${this.token}` })
+      : undefined;
+
+    return this.http
+      .get<ProfileResponse>(`${this.apiUrl}/profile/me`, { headers })
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  updateProfile(payload: ProfileUpdatePayload): Observable<ProfileResponse> {
+    const headers = this.token
+      ? new HttpHeaders({ Authorization: `Bearer ${this.token}` })
+      : undefined;
+
+    return this.http
+      .put<ProfileResponse>(`${this.apiUrl}/profile`, payload, { headers })
+      .pipe(catchError((err) => throwError(() => err)));
+  }
 }
+
+
+
 
 

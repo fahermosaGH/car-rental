@@ -1,61 +1,88 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AuthService } from '../../../../core/services/auth.service';
+import { FormsModule } from '@angular/forms';
 
-interface PerfilData {
-  fullName: string;
-  email: string;
-  phone: string;
-  documentNumber: string;
-  birthDate: string;
-  address: string;
-  licenseNumber: string;
-  licenseExpiry: string;
-  licenseCountry: string;
-}
+import {
+  AuthService,
+  ProfileResponse,
+  ProfileUpdatePayload,
+} from '../../../../core/services/auth.service';
 
 @Component({
   selector: 'app-perfil',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './perfil.component.html',
   styleUrls: ['./perfil.component.css'],
 })
 export class PerfilComponent implements OnInit {
-  private auth = inject(AuthService);
-
-  perfil: PerfilData = {
-    fullName: '',
-    email: '',
-    phone: '',
-    documentNumber: '',
-    birthDate: '',
-    address: '',
-    licenseNumber: '',
-    licenseExpiry: '',
-    licenseCountry: '',
-  };
+  perfil: ProfileResponse | null = null;
 
   loading = true;
+  saving = false;
+  error = '';
+  successMsg = '';
+
+  constructor(private auth: AuthService) {}
 
   ngOnInit(): void {
-    const token = this.auth.token;
+    this.auth.getProfile().subscribe({
+      next: (p) => {
+        this.perfil = { ...p };
+        this.loading = false;
+      },
+      error: () => {
+        this.error = 'No se pudo cargar tu perfil.';
+        this.loading = false;
+      },
+    });
+  }
 
-    if (token) {
-      try {
-        const payloadPart = token.split('.')[1];
-        const payloadJson = atob(payloadPart);
-        const payload = JSON.parse(payloadJson);
+  guardar(): void {
+    this.error = '';
+    this.successMsg = '';
 
-        // Lo que seguro tenemos del JWT
-        this.perfil.email = payload.username ?? payload.email ?? '';
-        this.perfil.fullName = payload.fullName ?? payload.name ?? '';
-      } catch {
-        // si falla el decode del token, dejamos todo vacío
-      }
+    if (!this.perfil) return;
+
+    // Validaciones mínimas en front
+    if (!this.perfil.firstName?.trim() || !this.perfil.lastName?.trim()) {
+      this.error = 'Nombre y apellido son obligatorios.';
+      return;
     }
 
-    // Por ahora, el resto de campos queda “No especificado” hasta CU13
-    this.loading = false;
+    if (!this.perfil.phone?.trim()) {
+      this.error = 'El teléfono es obligatorio.';
+      return;
+    }
+
+    const payload: ProfileUpdatePayload = {
+      firstName: this.perfil.firstName.trim(),
+      lastName: this.perfil.lastName.trim(),
+      phone: this.perfil.phone?.trim() || null,
+      documentNumber: this.perfil.documentNumber?.trim() || null,
+      birthDate: this.perfil.birthDate || null,      // viene como yyyy-MM-dd
+      address: this.perfil.address?.trim() || null,
+      licenseNumber: this.perfil.licenseNumber?.trim() || null,
+      licenseCountry: this.perfil.licenseCountry?.trim() || null,
+      licenseExpiry: this.perfil.licenseExpiry || null, // yyyy-MM-dd
+    };
+
+    this.saving = true;
+
+    this.auth.updateProfile(payload).subscribe({
+      next: (res) => {
+        this.saving = false;
+        this.perfil = { ...res };
+        this.successMsg = 'Tus datos se guardaron correctamente.';
+      },
+      error: (err) => {
+        this.saving = false;
+        this.error =
+          err?.error?.message ||
+          'No se pudo guardar tu perfil. Intentá nuevamente.';
+      },
+    });
   }
 }
+
+

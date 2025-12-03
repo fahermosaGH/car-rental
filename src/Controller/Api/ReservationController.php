@@ -46,6 +46,20 @@ class ReservationController extends AbstractController
             return $this->json(['error' => 'Faltan campos obligatorios'], 422);
         }
 
+        if (!$user) {
+            return $this->json([
+                'error' => 'Debés iniciar sesión para crear una reserva.'
+            ], 401);
+        }
+
+        // ⚠️ Nuevo: exigir perfil completo
+        if (!$user->isProfileComplete()) {
+            return $this->json([
+                'error' => 'Para confirmar una reserva necesitás completar tu perfil (datos personales y licencia).',
+                'code'  => 'PROFILE_INCOMPLETE',
+            ], 422);
+        }
+
         $vehicle = $vehicleRepo->find($data['vehicleId']);
         $pickup  = $locationRepo->find($data['pickupLocationId']);
         $dropoff = $locationRepo->find($data['dropoffLocationId']);

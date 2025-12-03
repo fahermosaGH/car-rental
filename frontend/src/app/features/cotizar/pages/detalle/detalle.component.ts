@@ -50,7 +50,7 @@ export class DetalleComponent implements OnInit {
   creating = false;
   errorMsg = '';
 
-  // --- NUEVO: seguros estilo Hertz (precio por reserva) ---
+  // --- Seguros estilo Hertz (precio por reserva) ---
   seguros: SeguroOption[] = [
     {
       id: 'smart',
@@ -74,7 +74,7 @@ export class DetalleComponent implements OnInit {
 
   selectedSeguroId: string | null = null;
 
-  // --- NUEVO: adicionales estilo Hertz ---
+  // --- Adicionales estilo Hertz ---
   adicionales: AdicionalOption[] = [
     {
       id: 'booster',
@@ -308,11 +308,49 @@ export class DetalleComponent implements OnInit {
       return;
     }
 
+    // 1) si no está logueado → mismo flujo de antes
     if (!this.auth.isLoggedIn()) {
       alert('🔐 Necesitás iniciar sesión para continuar con la reserva.');
       this.redirigirALogin();
       return;
     }
+
+    // 2) si está logueado → verificamos que el perfil esté completo
+    this.verificarPerfilYCrear();
+  }
+
+  /** Verifica que el perfil esté completo antes de crear la reserva */
+  private verificarPerfilYCrear() {
+    this.checking = true;
+    this.errorMsg = '';
+
+    this.auth.getProfile().subscribe({
+      next: (profile) => {
+        if (!profile.profileComplete) {
+          this.checking = false;
+          alert(
+            'Antes de confirmar la reserva tenés que completar tu perfil con tus datos personales y de licencia.'
+          );
+
+          // Lo mandamos a /perfil y dejamos la URL actual como returnUrl
+          this.auth.setReturnUrl(this.router.url);
+          this.router.navigate(['/perfil']);
+          return;
+        }
+
+        // Perfil OK → seguimos con el flujo normal de disponibilidad + creación
+        this.crearReservaConDisponibilidad();
+      },
+      error: () => {
+        this.checking = false;
+        alert('No se pudo verificar tu perfil. Intentá nuevamente en unos minutos.');
+      }
+    });
+  }
+
+  /** Lógica original de checkAvailability + crearReserva extraída a un método aparte */
+  private crearReservaConDisponibilidad() {
+    if (!this.vehiculo) return;
 
     this.checking = true;
     this.cotizarService.checkAvailability({
@@ -346,7 +384,7 @@ export class DetalleComponent implements OnInit {
           next: (res) => {
             this.creating = false;
 
-            // 🔹 En vez de volver al buscador, vamos a la pantalla de confirmación REAL
+            // Ahora vamos a la pantalla de confirmación REAL
             this.router.navigate(
               ['/cotizar/confirmacion', res.id]
             );

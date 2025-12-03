@@ -1,12 +1,9 @@
 <section class="resultados-page">
-  <!-- HEADER / RESUMEN -->
   <header class="resultados-header">
     <div class="header-text">
       <h1>Vehículos disponibles</h1>
 
-      <p *ngIf="cargando">
-        🚗 Buscando las mejores opciones para tu viaje...
-      </p>
+      <p *ngIf="cargando">🚗 Buscando las mejores opciones para tu viaje...</p>
 
       <p *ngIf="!cargando && resultados.length">
         Encontramos <strong>{{ resultados.length }}</strong>
@@ -14,7 +11,8 @@
       </p>
 
       <p *ngIf="!cargando && !resultados.length">
-        😕 No encontramos vehículos para esa búsqueda. Probá cambiar las fechas o la sucursal.
+        😕 No encontramos vehículos para esa búsqueda. Probá cambiar las fechas o la
+        sucursal.
       </p>
     </div>
 
@@ -28,9 +26,7 @@
     </div>
   </header>
 
-  <!-- LAYOUT -->
   <div class="layout">
-    <!-- SIDEBAR -->
     <aside class="sidebar">
       <h3 class="sidebar-title">Filtrar por categoría</h3>
 
@@ -69,7 +65,6 @@
       </div>
     </aside>
 
-    <!-- CONTENIDO -->
     <main class="content">
       <div class="toolbar" *ngIf="resultados.length">
         <div class="toolbar-left">
@@ -104,7 +99,6 @@
         </div>
       </div>
 
-      <!-- ESTADOS -->
       <div *ngIf="cargando" class="state state-loading">
         <span class="spinner"></span>
         <p>Consultando disponibilidad en tiempo real...</p>
@@ -115,7 +109,6 @@
         <p class="hint">Probá cambiar fechas o sucursal.</p>
       </div>
 
-      <!-- GRID -->
       <div class="grid" *ngIf="!cargando && resultados.length">
         <article class="card" *ngFor="let auto of resultados">
           <div class="card-media">
@@ -143,7 +136,7 @@
               <div class="price-block">
                 <span class="price-label">por día desde</span>
                 <div class="price-value">
-                  {{ auto.dailyRate | currency:'ARS' }}
+                  {{ auto.dailyRate | currency: 'ARS' }}
                 </div>
               </div>
             </div>
@@ -157,16 +150,19 @@
             </div>
 
             <div class="card-total">
-              <span
-                >Total por {{ dias }}
-                {{ dias === 1 ? 'día' : 'días' }}</span
-              >
-              <strong>{{ calcularTotal(auto.dailyRate) | currency:'ARS' }}</strong>
+              <span>
+                Total por {{ dias }} {{ dias === 1 ? 'día' : 'días' }}
+              </span>
+              <strong>
+                {{ calcularTotal(auto.dailyRate) | currency: 'ARS' }}
+              </strong>
             </div>
 
             <button
               class="btn-ver-detalle"
-              [disabled]="auto.unitsAvailable !== undefined && auto.unitsAvailable <= 0"
+              [disabled]="
+                auto.unitsAvailable !== undefined && auto.unitsAvailable <= 0
+              "
               (click)="verDetalle(auto.id)"
             >
               {{

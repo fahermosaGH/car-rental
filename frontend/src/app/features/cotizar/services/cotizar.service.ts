@@ -9,28 +9,41 @@ import { AuthService } from '../../../core/services/auth.service';
 export class CotizarService {
   private apiUrl = environment.apiUrl;
 
-  constructor(private http: HttpClient, private auth: AuthService) { }
+  constructor(private http: HttpClient, private auth: AuthService) {}
+
+  // -------------------------------------------------------------
+  // 🔥 Normalizador de categoría (soluciona el problema de filtros)
+  // -------------------------------------------------------------
+  private normalizeCategory(cat: any): string {
+    if (!cat) return 'Sin categoría';
+    if (typeof cat === 'string') return cat.trim(); // ← clave
+    if (typeof cat === 'object' && cat.name) return String(cat.name).trim();
+    return String(cat).trim();
+  }
 
   buscarVehiculos(): Observable<VehicleOption[]> {
     return this.http.get<any[]>(`${this.apiUrl}/vehicles`).pipe(
       map((data) =>
-        data.map((v) => ({
-          id: v.id,
-          // si viene objeto, usamos nombre; si viene string, usamos string; si nada, fallback
-          category: v.category?.name ?? v.category ?? 'Sin categoría',
-          brand: v.brand,
-          model: v.model,
-          name: `${v.brand} ${v.model}`,
-          year: v.year,
-          seats: v.seats,
-          transmission: v.transmission,
-          dailyRate: parseFloat(v.dailyRate ?? 0),
-          img: 'https://picsum.photos/seed/' + v.model + '/400/220',
-          fuel: 'Nafta',
-          description: `${v.brand} ${v.model} (${v.category?.name || v.category || 'Sin categoría'})`,
-          unitsAvailable:
-            typeof v.unitsAvailable === 'number' ? v.unitsAvailable : undefined,
-        }))
+        data.map((v) => {
+          const category = this.normalizeCategory(v.category);
+
+          return {
+            id: v.id,
+            category,
+            brand: v.brand,
+            model: v.model,
+            name: `${v.brand} ${v.model}`,
+            year: v.year,
+            seats: v.seats,
+            transmission: v.transmission,
+            dailyRate: parseFloat(v.dailyRate ?? 0),
+            img: 'https://picsum.photos/seed/' + v.model + '/400/220',
+            fuel: 'Nafta',
+            description: `${v.brand} ${v.model} (${category})`,
+            unitsAvailable:
+              typeof v.unitsAvailable === 'number' ? v.unitsAvailable : undefined,
+          };
+        })
       )
     );
   }
@@ -54,47 +67,47 @@ export class CotizarService {
     );
   }
 
+  // -------------------------------------------------------------
+  //           🔥 DISPONIBLES (ARREGLADO)
+  // -------------------------------------------------------------
   getAvailableVehicles(params: {
-    pickupLocationId: number;
-    startAt: string; // 'YYYY-MM-DD' o ISO
-    endAt: string;   // 'YYYY-MM-DD' o ISO
-    category?: string;
-  }): Observable<VehicleOption[]> {
-    let httpParams = new HttpParams()
-      .set('pickupLocationId', String(params.pickupLocationId))
-      .set('startAt', params.startAt)
-      .set('endAt', params.endAt);
+  pickupLocationId: number;
+  startAt: string;
+  endAt: string;
+  category?: string;
+}): Observable<VehicleOption[]> {
+  let httpParams = new HttpParams()
+    .set('pickupLocationId', String(params.pickupLocationId))
+    .set('startAt', params.startAt)
+    .set('endAt', params.endAt);
 
-    if (params.category && params.category.trim() !== '') {
-      httpParams = httpParams.set('category', params.category.trim());
-    }
-
-    return this.http
-      .get<any[]>(`${this.apiUrl}/vehicles/available`, { params: httpParams })
-      .pipe(
-        map((data) =>
-          data.map((v) => ({
-            id: v.id,
-            category: v.category?.name ?? v.category ?? 'Sin categoría',
-            brand: v.brand,
-            model: v.model,
-            name: `${v.brand} ${v.model}`,
-            year: v.year,
-            seats: v.seats,
-            transmission: v.transmission,
-            dailyRate: parseFloat(v.dailyRate ?? 0),
-            img: 'https://picsum.photos/seed/' + v.model + '/400/220',
-            description: `${v.brand} ${v.model} (${v.category?.name || v.category || 'Sin categoría'})`,
-            fuel: 'Nafta',
-
-            // 📌 USAMOS LA DISPONIBILIDAD REAL QUE YA VIENE DE LA API
-            unitsAvailable: v.unitsAvailable,
-
-            branchStock: v.branchStock,
-          }))
-        )
-      );
+  if (params.category && params.category.trim() !== '') {
+    httpParams = httpParams.set('category', params.category.trim());
   }
+
+  return this.http
+    .get<any[]>(`${this.apiUrl}/vehicles/available`, { params: httpParams })
+    .pipe(
+      map((data) =>
+        data.map((v) => ({
+          id: v.id,
+          category: v.category ?? 'Sin categoría',   // <--- CAMBIO CLAVE
+          brand: v.brand,
+          model: v.model,
+          name: `${v.brand} ${v.model}`,
+          year: v.year,
+          seats: v.seats,
+          transmission: v.transmission,
+          dailyRate: parseFloat(v.dailyRate ?? 0),
+          img: 'https://picsum.photos/seed/' + v.model + '/400/220',
+          description: `${v.brand} ${v.model} (${v.category ?? 'Sin categoría'})`,
+          fuel: 'Nafta',
+          unitsAvailable: v.unitsAvailable,
+          branchStock: v.branchStock,
+        }))
+      )
+    );
+}
 
   checkAvailability(params: {
     vehicleId: number;
@@ -114,7 +127,6 @@ export class CotizarService {
     );
   }
 
-  // ✅ Crear reserva real en el backend
   crearReserva(payload: {
     vehicleId: number;
     pickupLocationId: number;
@@ -136,27 +148,25 @@ export class CotizarService {
   }
 
   getReservationById(id: number) {
-  const headers = this.auth.token
-    ? new HttpHeaders({ Authorization: `Bearer ${this.auth.token}` })
-    : undefined;
+    const headers = this.auth.token
+      ? new HttpHeaders({ Authorization: `Bearer ${this.auth.token}` })
+      : undefined;
 
-  return this.http.get<{
-    id: number;
-    vehicleName: string;
-    category: string | null;
-    pickupLocationName: string;
-    dropoffLocationName: string;
-    startAt: string;
-    endAt: string;
-    totalPrice: string | null;
-    status: string;
-    extras: { name: string; price: string }[];
-
-    rating?: number;
-    ratingComment?: string;
-  }>(`${this.apiUrl}/reservations/${id}`, { headers });
-}
-
+    return this.http.get<{
+      id: number;
+      vehicleName: string;
+      category: string | null;
+      pickupLocationName: string;
+      dropoffLocationName: string;
+      startAt: string;
+      endAt: string;
+      totalPrice: string | null;
+      status: string;
+      extras: { name: string; price: string }[];
+      rating?: number;
+      ratingComment?: string;
+    }>(`${this.apiUrl}/reservations/${id}`, { headers });
+  }
 
   enviarComprobante(reservationId: number, email: string) {
     const headers = this.auth.token
@@ -169,15 +179,16 @@ export class CotizarService {
       { headers }
     );
   }
-calificarReserva(reservationId: number, payload: { rating: number; comment: string }) {
-  const headers = this.auth.token
-    ? new HttpHeaders({ Authorization: `Bearer ${this.auth.token}` })
-    : undefined;
 
-  return this.http.post(
-    `${this.apiUrl}/reservations/${reservationId}/rating`,
-    payload,
-    { headers }
-  );
-}
+  calificarReserva(reservationId: number, payload: { rating: number; comment: string }) {
+    const headers = this.auth.token
+      ? new HttpHeaders({ Authorization: `Bearer ${this.auth.token}` })
+      : undefined;
+
+    return this.http.post(
+      `${this.apiUrl}/reservations/${reservationId}/rating`,
+      payload,
+      { headers }
+    );
+  }
 }

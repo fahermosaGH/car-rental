@@ -35,14 +35,13 @@ class VehicleController extends AbstractController
         ]);
     }
 
-    // Disponibilidad real por sucursal + fechas, devolviendo unitsAvailable (filtrable por categoría)
     #[Route('/available', name: 'api_vehicles_available', methods: ['GET'])]
     public function available(Request $request, VehicleRepository $vehicleRepository): Response
     {
         $pickupStr = $request->query->get('pickupLocationId');
-        $startStr  = $request->query->get('startAt'); // YYYY-MM-DD o ISO
+        $startStr  = $request->query->get('startAt');
         $endStr    = $request->query->get('endAt');
-        $category  = $request->query->get('category'); // opcional
+        $category  = $request->query->get('category'); // string o null
 
         if (!$pickupStr || !$startStr || !$endStr) {
             return $this->json(['error' => 'pickupLocationId, startAt y endAt son obligatorios'], 400);
@@ -59,12 +58,81 @@ class VehicleController extends AbstractController
             return $this->json(['error' => 'startAt debe ser menor que endAt'], 400);
         }
 
-        // IMPORTANTE: este método del repo devuelve filas escalares
-        $rows = $vehicleRepository->findAvailableWithStockInfo(
-            (int) $pickupStr,
+        // 🔥🔥🔥 IGNORAR SUCURSAL PARA ENCONTRAR VEHÍCULOS, PERO IGUAL MOSTRAR STOCK REAL
+if ($category && trim($category) !== '') {
+
+    $normalized = trim($category);
+
+    // 1️⃣ Traigo todos los autos de la categoría
+    $vehicles = $vehicleRepository->createQueryBuilder('v')
+        ->leftJoin('v.category', 'c')
+        ->addSelect('c')
+        ->where('c.name = :cat')
+        ->setParameter('cat', $normalized)
+        ->getQuery()
+        ->getResult();
+
+    $data = [];
+
+    foreach ($vehicles as $v) {
+
+        // 2️⃣ Ahora busco stock real de este vehículo EN LA SUCURSAL
+        $stockRow = $vehicleRepository->findAvailableWithStockInfo(
+            (int)$pickupStr,
             $start,
             $end,
-            $category ?: null // filtra por categoría si viene
+            $v->getCategory()->getName()     // filtramos por la categoría real
+        );
+
+        // Busco el stock de este vehículo en particular
+        $match = null;
+        foreach ($stockRow as $sr) {
+            if ((int)$sr['id'] === $v->getId()) {
+                $match = $sr;
+                break;
+            }
+        }
+
+        // 3️⃣ Si hay match → uso stock real
+        if ($match) {
+            $branchStock    = (int)($match['branchStock'] ?? 0);
+            $taken          = (int)($match['taken'] ?? 0);
+            $unitsAvailable = max($branchStock - $taken, 0);
+        } else {
+            // 4️⃣ Si NO hay stock → mostrar sin stock
+            $unitsAvailable = 0;
+            $branchStock    = 0;
+        }
+
+        $data[] = [
+            'id'             => $v->getId(),
+            'brand'          => $v->getBrand(),
+            'model'          => $v->getModel(),
+            'year'           => $v->getYear(),
+            'seats'          => $v->getSeats(),
+            'transmission'   => $v->getTransmission(),
+            'dailyRate'      => $v->getDailyPriceOverride(),
+            'isActive'       => $v->isActive(),
+            'category'       => $v->getCategory()->getName(),
+            'unitsAvailable' => $unitsAvailable,
+            'branchStock'    => $branchStock,
+        ];
+    }
+
+    return $this->json($data, 200, [], [
+        'json_encode_options' => JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT
+    ]);
+}
+
+
+        // -----------------------------
+        // MODO NORMAL (sin categoría)
+        // -----------------------------
+        $rows = $vehicleRepository->findAvailableWithStockInfo(
+            (int)$pickupStr,
+            $start,
+            $end,
+            null
         );
 
         $data = array_map(static function (array $r) {
@@ -76,11 +144,11 @@ class VehicleController extends AbstractController
                 'id'             => (int) $r['id'],
                 'brand'          => (string) $r['brand'],
                 'model'          => (string) $r['model'],
-                'year'           => isset($r['year']) ? (int) $r['year'] : null,
-                'seats'          => isset($r['seats']) ? (int) $r['seats'] : null,
+                'year'           => isset($r['year']) ? (int)$r['year'] : null,
+                'seats'          => isset($r['seats']) ? (int)$r['seats'] : null,
                 'transmission'   => $r['transmission'] ?? null,
-                'dailyRate'      => $r['dailyRate'], // DECIMAL como string
-                'isActive'       => (bool) $r['isActive'],
+                'dailyRate'      => $r['dailyRate'],
+                'isActive'       => (bool)$r['isActive'],
                 'category'       => $r['category'] ?? null,
                 'unitsAvailable' => $unitsAvailable,
                 'branchStock'    => $branchStock,

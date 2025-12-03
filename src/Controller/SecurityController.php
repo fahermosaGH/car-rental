@@ -9,15 +9,28 @@ use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 
 class SecurityController extends AbstractController
 {
-    #[Route('/login', name: 'app_login')]
+    #[Route(path: '/login', name: 'app_login')]
     public function login(AuthenticationUtils $authenticationUtils): Response
     {
+        // si ya está logueado, lo mandamos directo al admin
+        if ($this->getUser()) {
+            return $this->redirectToRoute('ea_dashboard');
+        }
+
+        // error de login (credenciales malas, etc.)
+        $error = $authenticationUtils->getLastAuthenticationError();
+        $lastUsername = $authenticationUtils->getLastUsername();
+
         return $this->render('security/login.html.twig', [
-            'last_username' => $authenticationUtils->getLastUsername(),
-            'error' => $authenticationUtils->getLastAuthenticationError(),
+            'last_username' => $lastUsername,
+            'error' => $error,
         ]);
     }
 
-    #[Route('/logout', name: 'app_logout')]
-    public function logout(): void {}
+    #[Route(path: '/logout', name: 'app_logout')]
+    public function logout(): void
+    {
+        // Symfony intercepta esta ruta, este método nunca se ejecuta
+        throw new \LogicException('Este método puede quedarse vacío: será interceptado por el firewall.');
+    }
 }

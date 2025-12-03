@@ -125,5 +125,16 @@ class Location
     {
         return $this->stocks;
     }
-}
 
+    public function __toString(): string
+    {
+        // Lo que se verá en los selects de EasyAdmin
+        $label = $this->name;
+
+        if ($this->city) {
+            $label .= ' - ' . $this->city;
+        }
+
+        return $label;
+    }
+}

@@ -6,6 +6,7 @@ use App\Entity\Reservation;
 use App\Entity\Location;
 use App\Entity\Vehicle;
 use App\Entity\VehicleCategory;
+use App\Entity\User;
 use App\Entity\Customer;
 use App\Entity\VehicleLocationStock;
 
@@ -46,8 +47,8 @@ class DashboardController extends AbstractDashboardController
             yield MenuItem::linkToCrud('Stock por ubicación', 'fa fa-warehouse', VehicleStock::class);
         }
 
-        yield MenuItem::section('Clientes');
-        yield MenuItem::linkToCrud('Clientes', 'fa fa-users', Customer::class);
+        yield MenuItem::section('Usuarios');
+        yield MenuItem::linkToCrud('Usuarios', 'fa fa-user', User::class);
 
         yield MenuItem::section('Operaciones');
         yield MenuItem::linkToCrud('Reservas', 'fa fa-calendar-check', Reservation::class);

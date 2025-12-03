@@ -70,6 +70,18 @@ class Reservation
     public function getUser(): ?User { return $this->user; }
     public function setUser(?User $user): static { $this->user = $user; return $this; }
 
+    public function getCustomer(): ?Customer
+{
+    return $this->customer;
+}
+
+public function setCustomer(?Customer $customer): static
+{
+    $this->customer = $customer;
+    return $this;
+}
+
+
     public function getVehicle(): ?Vehicle { return $this->vehicle; }
     public function setVehicle(?Vehicle $vehicle): static { $this->vehicle = $vehicle; return $this; }
 

@@ -34,10 +34,15 @@ export class LayoutComponent {
     return this.auth.isLoggedIn();
   }
 
-  logout(): void {
-    this.auth.logout();
-    this.router.navigate(['/cotizar']);
+  logout() {
+  const ok = window.confirm('¿Estás seguro de que querés cerrar sesión?');
+  if (!ok) {
+    return;
   }
+
+  this.auth.logout();
+  this.router.navigate(['/cotizar']);
+}
 
   // 🔘 toggle del modo oscuro
   toggleDark(): void {

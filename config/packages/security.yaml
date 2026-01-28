@@ -13,6 +13,12 @@ security:
       pattern: ^/(?:_(profiler|wdt)|css|images|js)/
       security: false
 
+    # 🔹 API pública (sin JWT)
+    api_public:
+      pattern: ^/api/(locations|vehicles|vehicles/available|check-availability)
+      stateless: true
+      security: false
+
     # 🔹 Login JWT del API (NO se toca)
     login:
       pattern: ^/api/login_check
@@ -24,23 +30,21 @@ security:
         success_handler: lexik_jwt_authentication.handler.authentication_success
         failure_handler: lexik_jwt_authentication.handler.authentication_failure
 
-    # 🔹 API con JWT (NO se toca)
+    # 🔹 API protegida con JWT
     api:
       pattern: ^/api
       stateless: true
       provider: app_user_provider
       jwt: ~
 
-    # 🔹 Firewall para páginas normales (login web + admin)
+    # 🔹 Firewall web/admin
     main:
       lazy: true
       provider: app_user_provider
-
       form_login:
         login_path: app_login
         check_path: app_login
         default_target_path: /admin
-
       logout:
         path: app_logout
         target: /login
@@ -55,7 +59,6 @@ security:
     # 🔹 Rutas de API (se dejan como estaban)
     - { path: ^/api/login_check, roles: PUBLIC_ACCESS }
     - { path: ^/api/register, roles: PUBLIC_ACCESS }
-
     - { path: ^/api/forgot-password, roles: PUBLIC_ACCESS, methods: [POST, OPTIONS] }
 
     - { path: ^/api/locations, roles: PUBLIC_ACCESS, methods: [GET, OPTIONS] }
@@ -64,4 +67,3 @@ security:
     - { path: ^/api/check-availability, roles: PUBLIC_ACCESS, methods: [GET, OPTIONS] }
 
     - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
-

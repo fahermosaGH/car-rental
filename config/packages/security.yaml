@@ -66,4 +66,5 @@ security:
     - { path: ^/api/vehicles, roles: PUBLIC_ACCESS, methods: [GET, OPTIONS] }
     - { path: ^/api/check-availability, roles: PUBLIC_ACCESS, methods: [GET, OPTIONS] }
 
+    - { path: ^/api/admin, roles: ROLE_ADMIN }
     - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }

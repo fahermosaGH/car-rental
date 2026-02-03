@@ -1,0 +1,137 @@
+.admin-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  background: #0b1220;
+  color: #e8eefc;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+/* SIDEBAR */
+.sidebar {
+  background: #0a0f1c;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 8px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #2f6fed, #7c3aed);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+}
+
+.brand-text .title {
+  font-weight: 700;
+  line-height: 1.1;
+}
+.brand-text .subtitle {
+  opacity: 0.7;
+  font-size: 12px;
+}
+
+.nav {
+  padding: 14px 6px;
+  display: grid;
+  gap: 6px;
+}
+
+.nav a {
+  color: #cfe0ff;
+  text-decoration: none;
+  padding: 10px 10px;
+  border-radius: 10px;
+  opacity: 0.9;
+  transition: background 0.12s ease, opacity 0.12s ease;
+}
+
+.nav a:hover {
+  background: rgba(255, 255, 255, 0.06);
+  opacity: 1;
+}
+
+.nav a.active {
+  background: rgba(47, 111, 237, 0.18);
+  outline: 1px solid rgba(47, 111, 237, 0.35);
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.user {
+  padding: 8px;
+}
+.user-label {
+  font-size: 12px;
+  opacity: 0.7;
+}
+.user-email {
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.btn-ghost {
+  width: 100%;
+  margin-top: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: transparent;
+  color: #e8eefc;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* CONTENT */
+.content {
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(10, 15, 28, 0.6);
+  backdrop-filter: blur(10px);
+}
+
+.crumbs {
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.pill {
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(124, 58, 237, 0.18);
+  border: 1px solid rgba(124, 58, 237, 0.35);
+}
+
+.page {
+  padding: 18px;
+}
+
+

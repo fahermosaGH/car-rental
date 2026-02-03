@@ -23,7 +23,7 @@ export class LoginComponent implements OnInit {
     private auth: AuthService,
     private router: Router,
     private route: ActivatedRoute
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.redirectUrl = this.route.snapshot.queryParamMap.get('redirectUrl');
@@ -43,12 +43,18 @@ export class LoginComponent implements OnInit {
       next: () => {
         this.cargando = false;
 
-        const target =
-          this.redirectUrl && this.redirectUrl.startsWith('/')
-            ? this.redirectUrl
-            : '/cotizar';
+        // 1️⃣ Si venía de una ruta protegida (admin o user), respetamos eso
+        if (this.redirectUrl && this.redirectUrl.startsWith('/')) {
+          this.router.navigateByUrl(this.redirectUrl);
+          return;
+        }
 
-        this.router.navigateByUrl(target);
+        // 2️⃣ Si no, redirigimos según rol
+        if (this.auth.isAdmin()) {
+          this.router.navigateByUrl('/admin');
+        } else {
+          this.router.navigateByUrl('/cotizar');
+        }
       },
       error: (err) => {
         this.cargando = false;

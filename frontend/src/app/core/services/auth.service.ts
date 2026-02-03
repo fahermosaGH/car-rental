@@ -86,6 +86,27 @@ export class AuthService {
     }
   }
 
+  // =========================
+  // 🔹 Helpers de usuario/rol
+  // =========================
+
+  get currentUser(): AuthUser | null {
+    return this.userSubject.value;
+  }
+
+  hasRole(role: string): boolean {
+    const u = this.userSubject.value;
+    return !!u?.roles?.includes(role);
+  }
+
+  isAdmin(): boolean {
+    return this.hasRole('ROLE_ADMIN');
+  }
+
+  setCurrentUser(user: AuthUser | null): void {
+    this.userSubject.next(user);
+  }
+
   // === Token helpers ===
   get token(): string | null {
     return localStorage.getItem(TOKEN_KEY);
@@ -114,7 +135,7 @@ export class AuthService {
   setReturnUrl(url: string): void {
     try {
       sessionStorage.setItem(RETURN_URL_KEY, url);
-    } catch {}
+    } catch { }
   }
 
   consumeReturnUrl(): string | null {
@@ -199,6 +220,7 @@ export class AuthService {
       .pipe(catchError((err) => throwError(() => err)));
   }
 }
+
 
 
 

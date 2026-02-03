@@ -1,21 +1,71 @@
 import { Routes } from '@angular/router';
 import { LayoutComponent } from './core/layout/layout.component';
 import { authGuard } from './core/guards/auth.guard';
+import { adminGuard } from './core/guards/admin.guard';
+import { LayoutAdminComponent } from './core/layout-admin/layout-admin.component';
 
 import { SobreNosotrosComponent } from './pages/sobre-nosotros/sobre-nosotros.component';
 import { AtencionClienteComponent } from './pages/atencion-cliente/atencion-cliente';
-import { LoginComponent } from './features/auth/login/login.component';
-import { MisReservasComponent } from './features/reservas/pages/mis-reservas/mis-reservas.component';
 import { CentroAyudaComponent } from './pages/centro-ayuda/centro-ayuda';
 import { RequisitosAlquilerComponent } from './pages/requisitos-alquiler/requisitos-alquiler';
 import { MejorPrecioComponent } from './pages/mejor-precio/mejor-precio';
-
-// 👉 NUEVO IMPORT
 import { PreguntasFrecuentesComponent } from './pages/preguntas-frecuentes/preguntas-frecuentes';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'cotizar', pathMatch: 'full' },
 
+  // ✅ ADMIN: layout separado + guard ROLE_ADMIN
+  {
+    path: 'admin',
+    component: LayoutAdminComponent,
+    canActivate: [adminGuard],
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./features/admin/dashboard/admin-dashboard.component').then(
+            (m) => m.AdminDashboardComponent
+          ),
+      },
+      {
+        path: 'reservas',
+        loadComponent: () =>
+          import('./features/admin/reservas/admin-reservas.component').then(
+            (m) => m.AdminReservasComponent
+          ),
+      },
+      {
+        path: 'vehiculos',
+        loadComponent: () =>
+          import('./features/admin/vehiculos/admin-vehiculos.component').then(
+            (m) => m.AdminVehiculosComponent
+          ),
+      },
+      {
+        path: 'ubicaciones',
+        loadComponent: () =>
+          import('./features/admin/ubicaciones/admin-ubicaciones.component').then(
+            (m) => m.AdminUbicacionesComponent
+          ),
+      },
+      {
+        path: 'stock',
+        loadComponent: () =>
+          import('./features/admin/stock/admin-stock.component').then(
+            (m) => m.AdminStockComponent
+          ),
+      },
+      {
+        path: 'usuarios',
+        loadComponent: () =>
+          import('./features/admin/usuarios/admin-usuarios.component').then(
+            (m) => m.AdminUsuariosComponent
+          ),
+      },
+    ],
+  },
+
+  // ✅ USER APP: layout normal
   {
     path: '',
     component: LayoutComponent,
@@ -26,19 +76,23 @@ export const routes: Routes = [
           {
             path: 'login',
             loadComponent: () =>
-              import('./features/auth/login/login.component').then((m) => m.LoginComponent),
+              import('./features/auth/login/login.component').then(
+                (m) => m.LoginComponent
+              ),
           },
           {
             path: 'register',
             loadComponent: () =>
-              import('./features/auth/register/register.component').then((m) => m.RegisterComponent),
+              import('./features/auth/register/register.component').then(
+                (m) => m.RegisterComponent
+              ),
           },
           {
             path: 'forgot-password',
             loadComponent: () =>
-              import('./features/auth/forgot-password/forgot-password.component').then(
-                (m) => m.ForgotPasswordComponent
-              ),
+              import(
+                './features/auth/forgot-password/forgot-password.component'
+              ).then((m) => m.ForgotPasswordComponent),
           },
         ],
       },
@@ -49,27 +103,34 @@ export const routes: Routes = [
           {
             path: '',
             loadComponent: () =>
-              import('./features/cotizar/pages/buscador/buscador.component').then((m) => m.BuscadorComponent),
+              import('./features/cotizar/pages/buscador/buscador.component').then(
+                (m) => m.BuscadorComponent
+              ),
           },
           {
             path: 'resultados',
             loadComponent: () =>
-              import('./features/cotizar/pages/resultados/resultados.component').then((m) => m.ResultadosComponent),
+              import(
+                './features/cotizar/pages/resultados/resultados.component'
+              ).then((m) => m.ResultadosComponent),
           },
           {
             path: 'detalle/:id',
             loadComponent: () =>
-              import('./features/cotizar/pages/detalle/detalle.component').then((m) => m.DetalleComponent),
+              import('./features/cotizar/pages/detalle/detalle.component').then(
+                (m) => m.DetalleComponent
+              ),
           },
           {
             path: 'confirmacion/:id',
             loadComponent: () =>
-              import('./features/cotizar/pages/confirmacion/confirmacion.component').then((m) => m.ConfirmacionComponent),
+              import(
+                './features/cotizar/pages/confirmacion/confirmacion.component'
+              ).then((m) => m.ConfirmacionComponent),
           },
         ],
       },
 
-      // 🔹 NUEVAS RUTAS PARA VER FLOTA Y VER UBICACIONES
       {
         path: 'flota',
         loadComponent: () =>
@@ -80,16 +141,18 @@ export const routes: Routes = [
       {
         path: 'ubicaciones',
         loadComponent: () =>
-          import('./features/ubicaciones/ver-ubicaciones/ver-ubicaciones.component').then(
-            (m) => m.VerUbicacionesComponent
-          ),
+          import(
+            './features/ubicaciones/ver-ubicaciones/ver-ubicaciones.component'
+          ).then((m) => m.VerUbicacionesComponent),
       },
 
       {
         path: 'mis-reservas',
         canActivate: [authGuard],
         loadComponent: () =>
-          import('./features/reservas/pages/mis-reservas/mis-reservas.component').then((m) => m.MisReservasComponent),
+          import(
+            './features/reservas/pages/mis-reservas/mis-reservas.component'
+          ).then((m) => m.MisReservasComponent),
       },
 
       {
@@ -103,16 +166,10 @@ export const routes: Routes = [
 
       { path: 'sobre-nosotros', component: SobreNosotrosComponent },
       { path: 'atencion-al-cliente', component: AtencionClienteComponent },
-      { path: 'login', component: LoginComponent },
       { path: 'centro-de-ayuda', component: CentroAyudaComponent },
       { path: 'requisitos-alquiler', component: RequisitosAlquilerComponent },
       { path: 'mejor-precio', component: MejorPrecioComponent },
-
-      // 👉 NUEVA RUTA COMPLETA
-      {
-        path: 'preguntas-frecuentes',
-        component: PreguntasFrecuentesComponent,
-      },
+      { path: 'preguntas-frecuentes', component: PreguntasFrecuentesComponent },
     ],
   },
 

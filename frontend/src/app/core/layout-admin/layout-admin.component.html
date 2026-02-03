@@ -1,0 +1,43 @@
+<div class="admin-shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">CR</div>
+      <div class="brand-text">
+        <div class="title">Car Rental</div>
+        <div class="subtitle">Admin</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <a routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Dashboard</a>
+      <a routerLink="/admin/reservas" routerLinkActive="active">Reservas</a>
+      <a routerLink="/admin/vehiculos" routerLinkActive="active">Vehículos</a>
+      <a routerLink="/admin/ubicaciones" routerLinkActive="active">Ubicaciones</a>
+      <a routerLink="/admin/stock" routerLinkActive="active">Stock</a>
+      <a routerLink="/admin/usuarios" routerLinkActive="active">Usuarios</a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user">
+        <div class="user-label">Sesión</div>
+        <div class="user-email">{{ email }}</div>
+      </div>
+
+      <button class="btn-ghost" (click)="logout()">Cerrar sesión</button>
+    </div>
+  </aside>
+
+  <main class="content">
+    <header class="topbar">
+      <div class="crumbs">Panel de administración</div>
+      <div class="topbar-right">
+        <span class="pill">ROLE_ADMIN</span>
+      </div>
+    </header>
+
+    <section class="page">
+      <router-outlet></router-outlet>
+    </section>
+  </main>
+</div>
+

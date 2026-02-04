@@ -7,9 +7,18 @@
     </h1>
 
     <nav class="nav">
+      <!-- 🔐 BOTÓN ADMIN (solo si está logueado y es admin) -->
+      <a
+        *ngIf="isLoggedIn && isAdmin"
+        routerLink="/admin"
+        routerLinkActive="active"
+        class="admin-link"
+      >
+        Panel Admin
+      </a>
+
       <a routerLink="/cotizar" routerLinkActive="active">Cotizar</a>
 
-      <!-- NUEVOS BOTONES -->
       <a routerLink="/flota" routerLinkActive="active">Ver flota</a>
       <a routerLink="/ubicaciones" routerLinkActive="active">Ver ubicaciones</a>
 
@@ -39,4 +48,3 @@
     <p>© {{ currentYear }} Car Rental. Todos los derechos reservados.</p>
   </div>
 </footer>
-

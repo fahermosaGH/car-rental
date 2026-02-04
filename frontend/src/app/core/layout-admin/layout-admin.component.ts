@@ -17,8 +17,14 @@ export class LayoutAdminComponent {
 
   constructor(private auth: AuthService, private router: Router) {}
 
+  // ✅ NUEVO
+  goToSales(): void {
+    this.router.navigate(['/cotizar']);
+  }
+
   logout(): void {
     this.auth.logout();
-    this.router.navigate(['/auth/login']);
+    // más natural: vuelve a la app pública
+    this.router.navigate(['/cotizar']);
   }
 }

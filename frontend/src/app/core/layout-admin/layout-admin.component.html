@@ -30,7 +30,13 @@
   <main class="content">
     <header class="topbar">
       <div class="crumbs">Panel de administración</div>
+
       <div class="topbar-right">
+        <!-- ✅ NUEVO: volver a la app normal -->
+        <button type="button" class="btn-back" (click)="goToSales()">
+          Volver a Ventas
+        </button>
+
         <span class="pill">ROLE_ADMIN</span>
       </div>
     </header>
@@ -40,4 +46,3 @@
     </section>
   </main>
 </div>
-

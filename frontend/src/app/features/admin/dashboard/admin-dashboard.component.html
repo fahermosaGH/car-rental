@@ -1,27 +1,51 @@
 <h1>Dashboard</h1>
 
-<div class="grid">
+<div *ngIf="loading" class="state">Cargando métricas...</div>
+
+<div *ngIf="!loading && error" class="state error">
+  {{ error }}
+</div>
+
+<div class="grid" *ngIf="!loading && stats">
+  <div class="card">
+    <div class="kpi-title">Usuarios</div>
+    <div class="kpi-value">{{ stats.users }}</div>
+    <div class="kpi-sub">Registrados</div>
+  </div>
+
+  <div class="card">
+    <div class="kpi-title">Vehículos</div>
+    <div class="kpi-value">{{ stats.vehicles }}</div>
+    <div class="kpi-sub">En flota</div>
+  </div>
+
+  <div class="card">
+    <div class="kpi-title">Sucursales</div>
+    <div class="kpi-value">{{ stats.locations }}</div>
+    <div class="kpi-sub">Activas</div>
+  </div>
+
   <div class="card">
     <div class="kpi-title">Reservas totales</div>
-    <div class="kpi-value">—</div>
-    <div class="kpi-sub">Pendiente de endpoint</div>
+    <div class="kpi-value">{{ stats.reservationsTotal }}</div>
+    <div class="kpi-sub">Históricas</div>
   </div>
 
   <div class="card">
     <div class="kpi-title">Activas hoy</div>
-    <div class="kpi-value">—</div>
-    <div class="kpi-sub">Pendiente de endpoint</div>
+    <div class="kpi-value">{{ stats.reservationsActiveToday }}</div>
+    <div class="kpi-sub">Pending / Confirmed</div>
   </div>
 
   <div class="card">
     <div class="kpi-title">Cancelaciones del mes</div>
-    <div class="kpi-value">—</div>
-    <div class="kpi-sub">Pendiente de endpoint</div>
+    <div class="kpi-value">{{ stats.cancellationsThisMonth }}</div>
+    <div class="kpi-sub">Status: cancelled</div>
   </div>
 
   <div class="card">
-    <div class="kpi-title">Ingresos (simulado)</div>
-    <div class="kpi-value">—</div>
-    <div class="kpi-sub">Pendiente de endpoint</div>
+    <div class="kpi-title">Ingresos del mes</div>
+    <div class="kpi-value">{{ stats.incomeThisMonth | currency:'ARS' }}</div>
+    <div class="kpi-sub">Reservas confirmadas</div>
   </div>
 </div>

@@ -5,6 +5,7 @@ import {
   Observable,
   catchError,
   map,
+  switchMap,
   tap,
   throwError,
 } from 'rxjs';
@@ -77,10 +78,10 @@ export class AuthService {
   readonly user$ = this.userSubject.asObservable();
 
   constructor(private http: HttpClient, private router: Router) {
+    // Si hay token, intentamos precargar /me (pero sin romper si falla)
     if (this.isLoggedIn()) {
-      this.me().subscribe({
-        next: (me) =>
-          this.userSubject.next({ email: me.email, roles: me.roles }),
+      this.loadMe().subscribe({
+        next: () => {},
         error: () => this.userSubject.next(null),
       });
     }
@@ -135,7 +136,7 @@ export class AuthService {
   setReturnUrl(url: string): void {
     try {
       sessionStorage.setItem(RETURN_URL_KEY, url);
-    } catch { }
+    } catch {}
   }
 
   consumeReturnUrl(): string | null {
@@ -159,20 +160,21 @@ export class AuthService {
 
   // === API calls ===
 
-  login(email: string, password: string): Observable<string> {
+  /**
+   * ✅ Login que NO termina hasta haber cargado /me.
+   * Así el rol está disponible inmediatamente (isAdmin()).
+   */
+  login(email: string, password: string): Observable<MeResponse> {
     return this.http
       .post<AuthResponse>(`${this.apiUrl}/login_check`, { email, password })
       .pipe(
         tap((res) => {
           this.token = res.token;
-
-          this.me().subscribe({
-            next: (me) =>
-              this.userSubject.next({ email: me.email, roles: me.roles }),
-            error: () => this.userSubject.next(null),
-          });
         }),
-        map((res) => res.token),
+        switchMap(() => this.me()),
+        tap((me) => {
+          this.userSubject.next({ email: me.email, roles: me.roles });
+        }),
         catchError((err) => throwError(() => err))
       );
   }
@@ -200,6 +202,16 @@ export class AuthService {
       .pipe(catchError((err) => throwError(() => err)));
   }
 
+  /**
+   * ✅ Público: para guards o refresh.
+   * Trae /me y actualiza el userSubject.
+   */
+  loadMe(): Observable<MeResponse> {
+    return this.me().pipe(
+      tap((me) => this.userSubject.next({ email: me.email, roles: me.roles }))
+    );
+  }
+
   getProfile(): Observable<ProfileResponse> {
     const headers = this.token
       ? new HttpHeaders({ Authorization: `Bearer ${this.token}` })
@@ -220,9 +232,3 @@ export class AuthService {
       .pipe(catchError((err) => throwError(() => err)));
   }
 }
-
-
-
-
-
-

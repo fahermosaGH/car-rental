@@ -34,15 +34,22 @@ export class LayoutComponent {
     return this.auth.isLoggedIn();
   }
 
-  logout() {
-  const ok = window.confirm('¿Estás seguro de que querés cerrar sesión?');
-  if (!ok) {
-    return;
+  // ✅ NUEVO: solo muestra "Panel Admin" si tiene ROLE_ADMIN
+  get isAdmin(): boolean {
+    // Si tu AuthService ya tiene isAdmin(), esto queda perfecto.
+    // Si no lo tiene, avisame y lo ajustamos al toque.
+    return this.auth.isAdmin();
   }
 
-  this.auth.logout();
-  this.router.navigate(['/cotizar']);
-}
+  logout() {
+    const ok = window.confirm('¿Estás seguro de que querés cerrar sesión?');
+    if (!ok) {
+      return;
+    }
+
+    this.auth.logout();
+    this.router.navigate(['/cotizar']);
+  }
 
   // 🔘 toggle del modo oscuro
   toggleDark(): void {

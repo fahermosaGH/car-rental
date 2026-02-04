@@ -95,6 +95,28 @@
   text-decoration: none;
 }
 
+/* ✅ Botón/link "Panel Admin" */
+.admin-link {
+  margin-left: 1.5rem;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.admin-link:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.28);
+}
+
+/* en modo oscuro, que siga destacando */
+:host.dark-theme .admin-link {
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
 /* botón Cerrar sesión con mismo estilo que links */
 .nav-logout {
   margin-left: 1.5rem;
@@ -157,11 +179,11 @@
   border-top: 1px solid #ddd;
   font-size: 0.9rem;
 }
+
 .logo img {
   height: 55px;
   width: auto;
   object-fit: contain;
   border-radius: 2px;
-box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }

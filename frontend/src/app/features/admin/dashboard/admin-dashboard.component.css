@@ -2,6 +2,16 @@ h1 {
   margin: 0 0 14px;
 }
 
+.state {
+  opacity: 0.8;
+  padding: 10px 0;
+}
+
+.state.error {
+  opacity: 1;
+  color: #ffb4b4;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(180px, 1fr));

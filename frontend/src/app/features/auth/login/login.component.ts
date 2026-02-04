@@ -23,10 +23,12 @@ export class LoginComponent implements OnInit {
     private auth: AuthService,
     private router: Router,
     private route: ActivatedRoute
-  ) { }
+  ) {}
 
   ngOnInit(): void {
-    this.redirectUrl = this.route.snapshot.queryParamMap.get('redirectUrl');
+    // ✅ prioridad: returnUrl (guard), fallback: redirectUrl (viejo)
+    const qp = this.route.snapshot.queryParamMap;
+    this.redirectUrl = qp.get('returnUrl') || qp.get('redirectUrl');
   }
 
   submit() {
@@ -43,13 +45,13 @@ export class LoginComponent implements OnInit {
       next: () => {
         this.cargando = false;
 
-        // 1️⃣ Si venía de una ruta protegida (admin o user), respetamos eso
+        // 1️⃣ Si venía de ruta protegida, respetar
         if (this.redirectUrl && this.redirectUrl.startsWith('/')) {
           this.router.navigateByUrl(this.redirectUrl);
           return;
         }
 
-        // 2️⃣ Si no, redirigimos según rol
+        // 2️⃣ Si no, redirigir según rol (ahora ya está cargado el /me)
         if (this.auth.isAdmin()) {
           this.router.navigateByUrl('/admin');
         } else {

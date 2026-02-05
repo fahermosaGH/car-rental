@@ -8,6 +8,8 @@ composer.lock
 .env          
 .env.local
 .env.*.local
+.env.dev
+
 
 # Caché y logs
 *.log

@@ -16,13 +16,15 @@ export interface AdminGeneralStats {
 
 @Injectable({ providedIn: 'root' })
 export class AdminStatsService {
-  private apiUrl = environment.apiUrl;
+  private apiUrl = environment.apiUrl; // ej: http://127.0.0.1:8000/api
 
   constructor(private http: HttpClient, private auth: AuthService) {}
 
   getGeneralStats(): Observable<AdminGeneralStats> {
-    const headers = this.auth.token
-      ? new HttpHeaders({ Authorization: `Bearer ${this.auth.token}` })
+    const token = this.auth.token;
+
+    const headers = token
+      ? new HttpHeaders({ Authorization: `Bearer ${token}` })
       : undefined;
 
     return this.http.get<AdminGeneralStats>(

@@ -8,78 +8,106 @@ use App\Entity\User;
 use App\Entity\Vehicle;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/api/admin/stats')]
 class AdminStatsController extends AbstractController
 {
     #[Route('/general', name: 'api_admin_stats_general', methods: ['GET'])]
-    public function general(EntityManagerInterface $em): Response
+    public function general(EntityManagerInterface $em): JsonResponse
     {
-        // Seguridad extra (igual ya está el access_control ^/api/admin ROLE_ADMIN)
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        // Rango "hoy"
+        $todayStart = new \DateTimeImmutable('today');                 // 00:00 local (según timezone PHP)
+        $tomorrowStart = $todayStart->modify('+1 day');               // 00:00 mañana
 
-        $usersCount     = $em->getRepository(User::class)->count([]);
-        $vehiclesCount  = $em->getRepository(Vehicle::class)->count([]);
-        $locationsCount = $em->getRepository(Location::class)->count([]);
-        $reservasTotal  = $em->getRepository(Reservation::class)->count([]);
+        // Rango "mes actual"
+        $monthStart = $todayStart->modify('first day of this month');  // 00:00 día 1
+        $nextMonthStart = $monthStart->modify('first day of next month');
 
-        // Reservas activas HOY (pisan el día) con estado pending/confirmed
-        $todayStart = new \DateTimeImmutable('today');
-        $todayEnd   = $todayStart->modify('+1 day');
+        // Usuarios
+        $users = (int) $em->createQueryBuilder()
+            ->select('COUNT(u.id)')
+            ->from(User::class, 'u')
+            ->getQuery()
+            ->getSingleScalarResult();
 
-        $reservasActivasHoy = (int) $em->createQueryBuilder()
+        // Vehículos en flota (activos)
+        $vehicles = (int) $em->createQueryBuilder()
+            ->select('COUNT(v.id)')
+            ->from(Vehicle::class, 'v')
+            ->where('v.isActive = :active')
+            ->setParameter('active', true)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        // Sucursales activas
+        $locations = (int) $em->createQueryBuilder()
+            ->select('COUNT(l.id)')
+            ->from(Location::class, 'l')
+            ->where('l.isActive = :active')
+            ->setParameter('active', true)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        // Reservas totales (históricas)
+        $reservationsTotal = (int) $em->createQueryBuilder()
+            ->select('COUNT(r.id)')
+            ->from(Reservation::class, 'r')
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        // Activas hoy: status IN (pending, confirmed) y solapan el día de hoy
+        // Solape: startAt < tomorrowStart AND endAt > todayStart
+        $reservationsActiveToday = (int) $em->createQueryBuilder()
             ->select('COUNT(r.id)')
             ->from(Reservation::class, 'r')
             ->where('r.status IN (:st)')
-            ->andWhere(':todayStart < r.endAt')
-            ->andWhere(':todayEnd > r.startAt')
+            ->andWhere('r.startAt < :tomorrowStart')
+            ->andWhere('r.endAt > :todayStart')
             ->setParameter('st', ['pending', 'confirmed'])
             ->setParameter('todayStart', $todayStart)
-            ->setParameter('todayEnd', $todayEnd)
+            ->setParameter('tomorrowStart', $tomorrowStart)
             ->getQuery()
             ->getSingleScalarResult();
 
-        // Cancelaciones del mes (si no usás "cancelled", queda 0 y no rompe)
-        $monthStart = (new \DateTimeImmutable('first day of this month'))->setTime(0, 0, 0);
-        $monthEnd   = $monthStart->modify('+1 month');
-
-        $cancelacionesMes = (int) $em->createQueryBuilder()
-            ->select('COUNT(r2.id)')
-            ->from(Reservation::class, 'r2')
-            ->where('r2.status = :cancelled')
-            ->andWhere('r2.startAt >= :mStart')
-            ->andWhere('r2.startAt < :mEnd')
+        // Cancelaciones del mes (usamos startAt como fecha de referencia porque Reservation no tiene createdAt)
+        $cancellationsThisMonth = (int) $em->createQueryBuilder()
+            ->select('COUNT(r.id)')
+            ->from(Reservation::class, 'r')
+            ->where('r.status = :cancelled')
+            ->andWhere('r.startAt >= :monthStart')
+            ->andWhere('r.startAt < :nextMonthStart')
             ->setParameter('cancelled', 'cancelled')
-            ->setParameter('mStart', $monthStart)
-            ->setParameter('mEnd', $monthEnd)
+            ->setParameter('monthStart', $monthStart)
+            ->setParameter('nextMonthStart', $nextMonthStart)
             ->getQuery()
             ->getSingleScalarResult();
 
-        // Ingresos (simulado): suma totalPrice de confirmed en el mes (si null -> 0)
-        $ingresosMes = (float) $em->createQueryBuilder()
-            ->select('COALESCE(SUM(r3.totalPrice), 0)')
-            ->from(Reservation::class, 'r3')
-            ->where('r3.status = :confirmed')
-            ->andWhere('r3.startAt >= :mStart')
-            ->andWhere('r3.startAt < :mEnd')
+        // Ingresos del mes: SUM(totalPrice) de confirmed del mes (también por startAt)
+        $incomeRaw = $em->createQueryBuilder()
+            ->select('COALESCE(SUM(r.totalPrice), 0)')
+            ->from(Reservation::class, 'r')
+            ->where('r.status = :confirmed')
+            ->andWhere('r.startAt >= :monthStart')
+            ->andWhere('r.startAt < :nextMonthStart')
             ->setParameter('confirmed', 'confirmed')
-            ->setParameter('mStart', $monthStart)
-            ->setParameter('mEnd', $monthEnd)
+            ->setParameter('monthStart', $monthStart)
+            ->setParameter('nextMonthStart', $nextMonthStart)
             ->getQuery()
             ->getSingleScalarResult();
+
+        // Doctrine devuelve DECIMAL como string
+        $incomeThisMonth = (float) $incomeRaw;
 
         return $this->json([
-            'users' => $usersCount,
-            'vehicles' => $vehiclesCount,
-            'locations' => $locationsCount,
-            'reservationsTotal' => $reservasTotal,
-            'reservationsActiveToday' => $reservasActivasHoy,
-            'cancellationsThisMonth' => $cancelacionesMes,
-            'incomeThisMonth' => $ingresosMes,
-        ], Response::HTTP_OK, [], [
-            'json_encode_options' => JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT
+            'users' => $users,
+            'vehicles' => $vehicles,
+            'locations' => $locations,
+            'reservationsTotal' => $reservationsTotal,
+            'reservationsActiveToday' => $reservationsActiveToday,
+            'cancellationsThisMonth' => $cancellationsThisMonth,
+            'incomeThisMonth' => $incomeThisMonth,
         ]);
     }
 }

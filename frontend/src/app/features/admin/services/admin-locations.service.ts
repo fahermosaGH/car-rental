@@ -1,10 +1,8 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../../environments/environment';
-import { AuthService } from '../../../core/services/auth.service';
 
-export interface AdminLocation {
+export interface AdminLocationDto {
   id: number;
   name: string;
   city: string | null;
@@ -14,10 +12,10 @@ export interface AdminLocation {
   isActive: boolean;
 }
 
-export interface AdminLocationCreate {
-  name: string;
-  address: string;
+export interface AdminLocationCreateUpdate {
+  name?: string;
   city?: string | null;
+  address?: string | null;
   latitude?: number | null;
   longitude?: number | null;
   isActive?: boolean;
@@ -25,41 +23,23 @@ export interface AdminLocationCreate {
 
 @Injectable({ providedIn: 'root' })
 export class AdminLocationsService {
-  private apiUrl = environment.apiUrl;
+  private readonly baseUrl = 'http://127.0.0.1:8000/api/admin/locations';
 
-  constructor(private http: HttpClient, private auth: AuthService) {}
+  constructor(private http: HttpClient) {}
 
-  private get headers(): HttpHeaders | undefined {
-    const token = this.auth.token;
-    return token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
+  list(): Observable<AdminLocationDto[]> {
+    return this.http.get<AdminLocationDto[]>(this.baseUrl);
   }
 
-  list(): Observable<AdminLocation[]> {
-    return this.http.get<AdminLocation[]>(`${this.apiUrl}/admin/locations`, {
-      headers: this.headers,
-    });
+  create(payload: AdminLocationCreateUpdate): Observable<AdminLocationDto> {
+    return this.http.post<AdminLocationDto>(this.baseUrl, payload);
   }
 
-  create(payload: AdminLocationCreate): Observable<{ message: string; id: number }> {
-    return this.http.post<{ message: string; id: number }>(
-      `${this.apiUrl}/admin/locations`,
-      payload,
-      { headers: this.headers }
-    );
+  update(id: number, payload: AdminLocationCreateUpdate): Observable<AdminLocationDto> {
+    return this.http.put<AdminLocationDto>(`${this.baseUrl}/${id}`, payload);
   }
 
-  update(id: number, payload: Partial<AdminLocationCreate>): Observable<{ message: string }> {
-    return this.http.put<{ message: string }>(
-      `${this.apiUrl}/admin/locations/${id}`,
-      payload,
-      { headers: this.headers }
-    );
-  }
-
-  deactivate(id: number): Observable<{ message: string }> {
-    return this.http.delete<{ message: string }>(
-      `${this.apiUrl}/admin/locations/${id}`,
-      { headers: this.headers }
-    );
+  deactivate(id: number): Observable<{ ok: boolean; id: number; isActive: boolean }> {
+    return this.http.delete<{ ok: boolean; id: number; isActive: boolean }>(`${this.baseUrl}/${id}`);
   }
 }

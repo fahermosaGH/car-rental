@@ -1,4 +1,3 @@
-// frontend/src/app/app.config.ts
 import { ApplicationConfig } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
@@ -9,10 +8,6 @@ import { authTokenInterceptor } from './core/interceptors/token.interceptor';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
-    provideHttpClient(
-      withInterceptors([
-        authTokenInterceptor,  // 👈 nuestro interceptor
-      ])
-    ),
+    provideHttpClient(withInterceptors([authTokenInterceptor])),
   ],
 };

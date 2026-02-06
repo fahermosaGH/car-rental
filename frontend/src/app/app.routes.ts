@@ -90,9 +90,9 @@ export const routes: Routes = [
           {
             path: 'forgot-password',
             loadComponent: () =>
-              import(
-                './features/auth/forgot-password/forgot-password.component'
-              ).then((m) => m.ForgotPasswordComponent),
+              import('./features/auth/forgot-password/forgot-password.component').then(
+                (m) => m.ForgotPasswordComponent
+              ),
           },
         ],
       },
@@ -110,9 +110,9 @@ export const routes: Routes = [
           {
             path: 'resultados',
             loadComponent: () =>
-              import(
-                './features/cotizar/pages/resultados/resultados.component'
-              ).then((m) => m.ResultadosComponent),
+              import('./features/cotizar/pages/resultados/resultados.component').then(
+                (m) => m.ResultadosComponent
+              ),
           },
           {
             path: 'detalle/:id',
@@ -124,9 +124,9 @@ export const routes: Routes = [
           {
             path: 'confirmacion/:id',
             loadComponent: () =>
-              import(
-                './features/cotizar/pages/confirmacion/confirmacion.component'
-              ).then((m) => m.ConfirmacionComponent),
+              import('./features/cotizar/pages/confirmacion/confirmacion.component').then(
+                (m) => m.ConfirmacionComponent
+              ),
           },
         ],
       },
@@ -141,18 +141,18 @@ export const routes: Routes = [
       {
         path: 'ubicaciones',
         loadComponent: () =>
-          import(
-            './features/ubicaciones/ver-ubicaciones/ver-ubicaciones.component'
-          ).then((m) => m.VerUbicacionesComponent),
+          import('./features/ubicaciones/ver-ubicaciones/ver-ubicaciones.component').then(
+            (m) => m.VerUbicacionesComponent
+          ),
       },
 
       {
         path: 'mis-reservas',
         canActivate: [authGuard],
         loadComponent: () =>
-          import(
-            './features/reservas/pages/mis-reservas/mis-reservas.component'
-          ).then((m) => m.MisReservasComponent),
+          import('./features/reservas/pages/mis-reservas/mis-reservas.component').then(
+            (m) => m.MisReservasComponent
+          ),
       },
 
       {

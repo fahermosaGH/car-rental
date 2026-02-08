@@ -1,0 +1,71 @@
+<h1>Usuarios</h1>
+
+<div class="toolbar">
+  <button class="btn" (click)="toggleShowInactive()">
+    {{ showInactive ? 'Ocultar inactivos' : 'Mostrar inactivos' }}
+  </button>
+
+  <button class="btn ghost" (click)="cargar()">Recargar</button>
+</div>
+
+<div *ngIf="loading" class="state">Cargando usuarios...</div>
+<div *ngIf="!loading && error" class="state error">{{ error }}</div>
+
+<table class="table" *ngIf="!loading && rows.length">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Email</th>
+      <th>Nombre</th>
+      <th>Creado</th>
+      <th>Perfil</th>
+      <th>Roles</th>
+      <th>Activo</th>
+      <th>Acción</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr *ngFor="let r of rows" [class.inactive]="!r.isActive">
+      <td>{{ r.id }}</td>
+      <td class="mono">{{ r.email }}</td>
+      <td>{{ r.firstName }} {{ r.lastName }}</td>
+      <td class="mono">{{ r.createdAt }}</td>
+
+      <td>
+        <span class="pill" [class.ok]="r.profileComplete" [class.bad]="!r.profileComplete">
+          {{ r.profileComplete ? 'Completo' : 'Incompleto' }}
+        </span>
+      </td>
+
+      <td class="roles">
+        <label class="check">
+          <input
+            type="checkbox"
+            [checked]="hasRole(r, 'ROLE_ADMIN')"
+            (change)="onRoleChange(r, 'ROLE_ADMIN', $any($event.target).checked)"
+          />
+          Admin
+        </label>
+
+        <span class="role-user">ROLE_USER</span>
+      </td>
+
+      <td>
+        <span class="pill" [class.ok]="r.isActive" [class.bad]="!r.isActive">
+          {{ r.isActive ? 'Sí' : 'No' }}
+        </span>
+      </td>
+
+      <td>
+        <button class="btn small" (click)="toggleActive(r)">
+          {{ r.isActive ? 'Desactivar' : 'Activar' }}
+        </button>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<div *ngIf="!loading && !rows.length" class="state">
+  No hay usuarios para mostrar.
+</div>

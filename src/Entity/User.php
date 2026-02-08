@@ -34,6 +34,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $created_at;
 
+    // ✅ Nuevo: soft-disable de usuario (para admin)
+    #[ORM\Column(name: 'is_active', type: 'boolean')]
+    private bool $isActive = true;
+
     // 👇 Nuevos campos de perfil
 
     #[ORM\Column(type: 'string', length: 30, nullable: true)]
@@ -157,6 +161,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->created_at;
     }
 
+    // ===== Nuevo: Activo / desactivado =====
+
+    public function isActive(): bool
+    {
+        return $this->isActive === true;
+    }
+
+    public function setIsActive(bool $active): self
+    {
+        $this->isActive = $active;
+        return $this;
+    }
+
     // ===== Perfil extendido =====
 
     public function getPhone(): ?string
@@ -247,3 +264,4 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 }
+

@@ -1,0 +1,109 @@
+<div class="page-head">
+  <div>
+    <h2>Vehículos</h2>
+    <p class="muted">ABM de vehículos (crear / editar / desactivar).</p>
+  </div>
+
+  <div class="head-actions">
+    <label class="check">
+      <input type="checkbox" [(ngModel)]="showInactive" (change)="load()" />
+      <span>Mostrar inactivos</span>
+    </label>
+
+    <button class="btn" (click)="openCreate()">+ Nuevo vehículo</button>
+    <button class="btn-ghost" (click)="load()">Recargar</button>
+  </div>
+</div>
+
+<div *ngIf="error" class="alert">
+  {{ error }}
+</div>
+
+<div *ngIf="loading" class="muted">Cargando...</div>
+
+<div class="card" *ngIf="!loading">
+  <table class="table" *ngIf="items.length > 0; else empty">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Marca</th>
+        <th>Modelo</th>
+        <th>Año</th>
+        <th>Precio/día</th>
+        <th>Act.</th>
+        <th style="width: 220px;">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let v of items">
+        <td>{{ v.id }}</td>
+        <td>{{ v.brand || '-' }}</td>
+        <td>{{ v.model || '-' }}</td>
+        <td>{{ v.year ?? '-' }}</td>
+        <td>{{ v.dailyPrice ?? '-' }}</td>
+        <td>
+          <span class="pill" [class.off]="!v.isActive">{{ v.isActive ? 'Sí' : 'No' }}</span>
+        </td>
+        <td class="actions">
+          <button class="btn-mini" (click)="openEdit(v)">Editar</button>
+          <button class="btn-mini danger" (click)="deactivate(v)" [disabled]="!v.isActive">Desactivar</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <ng-template #empty>
+    <div class="muted">No hay vehículos cargados.</div>
+  </ng-template>
+</div>
+
+<!-- MODAL -->
+<div class="modal-backdrop" *ngIf="modalOpen">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">{{ editing ? 'Editar vehículo' : 'Nuevo vehículo' }}</div>
+      <button class="x" (click)="closeModal()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="grid">
+        <label>
+          <span>Marca</span>
+          <input [(ngModel)]="form.brand" />
+        </label>
+
+        <label>
+          <span>Modelo</span>
+          <input [(ngModel)]="form.model" />
+        </label>
+
+        <label>
+          <span>Año</span>
+          <input type="number" [(ngModel)]="form.year" />
+        </label>
+
+        <label>
+          <span>Precio por día</span>
+          <input type="number" [(ngModel)]="form.dailyPrice" />
+        </label>
+
+        <label>
+          <span>Imagen URL (opcional)</span>
+          <input [(ngModel)]="form.imageUrl" />
+        </label>
+
+        <label class="check">
+          <input type="checkbox" [(ngModel)]="form.isActive" />
+          <span>Activo</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-ghost" (click)="closeModal()">Cancelar</button>
+      <button class="btn" (click)="save()" [disabled]="loading">
+        {{ editing ? 'Guardar cambios' : 'Crear' }}
+      </button>
+    </div>
+  </div>
+</div>

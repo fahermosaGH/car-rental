@@ -1,16 +1,54 @@
+/* =========================
+   Admin PRO Dark (high contrast)
+   Fix: páginas que ya estaban en dark vuelven a verse bien
+   ========================= */
+
+:host {
+  --bg: #070b13;              /* fondo app */
+  --bg-2: #0b1220;            /* fondo contenido */
+  --panel: rgba(255,255,255,.04);
+  --panel-2: rgba(255,255,255,.06);
+  --panel-3: rgba(255,255,255,.08);
+
+  --text: #eaf1ff;
+  --muted: rgba(234,241,255,.72);
+  --muted-2: rgba(234,241,255,.55);
+
+  --border: rgba(255,255,255,.10);
+  --border-2: rgba(255,255,255,.14);
+
+  --brand: #2f6fed;           /* azul marca */
+  --brand-2: #7c3aed;         /* violeta */
+  --ok: #22c55e;
+  --warn: #f59e0b;
+  --danger: #ef4444;
+
+  --radius: 14px;
+  --shadow: 0 18px 50px rgba(0,0,0,.45);
+  --shadow-soft: 0 10px 26px rgba(0,0,0,.25);
+
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: var(--text);
+}
+
 .admin-shell {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 260px 1fr;
-  background: #0b1220;
-  color: #e8eefc;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  grid-template-columns: 280px 1fr;
+  background:
+    radial-gradient(1000px 600px at 70% -10%, rgba(47, 111, 237, 0.22), transparent 55%),
+    radial-gradient(900px 560px at 10% 110%, rgba(124, 58, 237, 0.18), transparent 55%),
+    linear-gradient(180deg, #050812, var(--bg));
 }
 
-/* SIDEBAR */
+/* =========================
+   SIDEBAR
+   ========================= */
 .sidebar {
-  background: #0a0f1c;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(900px 520px at 35% 0%, rgba(47, 111, 237, 0.22), transparent 55%),
+    linear-gradient(180deg, #060a14, #050814);
+  border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   padding: 16px;
@@ -20,27 +58,30 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 8px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 10px 10px 14px;
+  border-bottom: 1px solid var(--border);
 }
 
 .logo {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #2f6fed, #7c3aed);
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--brand), var(--brand-2));
+  box-shadow: 0 16px 34px rgba(47, 111, 237, 0.22);
   display: grid;
   place-items: center;
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: 0.3px;
 }
 
 .brand-text .title {
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1.1;
 }
 .brand-text .subtitle {
-  opacity: 0.7;
+  opacity: 0.75;
   font-size: 12px;
+  margin-top: 2px;
 }
 
 .nav {
@@ -50,96 +91,109 @@
 }
 
 .nav a {
-  color: #cfe0ff;
+  color: rgba(234, 241, 255, 0.92);
   text-decoration: none;
-  padding: 10px 10px;
-  border-radius: 10px;
-  opacity: 0.9;
-  transition: background 0.12s ease, opacity 0.12s ease;
+  padding: 10px 12px;
+  border-radius: 12px;
+  opacity: 0.92;
+  transition: background 0.14s ease, transform 0.08s ease, opacity 0.14s ease;
 }
 
 .nav a:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.07);
   opacity: 1;
 }
 
+.nav a:active {
+  transform: translateY(1px);
+}
+
 .nav a.active {
-  background: rgba(47, 111, 237, 0.18);
-  outline: 1px solid rgba(47, 111, 237, 0.35);
+  background: linear-gradient(90deg, rgba(47,111,237,0.26), rgba(124,58,237,0.14));
+  outline: 1px solid rgba(47,111,237,0.38);
 }
 
 .sidebar-footer {
   margin-top: auto;
   padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--border);
 }
 
 .user {
-  padding: 8px;
+  padding: 8px 10px;
 }
 .user-label {
   font-size: 12px;
-  opacity: 0.7;
+  opacity: 0.72;
 }
 .user-email {
-  font-weight: 600;
+  font-weight: 650;
   word-break: break-all;
 }
 
 .btn-ghost {
   width: 100%;
   margin-top: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: transparent;
-  color: #e8eefc;
+  border: 1px solid var(--border-2);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: 12px;
   cursor: pointer;
+  font-weight: 700;
+  transition: background 0.14s ease, transform 0.08s ease, opacity 0.14s ease;
 }
 .btn-ghost:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.10);
+}
+.btn-ghost:active {
+  transform: translateY(1px);
+  opacity: 0.95;
 }
 
-/* CONTENT */
+/* =========================
+   CONTENT
+   ========================= */
 .content {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .topbar {
-  height: 56px;
+  height: 64px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 18px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(10, 15, 28, 0.6);
+  border-bottom: 1px solid var(--border);
+  background: rgba(10, 15, 28, 0.55);
   backdrop-filter: blur(10px);
 }
 
 .crumbs {
-  font-weight: 600;
-  opacity: 0.9;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  color: var(--text);
+  opacity: 0.96;
 }
 
-/* ✅ nuevo contenedor a la derecha */
 .topbar-right {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-/* ✅ botón "Volver a Ventas" */
 .btn-back {
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid var(--border-2);
   background: rgba(255, 255, 255, 0.06);
-  color: #e8eefc;
+  color: var(--text);
   padding: 8px 12px;
   border-radius: 999px;
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 750;
   font-size: 12px;
-  transition: background 0.12s ease, transform 0.1s ease, opacity 0.12s ease;
+  transition: transform 0.08s ease, background 0.14s ease, opacity 0.14s ease;
 }
 
 .btn-back:hover {
@@ -155,10 +209,165 @@
   font-size: 12px;
   padding: 6px 10px;
   border-radius: 999px;
-  background: rgba(124, 58, 237, 0.18);
-  border: 1px solid rgba(124, 58, 237, 0.35);
+  background: rgba(47, 111, 237, 0.18);
+  border: 1px solid rgba(47, 111, 237, 0.35);
+  color: rgba(234,241,255,.95);
+  font-weight: 800;
 }
 
 .page {
   padding: 18px;
+  min-width: 0;
+}
+
+/* =========================
+   GLOBAL LOOK for child pages inside admin
+   (fixes "no se ve nada" en reservas/stock/etc.)
+   ========================= */
+
+/* Titles inside pages */
+.page h1, .page h2, .page h3 {
+  color: var(--text);
+}
+
+/* Generic card wrapper if a page has plain content */
+.page > * {
+  color: var(--text);
+}
+
+/* Tables: enforce dark readable */
+.page table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-soft);
+}
+
+.page table thead th {
+  text-align: left;
+  font-size: 12px;
+  color: rgba(234,241,255,.85);
+  font-weight: 800;
+  padding: 12px 14px;
+  background: rgba(255,255,255,.06);
+  border-bottom: 1px solid var(--border);
+}
+
+.page table tbody td {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  color: rgba(234,241,255,.92);
+}
+
+.page table tbody tr:hover td {
+  background: rgba(47, 111, 237, 0.06);
+}
+
+.page table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Inputs/selects: dark + focus */
+.page input,
+.page select,
+.page textarea {
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(255,255,255,.06);
+  color: var(--text);
+  outline: none;
+}
+
+.page input::placeholder,
+.page textarea::placeholder {
+  color: rgba(234,241,255,.40);
+}
+
+.page input:focus,
+.page select:focus,
+.page textarea:focus {
+  border-color: rgba(47,111,237,.55);
+  box-shadow: 0 0 0 4px rgba(47,111,237,.18);
+}
+
+/* Buttons: default dark pro */
+.page button {
+  border-radius: 12px;
+}
+
+.page button:not(.btn-ghost):not(.btn-back) {
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(255,255,255,.06);
+  color: var(--text);
+  padding: 8px 12px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: background 0.14s ease, transform 0.08s ease, opacity 0.14s ease;
+}
+
+.page button:not(.btn-ghost):not(.btn-back):hover {
+  background: rgba(255,255,255,.10);
+}
+
+.page button:not(.btn-ghost):not(.btn-back):active {
+  transform: translateY(1px);
+  opacity: 0.95;
+}
+
+/* A "primary" hint without changing HTML: buttons with class 'primary' if you use it */
+.page button.primary {
+  border-color: rgba(47,111,237,.45);
+  background: rgba(47,111,237,.16);
+}
+
+/* Scrollbar nicer (Chrome) */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,.14);
+  border-radius: 999px;
+  border: 2px solid rgba(0,0,0,0);
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,.20);
+  border: 避免 2px solid rgba(0,0,0,0);
+  background-clip: content-box;
+}
+
+/* Responsive */
+@media (max-width: 980px) {
+  .admin-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .nav a {
+    text-align: center;
+  }
+
+  .topbar {
+    height: auto;
+    padding: 12px 14px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
 }

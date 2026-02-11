@@ -7,21 +7,22 @@
       <option value="">(todos)</option>
       <option value="pending">pending</option>
       <option value="confirmed">confirmed</option>
+      <option value="completed">completed</option>
       <option value="cancelled">cancelled</option>
     </select>
   </label>
 
   <label>
     Desde:
-    <input type="date" [(ngModel)]="from">
+    <input type="date" [(ngModel)]="from" />
   </label>
 
   <label>
     Hasta:
-    <input type="date" [(ngModel)]="to">
+    <input type="date" [(ngModel)]="to" />
   </label>
 
-  <button (click)="reload()">Filtrar</button>
+  <button type="button" (click)="reload()">Filtrar</button>
 </div>
 
 <div *ngIf="loading" class="state">Cargando…</div>
@@ -40,6 +41,7 @@
       <th>Cambiar</th>
     </tr>
   </thead>
+
   <tbody>
     <tr *ngFor="let r of rows">
       <td>{{ r.id }}</td>
@@ -47,12 +49,14 @@
       <td>{{ r.vehicle || '-' }}</td>
       <td>{{ r.pickupLocation || '-' }} — {{ r.startAt }}</td>
       <td>{{ r.dropoffLocation || '-' }} — {{ r.endAt }}</td>
-      <td>{{ r.totalPrice | currency:'ARS' }}</td>
+      <td>{{ r.totalPrice | currency : 'ARS' }}</td>
       <td>{{ r.status }}</td>
+
       <td>
         <select [ngModel]="r.status" (ngModelChange)="changeStatus(r, $event)">
           <option value="pending">pending</option>
           <option value="confirmed">confirmed</option>
+          <option value="completed">completed</option>
           <option value="cancelled">cancelled</option>
         </select>
       </td>

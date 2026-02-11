@@ -1,0 +1,99 @@
+<section class="page">
+  <header class="head">
+    <div>
+      <h1>Calificaciones</h1>
+      <p class="muted">
+        Ranking de vehículos por promedio de reseñas y cantidad de opiniones.
+      </p>
+    </div>
+
+    <div class="actions">
+      <div class="search">
+        <input
+          type="text"
+          placeholder="Buscar por marca, modelo o categoría…"
+          [(ngModel)]="q"
+          (input)="apply()"
+        />
+      </div>
+
+      <div class="sort">
+        <button
+          type="button"
+          class="chip"
+          [class.active]="sort === 'best'"
+          (click)="setSort('best')"
+        >
+          ⭐ Mejor puntuación
+        </button>
+
+        <button
+          type="button"
+          class="chip"
+          [class.active]="sort === 'mostReviewed'"
+          (click)="setSort('mostReviewed')"
+        >
+          💬 Más reseñas
+        </button>
+
+        <button type="button" class="chip ghost" (click)="load()">↻ Recargar</button>
+      </div>
+    </div>
+  </header>
+
+  <div *ngIf="loading" class="state">Cargando ranking…</div>
+  <div *ngIf="!loading && error" class="alert">{{ error }}</div>
+
+  <div *ngIf="!loading && !error && filtered.length === 0" class="state">
+    No hay vehículos para mostrar.
+  </div>
+
+  <div class="grid" *ngIf="!loading && !error && filtered.length">
+    <article class="card" *ngFor="let v of filtered; let i = index">
+      <div class="rank">#{{ i + 1 }}</div>
+
+      <div class="media">
+        <img [src]="v.img" [alt]="v.name" />
+      </div>
+
+      <div class="body">
+        <div class="title-row">
+          <div>
+            <h3>{{ v.name }}</h3>
+            <span class="pill">{{ v.category || 'Sin categoría' }}</span>
+          </div>
+
+          <div class="score">
+            <div class="avg">{{ avgText(v) }}</div>
+
+            <div class="stars" aria-label="rating">
+              <span
+                *ngFor="let s of starsArray()"
+                class="star"
+                [class.filled]="isStarFilled(v, s)"
+              >
+                ★
+              </span>
+            </div>
+
+            <div class="cnt">{{ cntOf(v) }} reseñas</div>
+          </div>
+        </div>
+
+        <div class="meta">
+          <span *ngIf="v.year">📆 {{ v.year }}</span>
+          <span *ngIf="v.seats">🧍 {{ v.seats }} asientos</span>
+          <span *ngIf="v.transmission">⚙️ {{ v.transmission | titlecase }}</span>
+        </div>
+
+        <div class="cta">
+          <a class="btn" [routerLink]="['/calificaciones', v.id]">Ver reseñas</a>
+        </div>
+
+        <div class="note" *ngIf="avgOf(v) == null">
+          Sin reseñas todavía. (Queda al final del ranking)
+        </div>
+      </div>
+    </article>
+  </div>
+</section>

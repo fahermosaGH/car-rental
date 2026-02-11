@@ -1,0 +1,85 @@
+<section class="page">
+  <div class="topbar">
+    <a class="back" routerLink="/calificaciones">← Volver al ranking</a>
+    <button type="button" class="reload" (click)="load()">↻ Recargar</button>
+  </div>
+
+  <div *ngIf="loading" class="state">Cargando reseñas…</div>
+  <div *ngIf="!loading && error" class="alert">{{ error }}</div>
+
+  <ng-container *ngIf="!loading && !error && vehiculo">
+    <header class="header">
+      <div class="hero">
+        <img [src]="vehiculo.img" [alt]="vehiculo.name" />
+      </div>
+
+      <div class="info">
+        <h1>{{ vehiculo.name }}</h1>
+
+        <div class="sub">
+          <span class="pill">{{ vehiculo.category || 'Sin categoría' }}</span>
+          <span *ngIf="vehiculo.year">📆 {{ vehiculo.year }}</span>
+          <span *ngIf="vehiculo.seats">🧍 {{ vehiculo.seats }} asientos</span>
+          <span *ngIf="vehiculo.transmission">⚙️ {{ vehiculo.transmission | titlecase }}</span>
+        </div>
+
+        <div class="ratingBox">
+          <div class="avg">{{ ratingAvgText }}</div>
+
+          <div class="stars">
+            <span
+              *ngFor="let s of starsArray()"
+              class="star"
+              [class.filled]="isStarFilled(s)"
+            >★</span>
+          </div>
+
+          <div class="count">{{ ratingCount }} reseñas</div>
+
+          <div class="bar">
+            <div class="barFill" [style.width.%]="ratingBarPct"></div>
+          </div>
+
+          <button type="button" class="btn" (click)="alquilar()">
+            Alquilar este vehículo
+          </button>
+
+          <div class="hint">
+            Este botón no reemplaza nada: te lleva al flujo normal de alquiler.
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="reviews">
+      <h2>Opiniones</h2>
+
+      <div *ngIf="items.length === 0" class="empty">
+        <strong>Todavía no hay reseñas</strong>
+        <p>Cuando finalicen alquileres, los usuarios van a poder calificar y comentar.</p>
+      </div>
+
+      <article class="review" *ngFor="let it of items">
+        <div class="row">
+          <div class="miniStars">
+            <span
+              *ngFor="let s of starsArray()"
+              class="star"
+              [class.filled]="(it.rating ?? 0) >= s"
+            >★</span>
+          </div>
+
+          <span class="date" *ngIf="it.date">{{ it.date | date:'dd/MM/yyyy' }}</span>
+        </div>
+
+        <p class="comment" *ngIf="it.comment; else noComment">
+          “{{ it.comment }}”
+        </p>
+
+        <ng-template #noComment>
+          <p class="comment muted">Sin comentario.</p>
+        </ng-template>
+      </article>
+    </section>
+  </ng-container>
+</section>

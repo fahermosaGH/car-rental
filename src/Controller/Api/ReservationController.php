@@ -47,12 +47,9 @@ class ReservationController extends AbstractController
         }
 
         if (!$user) {
-            return $this->json([
-                'error' => 'Debés iniciar sesión para crear una reserva.'
-            ], 401);
+            return $this->json(['error' => 'Debés iniciar sesión para crear una reserva.'], 401);
         }
 
-        // ⚠️ Nuevo: exigir perfil completo
         if (!$user->isProfileComplete()) {
             return $this->json([
                 'error' => 'Para confirmar una reserva necesitás completar tu perfil (datos personales y licencia).',
@@ -68,7 +65,6 @@ class ReservationController extends AbstractController
             return $this->json(['error' => 'Datos de vehículo o sucursal inválidos'], 422);
         }
 
-        // 🕒 Parsear fechas
         try {
             $startAt = new \DateTimeImmutable($data['startAt']);
             $endAt   = new \DateTimeImmutable($data['endAt']);
@@ -80,7 +76,6 @@ class ReservationController extends AbstractController
             return $this->json(['error' => 'La fecha de fin debe ser posterior a la de inicio'], 422);
         }
 
-        // 🔍 Revalidar disponibilidad
         $available = $validator->isAvailable(
             $vehicle->getId(),
             $pickup->getId(),
@@ -95,7 +90,6 @@ class ReservationController extends AbstractController
             ], 409);
         }
 
-        // 🚗 Crear reserva
         $reservation = new Reservation();
         $reservation->setVehicle($vehicle);
         $reservation->setPickupLocation($pickup);
@@ -105,12 +99,10 @@ class ReservationController extends AbstractController
         $reservation->setStatus('confirmed');
         $reservation->setTotalPrice($data['totalPrice'] ?? 0);
 
-        // 👤 Asociar usuario web (User) si está logueado
         if ($user instanceof User) {
             $reservation->setUser($user);
         }
 
-        // 🧾 Extras
         if (!empty($data['extras']) && is_array($data['extras'])) {
             foreach ($data['extras'] as $extraData) {
                 if (!empty($extraData['name']) && isset($extraData['price'])) {
@@ -150,12 +142,11 @@ class ReservationController extends AbstractController
         return $this->json($data);
     }
 
-        #[Route('/{id}', name: 'api_reservations_show', methods: ['GET'])]
+    #[Route('/{id}', name: 'api_reservations_show', methods: ['GET'])]
     public function show(
         Reservation $reservation,
         #[CurrentUser] ?User $user = null
     ): Response {
-        // Si querés ser estricto y sólo dejar ver reservas propias:
         if ($reservation->getUser() && $user && $reservation->getUser()->getId() !== $user->getId()) {
             return $this->json(['error' => 'Forbidden'], 403);
         }
@@ -164,7 +155,6 @@ class ReservationController extends AbstractController
         $pickup  = $reservation->getPickupLocation();
         $dropoff = $reservation->getDropoffLocation();
 
-        // Extras como array simple
         $extras = [];
         foreach ($reservation->getExtras() as $extra) {
             $extras[] = [
@@ -187,6 +177,8 @@ class ReservationController extends AbstractController
             'endAt'                => $reservation->getEndAt()?->format('Y-m-d'),
             'totalPrice'           => $reservation->getTotalPrice(),
             'status'               => $reservation->getStatus(),
+            'rating'               => $reservation->getRating(),
+            'ratingComment'        => $reservation->getRatingComment(),
             'extras'               => $extras,
         ]);
     }
@@ -209,7 +201,6 @@ class ReservationController extends AbstractController
             return $this->json(['error' => 'Reserva no encontrada'], 404);
         }
 
-        // (Opcional pero prolijo) aseguramos que la reserva sea del usuario
         if ($reservation->getUser() && $reservation->getUser()->getId() !== $user->getId()) {
             return $this->json(['error' => 'Forbidden'], 403);
         }
@@ -252,11 +243,7 @@ class ReservationController extends AbstractController
             $lines[] = '- Sin extras seleccionados.';
         } else {
             foreach ($reservation->getExtras() as $extra) {
-                $lines[] = sprintf(
-                    '- %s: ARS %s',
-                    $extra->getName(),
-                    $extra->getPrice()
-                );
+                $lines[] = sprintf('- %s: ARS %s', $extra->getName(), $extra->getPrice());
             }
         }
 
@@ -268,7 +255,6 @@ class ReservationController extends AbstractController
             ->subject(sprintf('Comprobante de reserva #%d', $reservation->getId()))
             ->text($body);
 
-        // ⚠️ Esto usa el MAILER_DSN que tengas configurado
         $mailer->send($email);
 
         return $this->json([
@@ -277,43 +263,37 @@ class ReservationController extends AbstractController
         ]);
     }
 
-        #[Route('/{id}/cancel', name: 'api_reservations_cancel', methods: ['POST'])]
+    #[Route('/{id}/cancel', name: 'api_reservations_cancel', methods: ['POST'])]
     public function cancel(
         int $id,
         EntityManagerInterface $em,
         #[CurrentUser] ?User $user = null
     ): JsonResponse {
-        // 1) Usuario debe estar logueado
         if (!$user) {
             return $this->json(['message' => 'Unauthorized'], 401);
         }
 
-        $repo = $em->getRepository(Reservation::class);
         /** @var Reservation|null $reservation */
-        $reservation = $repo->find($id);
+        $reservation = $em->getRepository(Reservation::class)->find($id);
 
-        // 2) Reserva debe existir y pertenecer al usuario
         if (!$reservation || $reservation->getUser()?->getId() !== $user->getId()) {
             return $this->json(['message' => 'Reserva no encontrada'], 404);
         }
 
-        // 3) Ya cancelada
         if ($reservation->getStatus() === 'cancelled') {
             return $this->json(['message' => 'La reserva ya está cancelada.'], 409);
         }
 
-        // 4) Regla de negocio basada en días hasta el inicio
         $now     = new \DateTimeImmutable('now');
         $startAt = $reservation->getStartAt();
 
-        // diff en días (signed)
-        $diff          = $now->diff($startAt);
-        $daysToStart   = (int) $diff->format('%r%a'); // puede ser negativo
-        $total         = $reservation->getTotalPrice() !== null ? (float) $reservation->getTotalPrice() : 0.0;
+        $diff        = $now->diff($startAt);
+        $daysToStart = (int) $diff->format('%r%a');
+
+        $total          = $reservation->getTotalPrice() !== null ? (float) $reservation->getTotalPrice() : 0.0;
         $penaltyPercent = 0;
         $penaltyAmount  = '0.00';
 
-        // < 2 días → no se puede cancelar online
         if ($daysToStart < 2) {
             return $this->json([
                 'message' =>
@@ -322,13 +302,11 @@ class ReservationController extends AbstractController
             ], 422);
         }
 
-        // entre 2 y 15 días → 20 % de cargo
         if ($daysToStart <= 15) {
             $penaltyPercent = 20;
             $penaltyAmount  = number_format($total * 0.20, 2, '.', '');
         }
 
-        // 5) Cambiar estado a cancelada
         $reservation->setStatus('cancelled');
         $em->flush();
 
@@ -345,42 +323,51 @@ class ReservationController extends AbstractController
             'daysToStart'    => $daysToStart,
         ]);
     }
-#[Route('/{id}/rating', name: 'api_reservations_rating', methods: ['POST'])]
-public function rating(
-    int $id,
-    Request $request,
-    EntityManagerInterface $em,
-    #[CurrentUser] ?User $user = null
-): JsonResponse {
 
-    if (!$user) {
-        return $this->json(['error' => 'Unauthorized'], 401);
+    #[Route('/{id}/rating', name: 'api_reservations_rating', methods: ['POST'])]
+    public function rating(
+        int $id,
+        Request $request,
+        EntityManagerInterface $em,
+        #[CurrentUser] ?User $user = null
+    ): JsonResponse {
+        if (!$user) {
+            return $this->json(['error' => 'Unauthorized'], 401);
+        }
+
+        /** @var Reservation|null $reservation */
+        $reservation = $em->getRepository(Reservation::class)->find($id);
+        if (!$reservation) {
+            return $this->json(['error' => 'Reserva no encontrada'], 404);
+        }
+
+        if ($reservation->getUser()?->getId() !== $user->getId()) {
+            return $this->json(['error' => 'Forbidden'], 403);
+        }
+
+        // ✅ REGLA: solo se califica una reserva finalizada
+        if ($reservation->getStatus() !== 'completed') {
+            return $this->json(['error' => 'Solo podés calificar reservas finalizadas.'], 422);
+        }
+
+        // ✅ opcional: evitar doble calificación
+        if ($reservation->getRating() !== null) {
+            return $this->json(['error' => 'Esta reserva ya fue calificada.'], 409);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        $rating  = $data['rating'] ?? null;
+        $comment = $data['comment'] ?? null;
+
+        if (!$rating || $rating < 1 || $rating > 5) {
+            return $this->json(['error' => 'Rating inválido (1-5)'], 422);
+        }
+
+        $reservation->setRating((int)$rating);
+        $reservation->setRatingComment($comment);
+
+        $em->flush();
+
+        return $this->json(['message' => 'Calificación guardada']);
     }
-
-    /** @var Reservation|null $reservation */
-    $reservation = $em->getRepository(Reservation::class)->find($id);
-    if (!$reservation) {
-        return $this->json(['error' => 'Reserva no encontrada'], 404);
-    }
-
-    if ($reservation->getUser()?->getId() !== $user->getId()) {
-        return $this->json(['error' => 'Forbidden'], 403);
-    }
-
-    $data = json_decode($request->getContent(), true);
-    $rating  = $data['rating'] ?? null;
-    $comment = $data['comment'] ?? null;
-
-    if (!$rating || $rating < 1 || $rating > 5) {
-        return $this->json(['error' => 'Rating inválido (1-5)'], 422);
-    }
-
-    $reservation->setRating($rating);
-    $reservation->setRatingComment($comment);
-
-    $em->flush();
-
-    return $this->json(['message' => 'Calificación guardada']);
 }
-}
-

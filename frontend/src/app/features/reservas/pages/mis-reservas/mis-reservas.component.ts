@@ -67,11 +67,8 @@ export class MisReservasComponent implements OnInit {
           this.reservas = data.map((r) => {
             const rawStatus: string = r.status ?? 'confirmed';
             const daysToStart = this.calcularDiasHastaInicio(r.startAt);
-            const estadoLegible = this.calcularEstadoLegible(
-              rawStatus,
-              r.startAt,
-              r.endAt
-            );
+
+            const estadoLegible = this.calcularEstadoLegible(rawStatus);
             const canCancel = this.puedeCancelar(rawStatus, daysToStart);
 
             return {
@@ -117,23 +114,24 @@ export class MisReservasComponent implements OnInit {
     return Math.floor(diffMs / (1000 * 60 * 60 * 24));
   }
 
-  private calcularEstadoLegible(
-    rawStatus: string,
-    startAt: string,
-    endAt: string
-  ): string {
-    if (rawStatus === 'cancelled') return 'Cancelada';
-    if (rawStatus === 'pending') return 'Pendiente';
-
-    const hoy = new Date();
-    const fin = new Date(endAt);
-    if (fin.getTime() < hoy.getTime()) return 'Finalizada';
-
-    return 'Activa';
+  // 🔥 CORRECCIÓN CLAVE AQUÍ
+  private calcularEstadoLegible(rawStatus: string): string {
+    switch (rawStatus) {
+      case 'cancelled':
+        return 'Cancelada';
+      case 'pending':
+        return 'Pendiente';
+      case 'completed':
+        return 'Finalizada';
+      case 'confirmed':
+        return 'Activa';
+      default:
+        return 'Activa';
+    }
   }
 
   private puedeCancelar(rawStatus: string, daysToStart: number): boolean {
-    if (rawStatus === 'cancelled') return false;
+    if (rawStatus !== 'confirmed') return false;
     if (daysToStart < 2) return false;
     return true;
   }
@@ -176,9 +174,6 @@ export class MisReservasComponent implements OnInit {
     });
   }
 
-  // ======================================
-  // 👉 ACÁ VIENE EL CAMBIO PARA ENVIAR ESTADO
-  // ======================================
   verDetalle(reserva: ReservaItem): void {
     this.router.navigate(['/cotizar/confirmacion', reserva.id], {
       queryParams: {
@@ -189,30 +184,11 @@ export class MisReservasComponent implements OnInit {
 
   confirmarCancelacion(reserva: ReservaItem): void {
     if (!reserva.canCancel) {
-      alert(
-        'Esta reserva ya no puede cancelarse desde la web. Contactá a atención al cliente.'
-      );
+      alert('Esta reserva ya no puede cancelarse.');
       return;
     }
 
-    const masDe15Dias = reserva.daysToStart > 15;
-    const cargoEstimado = !masDe15Dias
-      ? Math.round(reserva.totalPrice * 0.2)
-      : 0;
-
-    const politicaLinea = masDe15Dias
-      ? 'Política: la cancelación es sin cargo.'
-      : 'Política: se aplicará un cargo del 20% del total.';
-
-    const mensaje =
-      `Estás por cancelar la reserva N.º ${reserva.id}\n\n` +
-      `${politicaLinea}\n\n` +
-      (!masDe15Dias
-        ? `Cargo estimado: ARS ${cargoEstimado.toLocaleString('es-AR')}\n\n`
-        : '') +
-      '¿Confirmás la cancelación?';
-
-    if (!confirm(mensaje)) return;
+    if (!confirm(`¿Cancelar la reserva #${reserva.id}?`)) return;
 
     this.ejecutarCancelacion(reserva);
   }
@@ -233,7 +209,6 @@ export class MisReservasComponent implements OnInit {
           reserva.canCancel = false;
           this.aplicarOrden();
           this.cancelandoId = null;
-          alert('Reserva cancelada correctamente.');
         },
         error: () => {
           this.cancelandoId = null;

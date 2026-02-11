@@ -1,11 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+
 import {
   AdminReservasService,
   AdminReservationRow,
   ReservationStatus,
-} from '../services/admin-reservas.service';
+} from '../services/admin-reservas.service'; // ✅ ESTA ES LA RUTA CORRECTA EN TU ESTRUCTURA
 
 @Component({
   selector: 'app-admin-reservas',
@@ -23,7 +24,8 @@ export class AdminReservasComponent implements OnInit {
   from = '';
   to = '';
 
-  statuses: ReservationStatus[] = ['pending', 'confirmed', 'cancelled'];
+  // ✅ Incluimos completed
+  statuses: ReservationStatus[] = ['pending', 'confirmed', 'completed', 'cancelled'];
 
   constructor(private api: AdminReservasService) {}
 
@@ -43,7 +45,7 @@ export class AdminReservasComponent implements OnInit {
       })
       .subscribe({
         next: (data) => {
-          this.rows = data;
+          this.rows = Array.isArray(data) ? data : [];
           this.loading = false;
         },
         error: () => {
@@ -66,4 +68,3 @@ export class AdminReservasComponent implements OnInit {
     });
   }
 }
-

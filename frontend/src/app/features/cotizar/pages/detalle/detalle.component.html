@@ -1,14 +1,13 @@
 <section class="detalle-page" *ngIf="vehiculo; else loadingTpl">
-  <!-- Barra superior: volver + badge de disponibilidad -->
+
+  <!-- Barra superior -->
   <header class="detalle-header">
-    <button class="btn-back" routerLink="/cotizar/resultados">
+    <button type="button" class="btn-back" (click)="goBack()">
       ← Volver a resultados
     </button>
 
     <div class="header-right">
-      <span *ngIf="checking" class="chip chip-warning">
-        ⏳ Verificando disponibilidad...
-      </span>
+      <span *ngIf="checking" class="chip chip-warning">⏳ Verificando disponibilidad...</span>
 
       <span
         *ngIf="!checking && unitsAvailable !== undefined"
@@ -21,9 +20,10 @@
     </div>
   </header>
 
-  <!-- Layout principal: info a la izquierda, resumen a la derecha -->
+  <!-- Layout principal -->
   <div class="detalle-layout">
-    <!-- Panel principal del vehículo -->
+
+    <!-- Panel principal -->
     <article class="panel panel-main">
       <div class="hero-image">
         <img [src]="vehiculo!.img" [alt]="vehiculo!.name" />
@@ -33,50 +33,41 @@
         <div class="title-row">
           <div>
             <h1>{{ vehiculo!.name }}</h1>
-            <p class="categoria">
-              {{ vehiculo!.category || 'Sin categoría' }}
-            </p>
+            <p class="categoria">{{ vehiculo!.category || 'Sin categoría' }}</p>
           </div>
         </div>
 
         <div class="meta-row">
-          <span *ngIf="vehiculo!.transmission">
-            ⚙️ {{ vehiculo!.transmission | titlecase }}
-          </span>
-          <span *ngIf="vehiculo!.fuel">
-            ⛽ {{ vehiculo!.fuel }}
-          </span>
+          <span *ngIf="vehiculo!.year">📆 {{ vehiculo!.year }}</span>
+          <span *ngIf="vehiculo!.seats">🧍‍♂️ {{ vehiculo!.seats }} asientos</span>
+          <span *ngIf="vehiculo!.transmission">⚙️ {{ vehiculo!.transmission | titlecase }}</span>
         </div>
 
         <section class="block">
           <h2>Descripción</h2>
-          <p>
-            {{ vehiculo!.description || 'Vehículo cómodo y seguro para tu próximo viaje.' }}
-          </p>
+          <p>{{ vehiculo!.description || 'Vehículo cómodo y seguro para tu próximo viaje.' }}</p>
         </section>
 
         <section class="block block-tarifa">
           <div class="tarifa-header">
             <div>
               <span class="label">Tarifa diaria</span>
-              <div class="tarifa-valor">
-                {{ vehiculo!.dailyRate | currency:'ARS' }}
-              </div>
+              <div class="tarifa-valor">{{ vehiculo!.dailyRate | currency:'ARS' }}</div>
             </div>
+
             <div class="tarifa-info">
-              <span class="dias">
-                {{ dias }} {{ dias === 1 ? 'día' : 'días' }}
-              </span>
+              <span class="dias">{{ dias }} {{ dias === 1 ? 'día' : 'días' }}</span>
             </div>
           </div>
         </section>
 
-        <!-- SEGMENTO NUEVO: seguros estilo Hertz -->
+        <!-- Seguros -->
         <section class="block">
           <div class="block-header">
             <h2>Seguros</h2>
             <span class="block-tag">Por reserva</span>
           </div>
+
           <p class="block-subtitle">
             Elegí una cobertura opcional para reducir la franquicia por daños en tu alquiler.
           </p>
@@ -99,35 +90,30 @@
                 <span class="extra-sub">{{ s.description }}</span>
               </div>
               <div class="extra-price">
-                <div class="extra-price-main">
-                  {{ s.price | currency:'ARS' }}
-                </div>
+                <div class="extra-price-main">{{ s.price | currency:'ARS' }}</div>
                 <div class="extra-price-sub">Por reserva</div>
               </div>
             </label>
 
             <div class="extra-note">
-              Podés continuar sin seguro adicional, pero se aplicará la franquicia estándar
-              de la sucursal.
+              Podés continuar sin seguro adicional, pero se aplicará la franquicia estándar de la sucursal.
             </div>
           </div>
         </section>
 
-        <!-- SEGMENTO NUEVO: adicionales estilo Hertz -->
+        <!-- Adicionales -->
         <section class="block">
           <div class="block-header">
             <h2>Adicionales</h2>
             <span class="block-tag">Opcionales</span>
           </div>
+
           <p class="block-subtitle">
             Sumá servicios y equipamiento para hacer tu viaje más cómodo y seguro.
           </p>
 
           <div class="extras-grid extras-adicionales">
-            <div
-              class="extra-item extra-adicional"
-              *ngFor="let a of adicionales"
-            >
+            <div class="extra-item extra-adicional" *ngFor="let a of adicionales">
               <div class="extra-content">
                 <span class="extra-title">{{ a.label }}</span>
                 <span class="extra-sub">{{ a.description }}</span>
@@ -139,33 +125,21 @@
 
               <div class="extra-qty">
                 <div class="quantity-control">
-                  <button
-                    type="button"
-                    (click)="changeAdicionalCantidad(a.id, -1)"
-                    [disabled]="a.quantity === 0"
-                  >
-                    –
-                  </button>
+                  <button type="button" (click)="changeAdicionalCantidad(a.id, -1)" [disabled]="a.quantity === 0">–</button>
                   <span>{{ a.quantity }}</span>
-                  <button
-                    type="button"
-                    (click)="changeAdicionalCantidad(a.id, 1)"
-                    [disabled]="a.quantity >= a.maxQuantity"
-                  >
-                    +
-                  </button>
+                  <button type="button" (click)="changeAdicionalCantidad(a.id, 1)" [disabled]="a.quantity >= a.maxQuantity">+</button>
                 </div>
-                <span class="qty-hint" *ngIf="a.maxQuantity === 1">
-                  Máx. 1
-                </span>
+
+                <span class="qty-hint" *ngIf="a.maxQuantity === 1">Máx. 1</span>
               </div>
             </div>
           </div>
         </section>
+
       </div>
     </article>
 
-    <!-- Panel lateral: resumen de reserva -->
+    <!-- Panel resumen (ACÁ está el botón de alquilar) -->
     <aside class="panel panel-resumen">
       <h2>Resumen de tu reserva</h2>
 
@@ -217,24 +191,29 @@
         El precio final puede variar según impuestos o cargos locales en la sucursal.
       </p>
 
-      <p *ngIf="errorMsg" class="error-msg">
-        {{ errorMsg }}
-      </p>
+      <p *ngIf="errorMsg" class="error-msg">{{ errorMsg }}</p>
 
-      <button
-        class="btn-primary"
-        [disabled]="botonDeshabilitado"
-        (click)="confirmarReserva()"
-      >
+      <button class="btn-primary" [disabled]="botonDeshabilitado" (click)="confirmarReserva()">
         {{ creating ? 'Creando reserva...' : 'Confirmar reserva' }}
       </button>
     </aside>
   </div>
+
+  <!-- Opiniones (abajo del todo) -->
+  <section class="block block-opiniones">
+    <div class="block-header">
+      <h2>Opiniones</h2>
+      <span class="block-tag" *ngIf="!ratingCount">Sin reseñas</span>
+      <span class="block-tag" *ngIf="ratingCount">{{ ratingCount }} reseñas</span>
+    </div>
+
+    <p class="block-subtitle" *ngIf="!ratingCount">
+      Todavía no hay opiniones. Cuando finalices tu alquiler vas a poder calificar el vehículo.
+    </p>
+  </section>
+
 </section>
 
-<!-- Template de carga -->
 <ng-template #loadingTpl>
-  <div class="loading">
-    🚘 Cargando información del vehículo...
-  </div>
+  <div class="loading">🚘 Cargando información del vehículo...</div>
 </ng-template>

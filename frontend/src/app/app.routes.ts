@@ -138,6 +138,28 @@ export const routes: Routes = [
             (m) => m.VerFlotaComponent
           ),
       },
+
+      // ✅ NUEVO: Calificaciones + detalle (usa TU estructura real: features/ratings/pages/...)
+      {
+        path: 'calificaciones',
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./features/ratings/pages/calificaciones/calificaciones.component').then(
+                (m) => m.CalificacionesComponent
+              ),
+          },
+          {
+            path: ':id',
+            loadComponent: () =>
+              import('./features/ratings/pages/calificaciones-detalle/calificaciones-detalle.component').then(
+                (m) => m.CalificacionesDetalleComponent
+              ),
+          },
+        ],
+      },
+
       {
         path: 'ubicaciones',
         loadComponent: () =>

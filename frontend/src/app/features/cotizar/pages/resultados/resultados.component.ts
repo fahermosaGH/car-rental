@@ -15,8 +15,8 @@ export class ResultadosComponent implements OnInit {
   resultados: VehicleOption[] = [];
   dias = 1;
 
-  startAt: string = '';
-  endAt: string = '';
+  startAt = '';
+  endAt = '';
   pickupLocationId = 1;
   dropoffLocationId = 1;
 
@@ -24,7 +24,6 @@ export class ResultadosComponent implements OnInit {
 
   order: 'asc' | 'desc' = 'asc';
 
-  // 🔥 Ahora se rellenan dinámicamente según los autos cargados
   availableCategories: string[] = ['Todos'];
   selectedCategory: string = 'Todos';
 
@@ -48,6 +47,8 @@ export class ResultadosComponent implements OnInit {
         const diffMs =
           new Date(this.endAt).getTime() - new Date(this.startAt).getTime();
         this.dias = Math.max(1, Math.ceil(diffMs / 86400000));
+      } else {
+        this.dias = 1;
       }
 
       this.cargarResultados();
@@ -65,7 +66,6 @@ export class ResultadosComponent implements OnInit {
 
     this.availableCategories = ['Todos', ...categoriasUnicas];
 
-    // Si estoy parado en una categoría que ya no existe en los resultados, vuelvo a "Todos"
     if (
       this.selectedCategory !== 'Todos' &&
       !categoriasUnicas.includes(this.selectedCategory)
@@ -74,27 +74,21 @@ export class ResultadosComponent implements OnInit {
     }
   }
 
-  private cargarResultados() {
+  private cargarResultados(): void {
     this.cargando = true;
 
-    if (this.selectedCategory === 'Todos') {
-      this.cotizarService.buscarVehiculos().subscribe({
-        next: (all) => {
-          this.resultados = all;
-          this.refrescarCategoriasDisponibles();
-          this.ordenarPorPrecio(this.order);
-          this.cargando = false;
-        },
-        error: () => {
-          this.resultados = [];
-          this.refrescarCategoriasDisponibles();
-          this.cargando = false;
-        },
-      });
+    // Si faltan params esenciales, no hay forma de calcular “disponibles”
+    if (!this.startAt || !this.endAt || !this.pickupLocationId) {
+      this.resultados = [];
+      this.refrescarCategoriasDisponibles();
+      this.cargando = false;
       return;
     }
 
-    const category = this.selectedCategory;
+    const category =
+      this.selectedCategory && this.selectedCategory !== 'Todos'
+        ? this.selectedCategory
+        : undefined;
 
     this.cotizarService
       .getAvailableVehicles({
@@ -105,7 +99,7 @@ export class ResultadosComponent implements OnInit {
       })
       .subscribe({
         next: (data) => {
-          this.resultados = data;
+          this.resultados = data ?? [];
           this.refrescarCategoriasDisponibles();
           this.ordenarPorPrecio(this.order);
           this.cargando = false;

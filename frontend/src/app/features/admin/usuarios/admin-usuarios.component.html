@@ -26,24 +26,37 @@
   </thead>
 
   <tbody>
-    <tr *ngFor="let r of rows" [class.inactive]="!r.isActive">
+    <tr
+      *ngFor="let r of rows"
+      [class.inactive]="!r.isActive"
+      [class.me]="isMe(r)"
+    >
       <td>{{ r.id }}</td>
-      <td class="mono">{{ r.email }}</td>
+
+      <td class="mono">
+        {{ r.email }}
+        <span *ngIf="isMe(r)" class="me-badge">TU CUENTA</span>
+      </td>
+
       <td>{{ r.firstName }} {{ r.lastName }}</td>
       <td class="mono">{{ r.createdAt }}</td>
 
       <td>
-        <span class="pill" [class.ok]="r.profileComplete" [class.bad]="!r.profileComplete">
+        <span
+          class="pill"
+          [class.ok]="r.profileComplete"
+          [class.bad]="!r.profileComplete"
+        >
           {{ r.profileComplete ? 'Completo' : 'Incompleto' }}
         </span>
       </td>
 
       <td class="roles">
-        <label class="check">
+        <label class="check" [class.disabled]="isMe(r)">
           <input
             type="checkbox"
             [checked]="hasRole(r, 'ROLE_ADMIN')"
-            (change)="onRoleChange(r, 'ROLE_ADMIN', $any($event.target).checked)"
+            (change)="onRoleAdminToggle(r, $any($event.target).checked)"
           />
           Admin
         </label>
@@ -58,7 +71,7 @@
       </td>
 
       <td>
-        <button class="btn small" (click)="toggleActive(r)">
+        <button class="btn small" (click)="toggleActive(r)" [disabled]="isMe(r)">
           {{ r.isActive ? 'Desactivar' : 'Activar' }}
         </button>
       </td>
@@ -69,3 +82,4 @@
 <div *ngIf="!loading && !rows.length" class="state">
   No hay usuarios para mostrar.
 </div>
+

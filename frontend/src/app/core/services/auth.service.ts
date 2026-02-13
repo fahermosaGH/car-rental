@@ -5,6 +5,7 @@ import {
   Observable,
   catchError,
   map,
+  of,
   switchMap,
   tap,
   throwError,
@@ -31,13 +32,11 @@ export interface RegisterPayload {
   password: string;
 }
 
-// Modelo de usuario para el front
 export interface AuthUser {
   email: string;
   roles: string[];
 }
 
-// Perfil que devuelve el backend
 export interface ProfileResponse {
   email: string;
   firstName: string;
@@ -55,7 +54,6 @@ export interface ProfileResponse {
   profileComplete: boolean;
 }
 
-// Payload para actualizar perfil
 export interface ProfileUpdatePayload {
   firstName: string;
   lastName: string;
@@ -70,7 +68,7 @@ export interface ProfileUpdatePayload {
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private apiUrl = environment.apiUrl; // ej: http://127.0.0.1:8000/api
+  private apiUrl = environment.apiUrl;
 
   readonly authChanges = new BehaviorSubject<boolean>(this.isLoggedIn());
 
@@ -78,8 +76,8 @@ export class AuthService {
   readonly user$ = this.userSubject.asObservable();
 
   constructor(private http: HttpClient, private router: Router) {
-    // Si hay token, intentamos precargar /me (pero sin romper si falla)
-    if (this.isLoggedIn()) {
+    // ✅ Solo intenta /me si hay token
+    if (this.token) {
       this.loadMe().subscribe({
         next: () => {},
         error: () => this.userSubject.next(null),
@@ -88,9 +86,8 @@ export class AuthService {
   }
 
   // =========================
-  // 🔹 Helpers de usuario/rol
+  // Helpers usuario/rol
   // =========================
-
   get currentUser(): AuthUser | null {
     return this.userSubject.value;
   }
@@ -108,7 +105,9 @@ export class AuthService {
     this.userSubject.next(user);
   }
 
-  // === Token helpers ===
+  // =========================
+  // Token helpers
+  // =========================
   get token(): string | null {
     return localStorage.getItem(TOKEN_KEY);
   }
@@ -124,7 +123,7 @@ export class AuthService {
   }
 
   isLoggedIn(): boolean {
-    return !!localStorage.getItem(TOKEN_KEY);
+    return !!this.token;
   }
 
   logout(): void {
@@ -132,7 +131,9 @@ export class AuthService {
     this.userSubject.next(null);
   }
 
-  // === Return URL helpers ===
+  // =========================
+  // Return URL helpers
+  // =========================
   setReturnUrl(url: string): void {
     try {
       sessionStorage.setItem(RETURN_URL_KEY, url);
@@ -158,23 +159,20 @@ export class AuthService {
     return false;
   }
 
-  // === API calls ===
+  // =========================
+  // API calls
+  // =========================
 
   /**
-   * ✅ Login que NO termina hasta haber cargado /me.
-   * Así el rol está disponible inmediatamente (isAdmin()).
+   * ✅ Login: guarda token y luego carga /me (con token sí o sí)
    */
   login(email: string, password: string): Observable<MeResponse> {
     return this.http
       .post<AuthResponse>(`${this.apiUrl}/login_check`, { email, password })
       .pipe(
-        tap((res) => {
-          this.token = res.token;
-        }),
-        switchMap(() => this.me()),
-        tap((me) => {
-          this.userSubject.next({ email: me.email, roles: me.roles });
-        }),
+        tap((res) => (this.token = res.token)),
+        switchMap(() => this.meAuthed()),
+        tap((me) => this.userSubject.next({ email: me.email, roles: me.roles })),
         catchError((err) => throwError(() => err))
       );
   }
@@ -192,23 +190,41 @@ export class AuthService {
     });
   }
 
-  me(): Observable<MeResponse> {
-    const headers = this.token
-      ? new HttpHeaders({ Authorization: `Bearer ${this.token}` })
-      : undefined;
+  /**
+   * ✅ Seguro: si NO hay token, NO pega al backend y devuelve null.
+   * Esto elimina el 401 rojo en pantallas públicas.
+   */
+  me(): Observable<MeResponse | null> {
+    if (!this.token) {
+      return of(null);
+    }
+    return this.meAuthed().pipe(
+      catchError(() => of(null)) // token vencido o inválido -> no explota la UI
+    );
+  }
 
+  /**
+   * ✅ Solo interno: requiere token sí o sí (para login / flujo protegido)
+   */
+  private meAuthed(): Observable<MeResponse> {
+    const headers = new HttpHeaders({ Authorization: `Bearer ${this.token}` });
     return this.http
       .get<MeResponse>(`${this.apiUrl}/me`, { headers })
       .pipe(catchError((err) => throwError(() => err)));
   }
 
   /**
-   * ✅ Público: para guards o refresh.
-   * Trae /me y actualiza el userSubject.
+   * ✅ Público: refresh de user. Si no hay token, limpia y termina.
    */
-  loadMe(): Observable<MeResponse> {
+  loadMe(): Observable<MeResponse | null> {
     return this.me().pipe(
-      tap((me) => this.userSubject.next({ email: me.email, roles: me.roles }))
+      tap((me) => {
+        if (!me) {
+          this.userSubject.next(null);
+          return;
+        }
+        this.userSubject.next({ email: me.email, roles: me.roles });
+      })
     );
   }
 

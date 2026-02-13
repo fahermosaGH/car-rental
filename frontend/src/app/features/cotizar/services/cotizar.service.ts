@@ -23,7 +23,7 @@ export class CotizarService {
   constructor(private http: HttpClient, private auth: AuthService) {}
 
   // -------------------------------------------------------------
-  // 🔥 Normalizador de categoría
+  // Normalizador de categoría
   // -------------------------------------------------------------
   private normalizeCategory(cat: any): string {
     if (!cat) return 'Sin categoría';
@@ -54,10 +54,9 @@ export class CotizarService {
             img: 'https://picsum.photos/seed/' + v.model + '/400/220',
             fuel: 'Nafta',
             description: `${v.brand} ${v.model} (${category})`,
-            unitsAvailable:
-              typeof v.unitsAvailable === 'number' ? v.unitsAvailable : undefined,
+            unitsAvailable: typeof v.unitsAvailable === 'number' ? v.unitsAvailable : undefined,
 
-            // ✅ ratings summary (si backend no lo manda, queda null/0)
+            // ratings summary
             ratingAvg: typeof v.ratingAvg === 'number' ? v.ratingAvg : null,
             ratingCount: typeof v.ratingCount === 'number' ? v.ratingCount : 0,
           };
@@ -67,9 +66,7 @@ export class CotizarService {
   }
 
   obtenerVehiculoPorId(id: number): Observable<VehicleOption | undefined> {
-    return this.buscarVehiculos().pipe(
-      map((vehiculos) => vehiculos.find((v) => v.id === id))
-    );
+    return this.buscarVehiculos().pipe(map((vehiculos) => vehiculos.find((v) => v.id === id)));
   }
 
   // -------------------------------------------------------------
@@ -106,42 +103,38 @@ export class CotizarService {
       httpParams = httpParams.set('category', params.category.trim());
     }
 
-    return this.http
-      .get<any[]>(`${this.apiUrl}/vehicles/available`, { params: httpParams })
-      .pipe(
-        map((data) =>
-          data.map((v) => ({
-            id: v.id,
-            category: v.category ?? 'Sin categoría',
-            brand: v.brand,
-            model: v.model,
-            name: `${v.brand} ${v.model}`,
-            year: v.year,
-            seats: v.seats,
-            transmission: v.transmission,
-            dailyRate: parseFloat(v.dailyRate ?? 0),
-            img: 'https://picsum.photos/seed/' + v.model + '/400/220',
-            description: `${v.brand} ${v.model} (${v.category ?? 'Sin categoría'})`,
-            fuel: 'Nafta',
-            unitsAvailable: v.unitsAvailable,
-            branchStock: v.branchStock,
+    return this.http.get<any[]>(`${this.apiUrl}/vehicles/available`, { params: httpParams }).pipe(
+      map((data) =>
+        data.map((v) => ({
+          id: v.id,
+          category: v.category ?? 'Sin categoría',
+          brand: v.brand,
+          model: v.model,
+          name: `${v.brand} ${v.model}`,
+          year: v.year,
+          seats: v.seats,
+          transmission: v.transmission,
+          dailyRate: parseFloat(v.dailyRate ?? 0),
+          img: 'https://picsum.photos/seed/' + v.model + '/400/220',
+          description: `${v.brand} ${v.model} (${v.category ?? 'Sin categoría'})`,
+          fuel: 'Nafta',
+          unitsAvailable: v.unitsAvailable,
+          branchStock: v.branchStock,
 
-            // ✅ ratings summary
-            ratingAvg: typeof v.ratingAvg === 'number' ? v.ratingAvg : null,
-            ratingCount: typeof v.ratingCount === 'number' ? v.ratingCount : 0,
-          }))
-        )
-      );
+          ratingAvg: typeof v.ratingAvg === 'number' ? v.ratingAvg : null,
+          ratingCount: typeof v.ratingCount === 'number' ? v.ratingCount : 0,
+        }))
+      )
+    );
   }
 
   // -------------------------------------------------------------
-  // ✅ NUEVO: ratings/opiniones por vehículo (detalle)
+  // RATINGS DETALLE
   // -------------------------------------------------------------
   getVehicleRatings(vehicleId: number, limit = 6): Observable<VehicleRatingsResponse> {
-    return this.http.get<VehicleRatingsResponse>(
-      `${this.apiUrl}/vehicles/${vehicleId}/ratings`,
-      { params: new HttpParams().set('limit', String(limit)) }
-    );
+    return this.http.get<VehicleRatingsResponse>(`${this.apiUrl}/vehicles/${vehicleId}/ratings`, {
+      params: new HttpParams().set('limit', String(limit)),
+    });
   }
 
   // -------------------------------------------------------------
@@ -159,14 +152,13 @@ export class CotizarService {
       .set('start', params.startAt)
       .set('end', params.endAt);
 
-    return this.http.get<{ available: boolean; message: string }>(
-      `${this.apiUrl}/check-availability`,
-      { params: httpParams }
-    );
+    return this.http.get<{ available: boolean; message: string }>(`${this.apiUrl}/check-availability`, {
+      params: httpParams,
+    });
   }
 
   // -------------------------------------------------------------
-  // RESERVAS
+  // ✅ RESERVAS (nuevo payload: pricing)
   // -------------------------------------------------------------
   crearReserva(payload: {
     vehicleId: number;
@@ -174,18 +166,23 @@ export class CotizarService {
     dropoffLocationId: number;
     startAt: string;
     endAt: string;
-    totalPrice: number | string;
-    extras: Array<{ name: string; price: number | string }>;
-  }): Observable<{ message: string; id: number }> {
+    pricing: {
+      insuranceCode: string | null;
+      extras: Array<{
+        code: string;
+        quantity: number;
+        price: number;
+        billing: 'per_day' | 'per_reservation';
+      }>;
+    };
+  }): Observable<{ message: string; id: number; pricing?: any }> {
     const headers = this.auth.token
       ? new HttpHeaders({ Authorization: `Bearer ${this.auth.token}` })
       : undefined;
 
-    return this.http.post<{ message: string; id: number }>(
-      `${this.apiUrl}/reservations`,
-      payload,
-      { headers }
-    );
+    return this.http.post<{ message: string; id: number; pricing?: any }>(`${this.apiUrl}/reservations`, payload, {
+      headers,
+    });
   }
 
   getReservationById(id: number) {
@@ -226,10 +223,6 @@ export class CotizarService {
       ? new HttpHeaders({ Authorization: `Bearer ${this.auth.token}` })
       : undefined;
 
-    return this.http.post(
-      `${this.apiUrl}/reservations/${reservationId}/rating`,
-      payload,
-      { headers }
-    );
+    return this.http.post(`${this.apiUrl}/reservations/${reservationId}/rating`, payload, { headers });
   }
 }

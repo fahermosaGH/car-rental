@@ -36,7 +36,9 @@
           💬 Más reseñas
         </button>
 
-        <button type="button" class="chip ghost" (click)="load()">↻ Recargar</button>
+        <button type="button" class="chip ghost" (click)="load()">
+          ↻ Recargar
+        </button>
       </div>
     </div>
   </header>
@@ -52,14 +54,14 @@
     <article class="card" *ngFor="let v of filtered; let i = index">
       <div class="rank">#{{ i + 1 }}</div>
 
-      <div class="media">
-        <img [src]="v.img" [alt]="v.name" />
+      <div class="media" *ngIf="v.__img">
+        <img [src]="v.__img" [alt]="v.__name" />
       </div>
 
       <div class="body">
         <div class="title-row">
           <div>
-            <h3>{{ v.name }}</h3>
+            <h3>{{ v.__name }}</h3>
             <span class="pill">{{ v.category || 'Sin categoría' }}</span>
           </div>
 

@@ -5,26 +5,24 @@ namespace App\Controller\Api;
 use App\Repository\ReservationRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Annotation\Route;
 
 class VehicleRatingController extends AbstractController
 {
     #[Route('/api/vehicles/{id}/ratings', name: 'api_vehicle_ratings', methods: ['GET'])]
-    public function ratings(int $id, ReservationRepository $reservations): JsonResponse
+    public function vehicleRatings(int $id, Request $request, ReservationRepository $reservationRepo): JsonResponse
     {
-        $summary = $reservations->getVehicleRatingSummary($id);
-        $itemsRaw = $reservations->getVehicleRatings($id, 6);
+        $limit = (int)($request->query->get('limit', 12));
+        $limit = max(1, min(100, $limit));
 
-        $items = array_map(static fn(array $r) => [
-            'rating' => (int) $r['rating'],
-            'comment' => $r['ratingComment'] ?? null,
-            'endAt' => isset($r['endAt']) && $r['endAt'] ? $r['endAt']->format(\DateTimeInterface::ATOM) : null,
-        ], $itemsRaw);
+        $stats = $reservationRepo->getRatingStatsForVehicle($id);
+        $items = $reservationRepo->getRatingsForVehicle($id, $limit);
 
         return $this->json([
             'vehicleId' => $id,
-            'ratingAvg' => $summary['avg'],
-            'ratingCount' => $summary['count'],
+            'ratingAvg' => $stats['avg'],
+            'ratingCount' => $stats['count'],
             'items' => $items,
         ]);
     }

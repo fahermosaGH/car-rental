@@ -65,11 +65,11 @@
         <section class="block">
           <div class="block-header">
             <h2>Seguros</h2>
-            <span class="block-tag">Por reserva</span>
+            <span class="block-tag">Por día (% sobre tarifa)</span>
           </div>
 
           <p class="block-subtitle">
-            Elegí una cobertura opcional para reducir la franquicia por daños en tu alquiler.
+            Elegí una cobertura para reducir la franquicia por daños en tu alquiler.
           </p>
 
           <div class="extras-grid extras-seguros">
@@ -83,20 +83,22 @@
                 name="seguro"
                 [value]="s.id"
                 [(ngModel)]="selectedSeguroId"
-                (change)="actualizarTotal()"
+                (change)="onSeguroChange()"
               />
               <div class="extra-content">
                 <span class="extra-title seguro-title">{{ s.label }}</span>
                 <span class="extra-sub">{{ s.description }}</span>
               </div>
+
+              <!-- ✅ Precio dinámico -->
               <div class="extra-price">
-                <div class="extra-price-main">{{ s.price | currency:'ARS' }}</div>
-                <div class="extra-price-sub">Por reserva</div>
+                <div class="extra-price-main">{{ seguroPriceFor(s.id) | currency:'ARS' }}</div>
+                <div class="extra-price-sub">Total ({{ dias }} {{ dias === 1 ? 'día' : 'días' }})</div>
               </div>
             </label>
 
             <div class="extra-note">
-              Podés continuar sin seguro adicional, pero se aplicará la franquicia estándar de la sucursal.
+              Tenés que elegir un seguro para continuar (el precio se calcula según días y tarifa).
             </div>
           </div>
         </section>
@@ -117,17 +119,32 @@
               <div class="extra-content">
                 <span class="extra-title">{{ a.label }}</span>
                 <span class="extra-sub">{{ a.description }}</span>
+
+                <!-- ✅ Precio dinámico por unidad (depende de billing y días) -->
                 <span class="extra-sub extra-sub-price">
-                  {{ a.price | currency:'ARS' }}
-                  {{ a.billing === 'per_day' ? ' por día' : ' por reserva' }}
+                  {{ adicionalPriceFor(a.id) | currency:'ARS' }} por unidad
+                  <span class="muted">
+                    ({{ (EXTRAS_PCT_OF_BASE * 100) | number:'1.0-0' }}% del base
+                    {{ a.billing === 'per_day' ? ' x día' : '' }})
+                  </span>
                 </span>
               </div>
 
               <div class="extra-qty">
                 <div class="quantity-control">
-                  <button type="button" (click)="changeAdicionalCantidad(a.id, -1)" [disabled]="a.quantity === 0">–</button>
+                  <button
+                    type="button"
+                    (click)="changeAdicionalCantidad(a.id, -1)"
+                    [disabled]="a.quantity === 0"
+                  >–</button>
+
                   <span>{{ a.quantity }}</span>
-                  <button type="button" (click)="changeAdicionalCantidad(a.id, 1)" [disabled]="a.quantity >= a.maxQuantity">+</button>
+
+                  <button
+                    type="button"
+                    (click)="changeAdicionalCantidad(a.id, 1)"
+                    [disabled]="a.quantity >= a.maxQuantity"
+                  >+</button>
                 </div>
 
                 <span class="qty-hint" *ngIf="a.maxQuantity === 1">Máx. 1</span>
@@ -139,7 +156,7 @@
       </div>
     </article>
 
-    <!-- Panel resumen (ACÁ está el botón de alquilar) -->
+    <!-- Panel resumen -->
     <aside class="panel panel-resumen">
       <h2>Resumen de tu reserva</h2>
 
@@ -188,7 +205,7 @@
       </div>
 
       <p class="nota">
-        El precio final puede variar según impuestos o cargos locales en la sucursal.
+        El precio final se calcula en el servidor según los días, seguro y adicionales seleccionados.
       </p>
 
       <p *ngIf="errorMsg" class="error-msg">{{ errorMsg }}</p>
@@ -199,7 +216,7 @@
     </aside>
   </div>
 
-  <!-- Opiniones (abajo del todo) -->
+  <!-- Opiniones -->
   <section class="block block-opiniones">
     <div class="block-header">
       <h2>Opiniones</h2>

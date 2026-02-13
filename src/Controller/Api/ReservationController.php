@@ -7,6 +7,7 @@ use App\Entity\ReservationExtra;
 use App\Entity\User;
 use App\Repository\VehicleRepository;
 use App\Repository\LocationRepository;
+use App\Service\PricingService;
 use App\Service\ReservationValidator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -28,6 +29,7 @@ class ReservationController extends AbstractController
         VehicleRepository $vehicleRepo,
         LocationRepository $locationRepo,
         ReservationValidator $validator,
+        PricingService $pricingService,
         #[CurrentUser] ?User $user = null
     ): Response {
         $data = json_decode($request->getContent(), true);
@@ -68,7 +70,7 @@ class ReservationController extends AbstractController
         try {
             $startAt = new \DateTimeImmutable($data['startAt']);
             $endAt   = new \DateTimeImmutable($data['endAt']);
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             return $this->json(['error' => 'Formato de fecha inválido'], 400);
         }
 
@@ -90,6 +92,19 @@ class ReservationController extends AbstractController
             ], 409);
         }
 
+        // ✅ NUEVO: pricing desde servidor (seguro obligatorio)
+        $pricingPayload = (isset($data['pricing']) && is_array($data['pricing'])) ? $data['pricing'] : [];
+        $computed = $pricingService->compute($vehicle, $startAt, $endAt, $pricingPayload);
+
+        if (empty($computed['ok'])) {
+            $code  = $computed['code'] ?? null;
+            $error = $computed['error'] ?? 'No se pudo calcular el precio.';
+            return $this->json([
+                'error' => $error,
+                'code'  => $code,
+            ], 422);
+        }
+
         $reservation = new Reservation();
         $reservation->setVehicle($vehicle);
         $reservation->setPickupLocation($pickup);
@@ -97,20 +112,34 @@ class ReservationController extends AbstractController
         $reservation->setStartAt($startAt);
         $reservation->setEndAt($endAt);
         $reservation->setStatus('confirmed');
-        $reservation->setTotalPrice($data['totalPrice'] ?? 0);
 
-        if ($user instanceof User) {
-            $reservation->setUser($user);
+        // ✅ total calculado por servidor
+        $reservation->setTotalPrice($computed['total'] ?? '0.00');
+
+        $reservation->setUser($user);
+
+        // ✅ Guardar seguro + extras calculados como ReservationExtra
+        // 1) Seguro
+        if (!empty($computed['insurance']) && is_array($computed['insurance'])) {
+            $ins = $computed['insurance'];
+            if (!empty($ins['name']) && isset($ins['price'])) {
+                $extra = new ReservationExtra();
+                $extra->setName((string) $ins['name']);
+                $extra->setPrice((string) $ins['price']);
+                $reservation->addExtra($extra);
+            }
         }
 
-        if (!empty($data['extras']) && is_array($data['extras'])) {
-            foreach ($data['extras'] as $extraData) {
-                if (!empty($extraData['name']) && isset($extraData['price'])) {
-                    $extra = new ReservationExtra();
-                    $extra->setName($extraData['name']);
-                    $extra->setPrice($extraData['price']);
-                    $reservation->addExtra($extra);
-                }
+        // 2) Adicionales
+        if (!empty($computed['extras']) && is_array($computed['extras'])) {
+            foreach ($computed['extras'] as $line) {
+                if (!is_array($line)) continue;
+                if (empty($line['name']) || !isset($line['price'])) continue;
+
+                $extra = new ReservationExtra();
+                $extra->setName((string) $line['name']);
+                $extra->setPrice((string) $line['price']);
+                $reservation->addExtra($extra);
             }
         }
 
@@ -119,7 +148,9 @@ class ReservationController extends AbstractController
 
         return $this->json([
             'message' => '✅ Reserva creada correctamente',
-            'id' => $reservation->getId(),
+            'id'      => $reservation->getId(),
+            // opcional: devolver pricing calculado para debug/UI
+            'pricing' => $computed,
         ], 201);
     }
 
@@ -345,12 +376,10 @@ class ReservationController extends AbstractController
             return $this->json(['error' => 'Forbidden'], 403);
         }
 
-        // ✅ REGLA: solo se califica una reserva finalizada
         if ($reservation->getStatus() !== 'completed') {
             return $this->json(['error' => 'Solo podés calificar reservas finalizadas.'], 422);
         }
 
-        // ✅ opcional: evitar doble calificación
         if ($reservation->getRating() !== null) {
             return $this->json(['error' => 'Esta reserva ya fue calificada.'], 409);
         }

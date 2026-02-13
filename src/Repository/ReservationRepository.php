@@ -14,71 +14,109 @@ class ReservationRepository extends ServiceEntityRepository
     }
 
     /**
-     * Devuelve promedio y cantidad de ratings para un vehículo.
-     * Usa Reservation.rating + Reservation.vehicle + status 'finished'
+     * Devuelve stats (avg, count) para muchos vehículos en una sola query.
+     * Solo considera reservas: status=completed y rating no null.
+     *
+     * Retorna un mapa:
+     * [
+     *   vehicleId => ['avg' => float|null, 'count' => int],
+     *   ...
+     * ]
      */
-    public function getVehicleRatingSummary(int $vehicleId): array
+    public function getRatingStatsByVehicleIds(array $vehicleIds): array
     {
-        $row = $this->createQueryBuilder('r')
-            ->select('AVG(r.rating) AS avgRating, COUNT(r.id) AS cnt')
-            ->andWhere('r.vehicle = :vid')
-            ->setParameter('vid', $vehicleId)
+        $vehicleIds = array_values(array_filter(array_map('intval', $vehicleIds)));
+        if (count($vehicleIds) === 0) {
+            return [];
+        }
+
+        $qb = $this->createQueryBuilder('r')
+            ->select('IDENTITY(r.vehicle) AS vehicleId')
+            ->addSelect('AVG(r.rating) AS ratingAvg')
+            ->addSelect('COUNT(r.rating) AS ratingCount')
+            ->andWhere('r.status = :status')
             ->andWhere('r.rating IS NOT NULL')
-            ->andWhere('r.status = :st')
-            ->setParameter('st', 'finished')
-            ->getQuery()
-            ->getOneOrNullResult();
-
-        $avg = ($row && $row['avgRating'] !== null) ? (float) $row['avgRating'] : null;
-        $cnt = ($row && $row['cnt'] !== null) ? (int) $row['cnt'] : 0;
-
-        return ['avg' => $avg, 'count' => $cnt];
-    }
-
-    /**
-     * Últimas opiniones (rating + comment) para un vehículo
-     */
-    public function getVehicleRatings(int $vehicleId, int $limit = 6): array
-    {
-        return $this->createQueryBuilder('r')
-            ->select('r.rating, r.ratingComment, r.endAt')
-            ->andWhere('r.vehicle = :vid')
-            ->setParameter('vid', $vehicleId)
-            ->andWhere('r.rating IS NOT NULL')
-            ->andWhere('r.status = :st')
-            ->setParameter('st', 'finished')
-            ->orderBy('r.endAt', 'DESC')
-            ->setMaxResults($limit)
-            ->getQuery()
-            ->getArrayResult();
-    }
-
-    /**
-     * Para listado: summary por muchos vehicles en un query (performance)
-     */
-    public function getRatingsSummaryForVehicleIds(array $vehicleIds): array
-    {
-        if (!$vehicleIds) return [];
-
-        $rows = $this->createQueryBuilder('r')
-            ->select('IDENTITY(r.vehicle) AS vehicleId, AVG(r.rating) AS avgRating, COUNT(r.id) AS cnt')
-            ->andWhere('r.vehicle IN (:ids)')
+            ->andWhere('IDENTITY(r.vehicle) IN (:ids)')
+            ->setParameter('status', 'completed')
             ->setParameter('ids', $vehicleIds)
-            ->andWhere('r.rating IS NOT NULL')
-            ->andWhere('r.status = :st')
-            ->setParameter('st', 'finished')
-            ->groupBy('vehicleId')
-            ->getQuery()
-            ->getArrayResult();
+            ->groupBy('vehicleId');
 
-        $map = [];
+        $rows = $qb->getQuery()->getArrayResult();
+
+        $out = [];
         foreach ($rows as $row) {
-            $map[(int)$row['vehicleId']] = [
-                'avg' => $row['avgRating'] !== null ? (float)$row['avgRating'] : null,
-                'count' => (int)$row['cnt'],
+            $vid = (int)($row['vehicleId'] ?? 0);
+            if ($vid <= 0) continue;
+
+            $avg = $row['ratingAvg'];
+            $out[$vid] = [
+                'avg' => $avg !== null ? (float)$avg : null,
+                'count' => (int)($row['ratingCount'] ?? 0),
             ];
         }
 
-        return $map;
+        return $out;
+    }
+
+    /**
+     * Stats de un vehículo.
+     */
+    public function getRatingStatsForVehicle(int $vehicleId): array
+    {
+        $vehicleId = (int)$vehicleId;
+
+        $qb = $this->createQueryBuilder('r')
+            ->select('AVG(r.rating) AS ratingAvg')
+            ->addSelect('COUNT(r.rating) AS ratingCount')
+            ->andWhere('r.status = :status')
+            ->andWhere('r.rating IS NOT NULL')
+            ->andWhere('IDENTITY(r.vehicle) = :vid')
+            ->setParameter('status', 'completed')
+            ->setParameter('vid', $vehicleId);
+
+        $row = $qb->getQuery()->getOneOrNullResult();
+
+        return [
+            'avg' => ($row && $row['ratingAvg'] !== null) ? (float)$row['ratingAvg'] : null,
+            'count' => ($row && $row['ratingCount'] !== null) ? (int)$row['ratingCount'] : 0,
+        ];
+    }
+
+    /**
+     * Lista de reseñas (items) para un vehículo.
+     * Solo reservas completed con rating no null.
+     */
+    public function getRatingsForVehicle(int $vehicleId, int $limit = 12): array
+    {
+        $vehicleId = (int)$vehicleId;
+        $limit = max(1, min(100, (int)$limit));
+
+        // join user para mostrar email (opcional, pero suma)
+        $qb = $this->createQueryBuilder('r')
+            ->leftJoin('r.user', 'u')
+            ->addSelect('u')
+            ->andWhere('r.status = :status')
+            ->andWhere('r.rating IS NOT NULL')
+            ->andWhere('IDENTITY(r.vehicle) = :vid')
+            ->setParameter('status', 'completed')
+            ->setParameter('vid', $vehicleId)
+            ->orderBy('r.id', 'DESC')
+            ->setMaxResults($limit);
+
+        /** @var Reservation[] $rows */
+        $rows = $qb->getQuery()->getResult();
+
+        $items = [];
+        foreach ($rows as $r) {
+            $items[] = [
+                'reservationId' => $r->getId(),
+                'rating' => $r->getRating(),
+                'comment' => $r->getRatingComment(),
+                'userEmail' => $r->getUser() ? $r->getUser()->getEmail() : null,
+                'endAt' => $r->getEndAt()?->format('Y-m-d'),
+            ];
+        }
+
+        return $items;
     }
 }

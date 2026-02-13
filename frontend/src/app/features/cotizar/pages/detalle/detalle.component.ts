@@ -13,14 +13,13 @@ interface SeguroOption {
   id: string;
   label: string;
   description: string;
-  price: number; // por reserva
+  pctPerDay: number; // % del dailyRate por día
 }
 
 interface AdicionalOption {
   id: string;
   label: string;
   description: string;
-  price: number;
   billing: BillingType;
   quantity: number;
   maxQuantity: number;
@@ -46,90 +45,52 @@ export class DetalleComponent implements OnInit {
   pickupLocationId = 1;
   dropoffLocationId = 1;
 
-  // disponibilidad
   unitsAvailable?: number;
   checking = false;
   creating = false;
   errorMsg = '';
 
-  // --- Ratings (UI pro) ---
+  // ratings
   ratingLoading = false;
   ratingError = '';
   ratingAvg: number | null = null;
   ratingCount = 0;
   ratingItems: RatingItem[] = [];
 
-  // --- Seguros estilo Hertz (precio por reserva) ---
+  // ✅ seguro = % por día del dailyRate
   seguros: SeguroOption[] = [
     {
       id: 'smart',
       label: 'SMART COVER',
       description: 'Cobertura que reduce 100% la franquicia por daños de colisión y vuelco.',
-      price: 9000,
+      pctPerDay: 0.05, // 5%
     },
     {
       id: 'plus',
       label: 'PLUS COVER',
       description: 'Cobertura que reduce 100% la franquicia por daños de colisión.',
-      price: 6500,
+      pctPerDay: 0.08, // 8%
     },
     {
       id: 'tyres',
       label: 'CUBIERTAS COVER',
       description: 'Cobertura adicional que reduce 100% la franquicia por daños y roturas de cubiertas.',
-      price: 3800,
+      pctPerDay: 0.03, // 3%
     },
   ];
 
   selectedSeguroId: string | null = null;
 
-  // --- Adicionales estilo Hertz ---
+  // ✅ extras = 3% del base por unidad (si billing per_day => x días)
+  // OJO: debe ser público/readonly para poder usarse en el HTML
+  readonly EXTRAS_PCT_OF_BASE = 0.03;
+
   adicionales: AdicionalOption[] = [
-    {
-      id: 'booster',
-      label: 'Booster (4–10 años)',
-      description: 'Silla especial para niños de 4 a 10 años.',
-      price: 2800,
-      billing: 'per_day',
-      quantity: 0,
-      maxQuantity: 2,
-    },
-    {
-      id: 'young_driver',
-      label: 'Conductor joven',
-      description: 'Si tenés entre 18 y 20 años podés alquilar un auto. Servicio con cargo adicional.',
-      price: 4500,
-      billing: 'per_day',
-      quantity: 0,
-      maxQuantity: 1,
-    },
-    {
-      id: 'additional_driver',
-      label: 'Conductor adicional',
-      description: 'Persona autorizada para conducir el vehículo aparte del conductor principal.',
-      price: 3200,
-      billing: 'per_day',
-      quantity: 0,
-      maxQuantity: 2,
-    },
-    {
-      id: 'baby_seat',
-      label: 'Silla de bebé (1–3 años)',
-      description: 'Silla especial para bebés entre 1 y 3 años. Sujeto a disponibilidad.',
-      price: 2800,
-      billing: 'per_day',
-      quantity: 0,
-      maxQuantity: 2,
-    },
-    {
-      id: 'border_cross',
-      label: 'Cruce de frontera',
-      description: 'Permite salir de Argentina y circular por países limítrofes. Requiere autorización previa.',
-      price: 30000,
-      billing: 'per_reservation',
-      quantity: 0,
-      maxQuantity: 1,
-    },
+    { id: 'booster', label: 'Booster (4–10 años)', description: 'Silla especial para niños de 4 a 10 años.', billing: 'per_day', quantity: 0, maxQuantity: 2 },
+    { id: 'young_driver', label: 'Conductor joven', description: 'Si tenés entre 18 y 20 años podés alquilar un auto.', billing: 'per_day', quantity: 0, maxQuantity: 1 },
+    { id: 'additional_driver', label: 'Conductor adicional', description: 'Persona autorizada para conducir el vehículo aparte del conductor principal.', billing: 'per_day', quantity: 0, maxQuantity: 2 },
+    { id: 'baby_seat', label: 'Silla de bebé (1–3 años)', description: 'Silla especial para bebés entre 1 y 3 años.', billing: 'per_day', quantity: 0, maxQuantity: 2 },
+    { id: 'border_cross', label: 'Cruce de frontera', description: 'Permite salir de Argentina y circular por países limítrofes.', billing: 'per_reservation', quantity: 0, maxQuantity: 1 },
   ];
 
   constructor(
@@ -139,7 +100,7 @@ export class DetalleComponent implements OnInit {
     private auth: AuthService
   ) {}
 
-  ngOnInit() {
+  ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
 
     this.route.queryParamMap.subscribe((params) => {
@@ -164,8 +125,6 @@ export class DetalleComponent implements OnInit {
     });
   }
 
-  // -------------------- NAV / VOLVER --------------------
-
   goBack(): void {
     this.router.navigate(['/cotizar/resultados'], {
       queryParams: {
@@ -178,8 +137,6 @@ export class DetalleComponent implements OnInit {
     });
   }
 
-  // -------------------- RATINGS --------------------
-
   private cargarRatings(): void {
     if (!this.vehiculo) return;
 
@@ -190,8 +147,6 @@ export class DetalleComponent implements OnInit {
       next: (r) => {
         this.ratingAvg = r.ratingAvg ?? null;
         this.ratingCount = r.ratingCount ?? 0;
-
-        // backend trae endAt -> lo convertimos a date para la UI
         this.ratingItems = Array.isArray(r.items)
           ? r.items.map((it) => ({
               rating: it.rating ?? null,
@@ -199,7 +154,6 @@ export class DetalleComponent implements OnInit {
               date: it.endAt ?? null,
             }))
           : [];
-
         this.ratingLoading = false;
       },
       error: () => {
@@ -222,16 +176,13 @@ export class DetalleComponent implements OnInit {
     return Array.from({ length: n }, (_, i) => i + 1);
   }
 
-  // 0..100
   get ratingBarPct(): number {
     if (!this.ratingCount || this.ratingAvg == null) return 0;
     const pct = (this.ratingAvg / 5) * 100;
     return Math.max(0, Math.min(100, pct));
   }
 
-  // -------------------- DISPONIBILIDAD --------------------
-
-  private verificarDisponibilidad() {
+  private verificarDisponibilidad(): void {
     this.errorMsg = '';
     if (!this.vehiculo || !this.startAt || !this.endAt || !this.pickupLocationId) {
       this.unitsAvailable = undefined;
@@ -241,7 +192,7 @@ export class DetalleComponent implements OnInit {
     this.checking = true;
     this.cotizarService
       .checkAvailability({
-        vehicleId: this.vehiculo!.id,
+        vehicleId: this.vehiculo.id,
         pickupLocationId: this.pickupLocationId,
         startAt: this.startAt,
         endAt: this.endAt,
@@ -259,61 +210,81 @@ export class DetalleComponent implements OnInit {
       });
   }
 
-  // -------------------- CALCULOS --------------------
+  // -------------------- CÁLCULOS --------------------
 
   get baseAmount(): number {
-    if (!this.vehiculo) return 0;
-    return this.vehiculo.dailyRate * this.dias;
+    const veh = this.vehiculo;
+    if (!veh) return 0;
+    return (veh.dailyRate ?? 0) * this.dias;
   }
 
+  // ✅ Seguro dinámico según días y dailyRate
   get seguroAmount(): number {
-    return this.getSeguroTotal();
+    if (!this.vehiculo || !this.selectedSeguroId) return 0;
+    return this.seguroPriceFor(this.selectedSeguroId);
   }
 
+  // ✅ Adicionales dinámicos según base, billing y días
   get adicionalesAmount(): number {
-    return this.getAdicionalesTotal();
-  }
+    const base = this.baseAmount;
+    if (base <= 0) return 0;
 
-  private getSeguroTotal(): number {
-    if (!this.selectedSeguroId) return 0;
-    const s = this.seguros.find((x) => x.id === this.selectedSeguroId);
-    return s ? s.price : 0;
-  }
-
-  private getAdicionalesTotal(): number {
     let total = 0;
     for (const a of this.adicionales) {
       if (a.quantity <= 0) continue;
-      if (a.billing === 'per_day') total += a.price * a.quantity * this.dias;
-      else total += a.price * a.quantity;
+
+      const perUnit = this.adicionalPriceFor(a.id); // ya considera billing/días
+      total += perUnit * a.quantity;
     }
     return total;
   }
 
-  private buildExtrasPayload(): Array<{ name: string; price: number }> {
-    const extras: Array<{ name: string; price: number }> = [];
+  // ✅ Precio total del seguro (según días)
+  seguroPriceFor(id: string): number {
+    const veh = this.vehiculo;
+    if (!veh) return 0;
 
-    if (this.selectedSeguroId) {
-      const s = this.seguros.find((x) => x.id === this.selectedSeguroId);
-      if (s) extras.push({ name: s.label, price: this.getSeguroTotal() });
-    }
+    const s = this.seguros.find((x) => x.id === id);
+    if (!s) return 0;
 
-    for (const a of this.adicionales) {
-      if (a.quantity <= 0) continue;
-      const totalPrice =
-        a.billing === 'per_day' ? a.price * a.quantity * this.dias : a.price * a.quantity;
-      extras.push({ name: a.label, price: totalPrice });
-    }
-
-    return extras;
+    const daily = veh.dailyRate ?? 0;
+    return daily * s.pctPerDay * this.dias;
   }
 
-  actualizarTotal() {
-    if (!this.vehiculo) return;
-    this.total = this.baseAmount + this.getSeguroTotal() + this.getAdicionalesTotal();
+  // ✅ Precio por 1 unidad del adicional:
+  // - per_day => 3% del base por día => base * 3% (ya incluye días)
+  // - per_reservation => 3% del base total (1 vez)
+  adicionalPriceFor(id: string): number {
+    const base = this.baseAmount;
+    if (base <= 0) return 0;
+
+    const a = this.adicionales.find((x) => x.id === id);
+    if (!a) return 0;
+
+    const basePct = base * this.EXTRAS_PCT_OF_BASE;
+
+    // Si es por día: usamos basePct (base ya incluye días, así que ya escala)
+    // Si es por reserva: también basePct (1 vez). Si querés que NO escale por días, avisame y lo ajusto.
+    // ---- Ajuste fino (recomendado):
+    // per_day => (dailyRate * 3%) * días
+    // per_reservation => (dailyRate * 3%) * 1
+    // Para eso, calculo con dailyRate:
+    const daily = (this.vehiculo?.dailyRate ?? 0);
+    const perDayUnit = (daily * this.EXTRAS_PCT_OF_BASE) * this.dias; // escala por días
+    const perReservationUnit = (daily * this.EXTRAS_PCT_OF_BASE);     // NO escala por días
+
+    return a.billing === 'per_day' ? perDayUnit : perReservationUnit;
   }
 
-  changeAdicionalCantidad(id: string, delta: number) {
+  onSeguroChange(): void {
+    this.actualizarTotal();
+  }
+
+  actualizarTotal(): void {
+    this.total = this.baseAmount + this.seguroAmount + this.adicionalesAmount;
+  }
+
+  changeAdicionalCantidad(id: string, delta: number): void {
     const extra = this.adicionales.find((a) => a.id === id);
     if (!extra) return;
 
@@ -327,13 +298,39 @@ export class DetalleComponent implements OnInit {
     return sinFechas || sinCupo || this.checking || this.creating || !this.vehiculo;
   }
 
+  // -------------------- PAYLOAD NUEVO (pricing) --------------------
+
+  private buildPricingPayload(): {
+    insuranceCode: string | null;
+    extras: Array<{ code: string; quantity: number; price: number; billing: BillingType }>;
+  } {
+    const extras: Array<{ code: string; quantity: number; price: number; billing: BillingType }> = [];
+
+    for (const a of this.adicionales) {
+      if (a.quantity <= 0) continue;
+
+      extras.push({
+        code: a.id,
+        quantity: a.quantity,
+        price: this.adicionalPriceFor(a.id),
+        billing: a.billing,
+      });
+    }
+
+    return {
+      insuranceCode: this.selectedSeguroId,
+      extras,
+    };
+  }
+
   // -------------------- RESERVA --------------------
 
-  private redirigirALogin() {
-    if (!this.vehiculo) return;
+  private redirigirALogin(): void {
+    const veh = this.vehiculo;
+    if (!veh) return;
 
     const redirectUrl = this.router
-      .createUrlTree(['/cotizar/detalle', this.vehiculo.id], {
+      .createUrlTree(['/cotizar/detalle', veh.id], {
         queryParams: {
           dias: this.dias,
           startAt: this.startAt,
@@ -345,13 +342,12 @@ export class DetalleComponent implements OnInit {
       .toString();
 
     const pendingPayload = {
-      vehicleId: this.vehiculo.id,
+      vehicleId: veh.id,
       pickupLocationId: this.pickupLocationId,
       dropoffLocationId: this.dropoffLocationId,
       startAt: this.startAt,
       endAt: this.endAt,
-      totalPrice: this.total,
-      extras: this.buildExtrasPayload(),
+      pricing: this.buildPricingPayload(),
     };
 
     this.router.navigate(['/auth/login'], {
@@ -360,11 +356,17 @@ export class DetalleComponent implements OnInit {
     });
   }
 
-  confirmarReserva() {
-    if (!this.vehiculo) return;
+  confirmarReserva(): void {
+    const veh = this.vehiculo;
+    if (!veh) return;
 
     if (!this.startAt || !this.endAt) {
       alert('⚠️ Faltan las fechas de reserva.');
+      return;
+    }
+
+    if (!this.selectedSeguroId) {
+      alert('⚠️ Tenés que seleccionar un seguro para continuar.');
       return;
     }
 
@@ -377,7 +379,7 @@ export class DetalleComponent implements OnInit {
     this.verificarPerfilYCrear();
   }
 
-  private verificarPerfilYCrear() {
+  private verificarPerfilYCrear(): void {
     this.checking = true;
     this.errorMsg = '';
 
@@ -399,13 +401,15 @@ export class DetalleComponent implements OnInit {
     });
   }
 
-  private crearReservaConDisponibilidad() {
-    if (!this.vehiculo) return;
+  private crearReservaConDisponibilidad(): void {
+    const veh = this.vehiculo;
+    if (!veh) return;
 
     this.checking = true;
+
     this.cotizarService
       .checkAvailability({
-        vehicleId: this.vehiculo!.id,
+        vehicleId: veh.id,
         pickupLocationId: this.pickupLocationId,
         startAt: this.startAt,
         endAt: this.endAt,
@@ -413,6 +417,7 @@ export class DetalleComponent implements OnInit {
       .subscribe({
         next: (r) => {
           this.checking = false;
+
           if (!r.available) {
             this.unitsAvailable = 0;
             alert('❌ Sin stock en esas fechas.');
@@ -420,13 +425,12 @@ export class DetalleComponent implements OnInit {
           }
 
           const payload = {
-            vehicleId: this.vehiculo!.id,
+            vehicleId: veh.id,
             pickupLocationId: this.pickupLocationId,
             dropoffLocationId: this.dropoffLocationId,
             startAt: this.startAt,
             endAt: this.endAt,
-            totalPrice: this.total,
-            extras: this.buildExtrasPayload(),
+            pricing: this.buildPricingPayload(),
           };
 
           this.creating = true;
@@ -439,7 +443,7 @@ export class DetalleComponent implements OnInit {
               this.creating = false;
 
               if (err.status === 409) alert('❌ El vehículo no está disponible.');
-              else if (err.status === 422) alert('⚠️ Datos inválidos.');
+              else if (err.status === 422) alert('⚠️ Datos inválidos (seguro obligatorio / pricing).');
               else if (err.status === 400) alert('⚠️ Fechas inválidas.');
               else if (err.status === 401 || err.status === 403) {
                 alert('🔐 Necesitás iniciar sesión para continuar con la reserva.');

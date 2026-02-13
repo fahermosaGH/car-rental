@@ -1,23 +1,23 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 
 export const authTokenInterceptor: HttpInterceptorFn = (req, next) => {
-  const token = localStorage.getItem('auth_token'); // 👈 tu key real
+  const token = localStorage.getItem('auth_token');
 
-  // Si no hay token, seguimos normal
-  if (!token) {
-    return next(req);
-  }
+  // No tocar auth endpoints
+  const isAuthEndpoint =
+    req.url.includes('/login_check') ||
+    req.url.includes('/register') ||
+    req.url.includes('/forgot-password');
 
-  // Evitamos duplicar si ya viene Authorization
-  if (req.headers.has('Authorization')) {
-    return next(req);
-  }
+  if (isAuthEndpoint) return next(req);
 
-  const authReq = req.clone({
-    setHeaders: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  if (!token) return next(req);
 
-  return next(authReq);
+  if (req.headers.has('Authorization')) return next(req);
+
+  return next(
+    req.clone({
+      setHeaders: { Authorization: `Bearer ${token}` },
+    })
+  );
 };

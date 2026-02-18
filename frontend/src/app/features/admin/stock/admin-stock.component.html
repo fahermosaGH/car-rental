@@ -1,0 +1,72 @@
+<div class="head">
+  <div>
+    <h2>Stock</h2>
+    <p class="sub">
+      Stock por vehículo y sucursal. El valor se deriva automáticamente desde
+      unidades con patente.
+    </p>
+  </div>
+
+  <div class="actions">
+    <button class="btn" type="button" (click)="load()" [disabled]="loading || rebuilding">
+      Recargar
+    </button>
+
+    <button class="btn danger" type="button" (click)="rebuildAll()" [disabled]="loading || rebuilding">
+      {{ rebuilding ? 'Recalculando...' : 'Recalcular todo (patentes)' }}
+    </button>
+  </div>
+</div>
+
+<div *ngIf="error" class="alert">
+  No se pudo cargar el stock.
+  <button class="btn-small" type="button" (click)="load()">Reintentar</button>
+</div>
+
+<div class="card" *ngIf="!loading && rows.length === 0 && !error">
+  No hay stock cargado.
+</div>
+
+<div class="table-wrap" *ngIf="rows.length > 0">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Sucursal</th>
+        <th>Vehículo</th>
+        <th class="num">Cantidad</th>
+        <th class="num">Acciones</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr *ngFor="let r of rows">
+        <td>
+          <div class="strong">{{ r.location?.name }}</div>
+          <div class="muted">{{ r.location?.city ?? '-' }}</div>
+        </td>
+
+        <td>
+          <div class="strong">
+            {{ r.vehicle?.brand ?? '' }} {{ r.vehicle?.model ?? '' }}
+          </div>
+          <div class="muted">ID: {{ r.vehicle?.id }} · {{ r.vehicle?.year ?? '-' }}</div>
+        </td>
+
+        <td class="num">
+          <span class="qty-pill">{{ r.quantity }}</span>
+        </td>
+
+        <td class="num">
+          <button
+            class="btn-small"
+            type="button"
+            (click)="syncRow(r)"
+            [disabled]="syncingRow[r.id] || rebuilding"
+          >
+            {{ syncingRow[r.id] ? 'Sincronizando...' : 'Sincronizar' }}
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

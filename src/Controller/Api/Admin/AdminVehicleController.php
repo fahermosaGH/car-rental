@@ -3,6 +3,7 @@
 namespace App\Controller\Api\Admin;
 
 use App\Entity\Vehicle;
+use App\Repository\VehicleCategoryRepository;
 use App\Repository\VehicleRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -17,6 +18,7 @@ class AdminVehicleController extends AbstractController
 {
     public function __construct(
         private readonly VehicleRepository $vehicles,
+        private readonly VehicleCategoryRepository $categories,
         private readonly EntityManagerInterface $em,
     ) {}
 
@@ -25,12 +27,9 @@ class AdminVehicleController extends AbstractController
     {
         $includeInactive = $request->query->getBoolean('includeInactive', false);
 
-        // ✅ Ajustá esto según cómo sea tu Vehicle (si tiene isActive)
-        if ($includeInactive) {
-            $items = $this->vehicles->findBy([], ['id' => 'DESC']);
-        } else {
-            $items = $this->vehicles->findBy(['isActive' => true], ['id' => 'DESC']);
-        }
+        $items = $includeInactive
+            ? $this->vehicles->findBy([], ['id' => 'DESC'])
+            : $this->vehicles->findBy(['isActive' => true], ['id' => 'DESC']);
 
         return $this->json(array_map([$this, 'toDto'], $items));
     }
@@ -42,11 +41,12 @@ class AdminVehicleController extends AbstractController
 
         $v = new Vehicle();
 
-        // ✅ AJUSTAR CAMPOS según tu entidad Vehicle
-        $this->applyPayload($v, $data);
+        $error = $this->applyPayload($v, $data, true);
+        if ($error) {
+            return $this->json(['error' => $error], 422);
+        }
 
-        // Si tu entidad tiene isActive
-        if (method_exists($v, 'setIsActive') && !isset($data['isActive'])) {
+        if (!isset($data['isActive']) && method_exists($v, 'setIsActive')) {
             $v->setIsActive(true);
         }
 
@@ -61,13 +61,15 @@ class AdminVehicleController extends AbstractController
     {
         $v = $this->vehicles->find($id);
         if (!$v) {
-            return $this->json(['message' => 'Vehicle not found'], 404);
+            return $this->json(['error' => 'Vehículo no encontrado'], 404);
         }
 
         $data = $this->getJson($request);
 
-        // ✅ AJUSTAR CAMPOS según tu entidad Vehicle
-        $this->applyPayload($v, $data);
+        $error = $this->applyPayload($v, $data, false);
+        if ($error) {
+            return $this->json(['error' => $error], 422);
+        }
 
         $this->em->flush();
 
@@ -79,15 +81,11 @@ class AdminVehicleController extends AbstractController
     {
         $v = $this->vehicles->find($id);
         if (!$v) {
-            return $this->json(['message' => 'Vehicle not found'], 404);
+            return $this->json(['error' => 'Vehículo no encontrado'], 404);
         }
 
-        // ✅ Soft delete si existe isActive
         if (method_exists($v, 'setIsActive')) {
             $v->setIsActive(false);
-        } else {
-            // Si no tenés isActive, podés hacer remove (pero NO lo recomiendo)
-            // $this->em->remove($v);
         }
 
         $this->em->flush();
@@ -97,41 +95,91 @@ class AdminVehicleController extends AbstractController
 
     private function getJson(Request $request): array
     {
-        $raw = $request->getContent();
-        $data = json_decode($raw, true);
+        $data = json_decode((string)$request->getContent(), true);
         return is_array($data) ? $data : [];
     }
 
-    private function applyPayload(Vehicle $v, array $data): void
+    /**
+     * @return string|null error message
+     */
+    private function applyPayload(Vehicle $v, array $data, bool $isCreate): ?string
     {
-        // ✅✅✅ AJUSTÁ ESTOS SETTERS A TU Vehicle.php REAL ✅✅✅
-        // Ejemplo típico:
+        // brand/model
         if (isset($data['brand']) && method_exists($v, 'setBrand')) $v->setBrand((string)$data['brand']);
         if (isset($data['model']) && method_exists($v, 'setModel')) $v->setModel((string)$data['model']);
-        if (isset($data['year']) && method_exists($v, 'setYear')) $v->setYear((int)$data['year']);
 
-        // precio por día (ajustar nombre)
-        if (isset($data['pricePerDay']) && method_exists($v, 'setPricePerDay')) $v->setPricePerDay((float)$data['pricePerDay']);
-        if (isset($data['dailyPrice']) && method_exists($v, 'setDailyPrice')) $v->setDailyPrice((float)$data['dailyPrice']);
+        // year
+        if (array_key_exists('year', $data) && method_exists($v, 'setYear')) {
+            $year = $data['year'] !== null ? (int)$data['year'] : null;
+            if ($isCreate && (!$year || $year < 1900)) return 'year es obligatorio';
+            if ($year !== null) $v->setYear($year);
+        }
 
-        // activo
-        if (isset($data['isActive']) && method_exists($v, 'setIsActive')) $v->setIsActive((bool)$data['isActive']);
+        // seats (OBLIGATORIO en create)
+        if (array_key_exists('seats', $data) && method_exists($v, 'setSeats')) {
+            $seats = $data['seats'] !== null ? (int)$data['seats'] : null;
+            if ($isCreate && (!$seats || $seats <= 0)) return 'seats es obligatorio';
+            if ($seats !== null) $v->setSeats($seats);
+        } elseif ($isCreate) {
+            return 'seats es obligatorio';
+        }
 
-        // imagen (si existe)
-        if (isset($data['imageUrl']) && method_exists($v, 'setImageUrl')) $v->setImageUrl((string)$data['imageUrl']);
+        // transmission (OBLIGATORIO en create)
+        if (array_key_exists('transmission', $data) && method_exists($v, 'setTransmission')) {
+            $tr = trim((string)($data['transmission'] ?? ''));
+            if ($isCreate && $tr === '') return 'transmission es obligatorio';
+            if ($tr !== '') $v->setTransmission($tr);
+        } elseif ($isCreate) {
+            return 'transmission es obligatorio';
+        }
+
+        // categoryId (OBLIGATORIO en create)
+        if (array_key_exists('categoryId', $data)) {
+            $cid = (int)($data['categoryId'] ?? 0);
+            if ($isCreate && $cid <= 0) return 'categoryId es obligatorio';
+
+            if ($cid > 0 && method_exists($v, 'setCategory')) {
+                $cat = $this->categories->find($cid);
+                if (!$cat) return 'Categoría inexistente';
+                $v->setCategory($cat);
+            }
+        } elseif ($isCreate) {
+            return 'categoryId es obligatorio';
+        }
+
+        // dailyPriceOverride (vos en front lo llamás dailyPrice)
+        if (array_key_exists('dailyPrice', $data) && method_exists($v, 'setDailyPriceOverride')) {
+            $val = $data['dailyPrice'];
+            if ($val === '' || $val === null) {
+                $v->setDailyPriceOverride(null);
+            } else {
+                // guarda como string decimal
+                $v->setDailyPriceOverride((string)$val);
+            }
+        }
+
+        // isActive
+        if (isset($data['isActive']) && method_exists($v, 'setIsActive')) {
+            $v->setIsActive((bool)$data['isActive']);
+        }
+
+        return null;
     }
 
     private function toDto(Vehicle $v): array
     {
-        // ✅✅✅ AJUSTÁ GETTERS A TU Vehicle.php REAL ✅✅✅
+        $cat = method_exists($v, 'getCategory') ? $v->getCategory() : null;
+
         return [
-            'id' => method_exists($v, 'getId') ? $v->getId() : null,
-            'brand' => method_exists($v, 'getBrand') ? $v->getBrand() : null,
-            'model' => method_exists($v, 'getModel') ? $v->getModel() : null,
-            'year' => method_exists($v, 'getYear') ? $v->getYear() : null,
-            'dailyPrice' => method_exists($v, 'getDailyPrice') ? $v->getDailyPrice() : (method_exists($v, 'getPricePerDay') ? $v->getPricePerDay() : null),
-            'isActive' => method_exists($v, 'getIsActive') ? $v->getIsActive() : true,
-            'imageUrl' => method_exists($v, 'getImageUrl') ? $v->getImageUrl() : null,
+            'id' => $v->getId(),
+            'brand' => $v->getBrand(),
+            'model' => $v->getModel(),
+            'year' => $v->getYear(),
+            'seats' => $v->getSeats(),
+            'transmission' => $v->getTransmission(),
+            'dailyPrice' => $v->getDailyPriceOverride(),
+            'isActive' => $v->isActive(),
+            'category' => $cat ? ['id' => $cat->getId(), 'name' => $cat->getName()] : null,
         ];
     }
 }

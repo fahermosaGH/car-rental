@@ -9,7 +9,12 @@
 h2 { margin: 0 0 6px; font-size: 24px; }
 .muted { opacity: .75; }
 
-.head-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.head-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
 
 .btn, .btn-ghost, .btn-mini {
   border-radius: 12px;
@@ -64,47 +69,184 @@ h2 { margin: 0 0 6px; font-size: 24px; }
   opacity: .8;
 }
 
-.check { display: flex; align-items: center; gap: 8px; opacity: .9; }
-.check input { transform: translateY(1px); }
+/* ✅ IMPORTANTES: consistencia de layout */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
+/* ---- MODAL ---- */
 .modal-backdrop {
-  position: fixed; inset: 0;
+  position: fixed;
+  inset: 0;
   background: rgba(0,0,0,.55);
   display: grid;
   place-items: center;
   z-index: 50;
+  padding: 12px;
 }
+
 .modal {
-  width: min(720px, calc(100vw - 24px));
+  width: min(820px, calc(100vw - 24px));
   border-radius: 18px;
   border: 1px solid rgba(255,255,255,.10);
   background: #0a0f1c;
   color: #e8eefc;
   overflow: hidden;
 }
+
 .modal-head {
-  display:flex; align-items:center; justify-content: space-between;
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
   padding: 14px 16px;
   border-bottom: 1px solid rgba(255,255,255,.08);
 }
+
 .modal-title { font-weight: 900; }
-.x { background: transparent; border: none; color: #e8eefc; cursor: pointer; font-size: 18px; }
+
+.x {
+  background: transparent;
+  border: none;
+  color: #e8eefc;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
 .modal-body { padding: 16px; }
-.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-label span { display:block; font-size: 12px; opacity: .75; margin-bottom: 6px; }
-input {
+
+/* ✅ grid más estable y con alto consistente */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 16px;
+  align-items: start;
+}
+
+/* ✅ evita superposición rara: label como contenedor vertical */
+.grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0; /* evita overflow feo */
+}
+
+label span {
+  display:block;
+  font-size: 12px;
+  opacity: .75;
+  margin: 0;
+}
+
+/* ✅ Estilo unificado para inputs y selects */
+input,
+select {
+  width: 100%;
+  height: 42px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06);
+  color: #e8eefc;
+  outline: none;
+}
+
+input:focus,
+select:focus {
+  border-color: rgba(124, 58, 237, .55);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, .18);
+}
+
+/* ✅ arregla el select “blanco horrible” en algunos browsers */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, rgba(232,238,252,.85) 50%),
+    linear-gradient(135deg, rgba(232,238,252,.85) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) 50%,
+    calc(100% - 12px) 50%;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 34px;
+}
+
+/* ✅ checkbox/activo prolijo y alineado */
+label.check {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  padding-top: 8px;
+}
+
+.check input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  margin: 0;
+  border-radius: 6px;
+  transform: none;
+}
+
+.modal-actions {
+  display:flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 16px;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+
+@media (max-width: 680px) {
+  .grid { grid-template-columns: 1fr; }
+}
+
+/* --- CHECKBOX PROLIJO EN MODAL --- */
+.field-check {
+  grid-column: 1 / -1;            /* ocupa toda la fila */
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
+}
+
+.field-check input[type="checkbox"]{
+  width: 18px;
+  height: 18px;
+  accent-color: #7c3aed;          /* mismo violeta del theme */
+}
+
+.field-check span{
+  font-size: 13px;
+  opacity: .9;
+}
+
+/* --- SELECT EN TEMA OSCURO (mejora legibilidad del dropdown) --- */
+select.select {
   width: 100%;
   padding: 10px 12px;
   border-radius: 12px;
   border: 1px solid rgba(255,255,255,.12);
   background: rgba(255,255,255,.06);
   color: #e8eefc;
+  color-scheme: dark;             /* clave: pide controles oscuros */
 }
-.modal-actions {
-  display:flex; justify-content: flex-end; gap: 10px;
-  padding: 14px 16px;
-  border-top: 1px solid rgba(255,255,255,.08);
+
+/* intenta forzar opciones legibles (algunos browsers lo respetan) */
+select.select option {
+  background: #0a0f1c;
+  color: #e8eefc;
 }
-@media (max-width: 680px) {
-  .grid { grid-template-columns: 1fr; }
+
+/* si tu select tiene variante "small" en otros módulos */
+select.select.small {
+  padding: 8px 10px;
+  border-radius: 10px;
 }
+

@@ -26,19 +26,26 @@ export class AdminVehiculosComponent implements OnInit {
   modalOpen = false;
   editing: AdminVehicleDto | null = null;
 
-  form: AdminVehicleCreateUpdate = {
-    brand: '',
-    model: '',
-    year: null,
-    dailyPrice: null,
-    isActive: true,
-    imageUrl: '',
-  };
+  form: AdminVehicleCreateUpdate = this.emptyForm();
 
   constructor(private api: AdminVehiclesService) {}
 
   ngOnInit(): void {
     this.load();
+  }
+
+  private emptyForm(): AdminVehicleCreateUpdate {
+    return {
+      brand: '',
+      model: '',
+      year: null,
+      seats: null,
+      transmission: '',
+      categoryId: 0,
+      dailyPrice: null,
+      isActive: true,
+      imageUrl: null,
+    };
   }
 
   load(): void {
@@ -51,35 +58,32 @@ export class AdminVehiculosComponent implements OnInit {
       .subscribe({
         next: (data) => (this.items = data ?? []),
         error: (e) => {
-          this.error =
-            e?.error?.message ?? 'No se pudieron cargar los vehículos.';
+          this.error = e?.error?.message ?? 'No se pudieron cargar los vehículos.';
         },
       });
   }
 
   openCreate(): void {
     this.editing = null;
-    this.form = {
-      brand: '',
-      model: '',
-      year: null,
-      dailyPrice: null,
-      isActive: true,
-      imageUrl: '',
-    };
+    this.form = this.emptyForm();
     this.modalOpen = true;
   }
 
   openEdit(v: AdminVehicleDto): void {
     this.editing = v;
+
     this.form = {
       brand: v.brand ?? '',
       model: v.model ?? '',
       year: v.year ?? null,
+      seats: v.seats ?? null,
+      transmission: v.transmission ?? '',
+      categoryId: v.categoryId ?? 0,
       dailyPrice: v.dailyPrice ?? null,
-      isActive: v.isActive,
-      imageUrl: v.imageUrl ?? '',
+      isActive: !!v.isActive,
+      imageUrl: v.imageUrl ?? null,
     };
+
     this.modalOpen = true;
   }
 
@@ -94,10 +98,39 @@ export class AdminVehiculosComponent implements OnInit {
       brand: (this.form.brand ?? '').trim(),
       model: (this.form.model ?? '').trim(),
       year: this.form.year ?? null,
+      seats: this.form.seats ?? null,
+      transmission: (this.form.transmission ?? '').trim(),
+      categoryId: Number(this.form.categoryId ?? 0),
       dailyPrice: this.form.dailyPrice ?? null,
       isActive: !!this.form.isActive,
       imageUrl: (this.form.imageUrl ?? '').trim() || null,
     };
+
+    // ✅ Validaciones para no pegarle al backend con nulls
+    if (!payload.brand) {
+      this.error = 'Marca es obligatoria.';
+      return;
+    }
+    if (!payload.model) {
+      this.error = 'Modelo es obligatorio.';
+      return;
+    }
+    if (!payload.year || payload.year <= 0) {
+      this.error = 'Año es obligatorio.';
+      return;
+    }
+    if (!payload.seats || payload.seats <= 0) {
+      this.error = 'Asientos es obligatorio (número > 0).';
+      return;
+    }
+    if (!payload.transmission) {
+      this.error = 'Transmisión es obligatoria.';
+      return;
+    }
+    if (!payload.categoryId || payload.categoryId <= 0) {
+      this.error = 'Categoría (ID) es obligatoria.';
+      return;
+    }
 
     this.loading = true;
 
@@ -111,7 +144,8 @@ export class AdminVehiculosComponent implements OnInit {
         this.load();
       },
       error: (e) => {
-        this.error = e?.error?.message ?? 'No se pudo guardar.';
+        // backend suele mandar {error: "..."} o {message: "..."}
+        this.error = e?.error?.error ?? e?.error?.message ?? 'No se pudo guardar.';
       },
     });
   }
@@ -131,3 +165,4 @@ export class AdminVehiculosComponent implements OnInit {
       });
   }
 }
+

@@ -23,7 +23,7 @@ export interface StockRowDto {
 export interface StockUpsertPayload {
   vehicleId: number;
   locationId: number;
-  quantity: number;
+  quantity: number; // (hoy el backend lo ignora y deriva desde unidades, pero lo dejamos por compatibilidad)
 }
 
 @Injectable({ providedIn: 'root' })
@@ -48,4 +48,10 @@ export class AdminStockService {
   update(id: number, quantity: number): Observable<any> {
     return this.http.put<any>(`${this.baseUrl}/${id}`, { quantity });
   }
+
+  // ✅ Recalcula TODO el stock desde unidades con patente
+  rebuild(): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/rebuild`, {});
+  }
 }
+

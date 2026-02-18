@@ -68,18 +68,41 @@
     <div class="modal-body">
       <div class="grid">
         <label>
-          <span>Marca</span>
-          <input [(ngModel)]="form.brand" />
+          <span>Marca *</span>
+          <input [(ngModel)]="form.brand" required />
         </label>
 
         <label>
-          <span>Modelo</span>
-          <input [(ngModel)]="form.model" />
+          <span>Modelo *</span>
+          <input [(ngModel)]="form.model" required />
         </label>
 
         <label>
-          <span>Año</span>
-          <input type="number" [(ngModel)]="form.year" />
+          <span>Año *</span>
+          <input type="number" [(ngModel)]="form.year" min="1900" required />
+        </label>
+
+        <!-- ✅ NUEVO -->
+        <label>
+          <span>Asientos *</span>
+          <input type="number" [(ngModel)]="form.seats" min="1" required />
+        </label>
+
+        <!-- ✅ NUEVO -->
+        <label>
+          <span>Transmisión *</span>
+          <select [(ngModel)]="form.transmission" required>
+            <option value="">Seleccionar...</option>
+            <option value="manual">Manual</option>
+            <option value="automatic">Automática</option>
+          </select>
+        </label>
+
+        <!-- ✅ NUEVO (rápido): categoryId numérico -->
+        <label>
+          <span>ID Categoría *</span>
+          <input type="number" [(ngModel)]="form.categoryId" min="1" required />
+          <small class="muted">Por ahora ingresá el ID de la categoría (luego lo pasamos a select).</small>
         </label>
 
         <label>
@@ -92,7 +115,7 @@
           <input [(ngModel)]="form.imageUrl" />
         </label>
 
-        <label class="check">
+        <label class="field-check">
           <input type="checkbox" [(ngModel)]="form.isActive" />
           <span>Activo</span>
         </label>

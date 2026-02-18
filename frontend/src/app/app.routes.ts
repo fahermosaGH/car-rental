@@ -62,6 +62,13 @@ export const routes: Routes = [
             (m) => m.AdminUsuariosComponent
           ),
       },
+      {
+        path: 'unidades',
+        loadComponent: () =>
+          import('./features/admin/unidades/admin-unidades.component').then(
+            (m) => m.AdminUnidadesComponent
+          ),
+      },
     ],
   },
 

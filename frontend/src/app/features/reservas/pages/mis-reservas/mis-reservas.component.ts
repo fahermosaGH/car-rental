@@ -114,7 +114,6 @@ export class MisReservasComponent implements OnInit {
     return Math.floor(diffMs / (1000 * 60 * 60 * 24));
   }
 
-  // 🔥 CORRECCIÓN CLAVE AQUÍ
   private calcularEstadoLegible(rawStatus: string): string {
     switch (rawStatus) {
       case 'cancelled':
@@ -134,6 +133,11 @@ export class MisReservasComponent implements OnInit {
     if (rawStatus !== 'confirmed') return false;
     if (daysToStart < 2) return false;
     return true;
+  }
+
+  // ✅ NUEVO: se puede reportar problema si está activa (confirmed)
+  puedeReportarProblema(rawStatus: string): boolean {
+    return rawStatus === 'confirmed';
   }
 
   setSort(field: SortField): void {
@@ -180,6 +184,11 @@ export class MisReservasComponent implements OnInit {
         estado: reserva.estadoLegible
       }
     });
+  }
+
+  // ✅ NUEVO: ir a pantalla de reporte
+  reportarProblema(reserva: ReservaItem): void {
+    this.router.navigate(['/reservas/reportar-problema', reserva.id]);
   }
 
   confirmarCancelacion(reserva: ReservaItem): void {

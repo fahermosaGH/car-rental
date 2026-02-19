@@ -91,8 +91,6 @@
         </td>
 
         <td class="acciones-cell">
-
-          <!-- 👉 AQUÍ VA LA NAVEGACIÓN CON QUERY PARAM -->
           <button
             type="button"
             class="btn-link"
@@ -109,6 +107,16 @@
             (click)="confirmarCancelacion(r)"
           >
             {{ cancelandoId === r.id ? 'Cancelando...' : 'Cancelar' }}
+          </button>
+
+          <!-- ✅ NUEVO: Reportar problema -->
+          <button
+            type="button"
+            class="btn-problema"
+            *ngIf="puedeReportarProblema(r.rawStatus)"
+            (click)="reportarProblema(r)"
+          >
+            Reportar problema
           </button>
         </td>
       </tr>

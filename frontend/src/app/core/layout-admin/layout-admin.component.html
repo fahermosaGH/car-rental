@@ -13,9 +13,15 @@
         routerLink="/admin"
         routerLinkActive="active"
         [routerLinkActiveOptions]="{ exact: true }"
-        >Dashboard</a
       >
+        Dashboard
+      </a>
+
       <a routerLink="/admin/reservas" routerLinkActive="active">Reservas</a>
+
+      <!-- ✅ NUEVO: Incidentes -->
+      <a routerLink="/admin/incidentes" routerLinkActive="active">Incidentes</a>
+
       <a routerLink="/admin/vehiculos" routerLinkActive="active">Vehículos</a>
       <a routerLink="/admin/ubicaciones" routerLinkActive="active">Ubicaciones</a>
       <a routerLink="/admin/stock" routerLinkActive="active">Stock</a>

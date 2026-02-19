@@ -1,0 +1,47 @@
+<div class="wrapper">
+  <div class="card">
+    <div class="header">
+      <h2>Reportar problema</h2>
+
+      <button type="button" class="btn btn-secondary" (click)="volver()">
+        ← Volver
+      </button>
+    </div>
+
+    <p class="sub">
+      Reserva #{{ reservationId }} — contanos qué pasó para que el equipo pueda ayudarte.
+    </p>
+
+    <div class="field">
+      <label for="desc">Descripción</label>
+      <textarea
+        id="desc"
+        [(ngModel)]="description"
+        placeholder="Ej: el auto no arrancó / se prendió una luz en el tablero / tuve una avería..."
+      ></textarea>
+    </div>
+
+    <div class="actions">
+      <button
+        type="button"
+        class="btn btn-primary"
+        [disabled]="sending"
+        (click)="enviar()"
+      >
+        {{ sending ? 'Enviando...' : 'Enviar incidente' }}
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-secondary"
+        [disabled]="sending"
+        (click)="description=''; errorMsg=''; okMsg='';"
+      >
+        Limpiar
+      </button>
+    </div>
+
+    <div *ngIf="okMsg" class="msg msg-ok">{{ okMsg }}</div>
+    <div *ngIf="errorMsg" class="msg msg-error">{{ errorMsg }}</div>
+  </div>
+</div>

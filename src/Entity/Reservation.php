@@ -7,7 +7,6 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Validator\Constraints as Assert;
 use App\Entity\User;
 
 #[ORM\Entity(repositoryClass: ReservationRepository::class)]
@@ -30,6 +29,11 @@ class Reservation
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
     private ?Vehicle $vehicle = null;
+
+    // ✅ NUEVO: unidad física asignada (patente)
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?VehicleUnit $vehicleUnit = null;
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
@@ -70,20 +74,15 @@ class Reservation
     public function getUser(): ?User { return $this->user; }
     public function setUser(?User $user): static { $this->user = $user; return $this; }
 
-    public function getCustomer(): ?Customer
-{
-    return $this->customer;
-}
-
-public function setCustomer(?Customer $customer): static
-{
-    $this->customer = $customer;
-    return $this;
-}
-
+    public function getCustomer(): ?Customer { return $this->customer; }
+    public function setCustomer(?Customer $customer): static { $this->customer = $customer; return $this; }
 
     public function getVehicle(): ?Vehicle { return $this->vehicle; }
     public function setVehicle(?Vehicle $vehicle): static { $this->vehicle = $vehicle; return $this; }
+
+    // ✅ NUEVO
+    public function getVehicleUnit(): ?VehicleUnit { return $this->vehicleUnit; }
+    public function setVehicleUnit(?VehicleUnit $vehicleUnit): static { $this->vehicleUnit = $vehicleUnit; return $this; }
 
     public function getPickupLocation(): ?Location { return $this->pickupLocation; }
     public function setPickupLocation(?Location $pickupLocation): static { $this->pickupLocation = $pickupLocation; return $this; }

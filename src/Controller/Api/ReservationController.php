@@ -9,6 +9,7 @@ use App\Repository\VehicleRepository;
 use App\Repository\LocationRepository;
 use App\Service\PricingService;
 use App\Service\ReservationValidator;
+use App\Service\VehicleUnitAssignmentService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -30,6 +31,7 @@ class ReservationController extends AbstractController
         LocationRepository $locationRepo,
         ReservationValidator $validator,
         PricingService $pricingService,
+        VehicleUnitAssignmentService $unitAssigner,
         #[CurrentUser] ?User $user = null
     ): Response {
         $data = json_decode($request->getContent(), true);
@@ -78,6 +80,7 @@ class ReservationController extends AbstractController
             return $this->json(['error' => 'La fecha de fin debe ser posterior a la de inicio'], 422);
         }
 
+        // 🔒 Mantengo tu validación por stock (NO se rompe nada)
         $available = $validator->isAvailable(
             $vehicle->getId(),
             $pickup->getId(),
@@ -92,7 +95,7 @@ class ReservationController extends AbstractController
             ], 409);
         }
 
-        // ✅ NUEVO: pricing desde servidor (seguro obligatorio)
+        // ✅ pricing desde servidor
         $pricingPayload = (isset($data['pricing']) && is_array($data['pricing'])) ? $data['pricing'] : [];
         $computed = $pricingService->compute($vehicle, $startAt, $endAt, $pricingPayload);
 
@@ -105,21 +108,29 @@ class ReservationController extends AbstractController
             ], 422);
         }
 
+        // ✅ NUEVO: asignar una unidad física (patente) sin romper stock
+        $unit = $unitAssigner->pickUnitOrNull($vehicle, $pickup, $startAt, $endAt);
+        if (!$unit) {
+            // esto puede pasar si hay stock>0 pero ninguna unidad libre por asignación (caso raro)
+            return $this->json([
+                'error' => 'No hay una unidad física disponible para asignar en esas fechas.',
+                'code'  => 'UNIT_NOT_AVAILABLE',
+            ], 409);
+        }
+
         $reservation = new Reservation();
         $reservation->setVehicle($vehicle);
+        $reservation->setVehicleUnit($unit); // ✅ patente asignada
         $reservation->setPickupLocation($pickup);
         $reservation->setDropoffLocation($dropoff);
         $reservation->setStartAt($startAt);
         $reservation->setEndAt($endAt);
         $reservation->setStatus('confirmed');
 
-        // ✅ total calculado por servidor
         $reservation->setTotalPrice($computed['total'] ?? '0.00');
-
         $reservation->setUser($user);
 
-        // ✅ Guardar seguro + extras calculados como ReservationExtra
-        // 1) Seguro
+        // Seguro como extra
         if (!empty($computed['insurance']) && is_array($computed['insurance'])) {
             $ins = $computed['insurance'];
             if (!empty($ins['name']) && isset($ins['price'])) {
@@ -130,7 +141,7 @@ class ReservationController extends AbstractController
             }
         }
 
-        // 2) Adicionales
+        // Adicionales como extras
         if (!empty($computed['extras']) && is_array($computed['extras'])) {
             foreach ($computed['extras'] as $line) {
                 if (!is_array($line)) continue;
@@ -149,7 +160,10 @@ class ReservationController extends AbstractController
         return $this->json([
             'message' => '✅ Reserva creada correctamente',
             'id'      => $reservation->getId(),
-            // opcional: devolver pricing calculado para debug/UI
+            'vehicleUnit' => [
+                'id' => $unit->getId(),
+                'plate' => $unit->getPlate(),
+            ],
             'pricing' => $computed,
         ], 201);
     }
@@ -162,6 +176,7 @@ class ReservationController extends AbstractController
         $data = array_map(fn(Reservation $r) => [
             'id' => $r->getId(),
             'vehicle' => (string)$r->getVehicle(),
+            'vehicleUnitPlate' => $r->getVehicleUnit()?->getPlate(),
             'pickupLocation' => (string)$r->getPickupLocation(),
             'dropoffLocation' => (string)$r->getDropoffLocation(),
             'startAt' => $r->getStartAt()->format('Y-m-d'),
@@ -199,6 +214,11 @@ class ReservationController extends AbstractController
             'vehicleName'          => $vehicle
                 ? trim(($vehicle->getBrand() ?? '') . ' ' . ($vehicle->getModel() ?? ''))
                 : 'Vehículo',
+            'vehicleUnit'          => $reservation->getVehicleUnit() ? [
+                'id' => $reservation->getVehicleUnit()?->getId(),
+                'plate' => $reservation->getVehicleUnit()?->getPlate(),
+                'status' => $reservation->getVehicleUnit()?->getStatus(),
+            ] : null,
             'category'             => $vehicle && $vehicle->getCategory()
                 ? $vehicle->getCategory()->getName()
                 : null,
@@ -255,6 +275,12 @@ class ReservationController extends AbstractController
             $vehicle?->getModel() ?? ''
         );
         $lines[] = sprintf('Categoría: %s', $vehicle?->getCategory()?->getName() ?? 'N/A');
+
+        // ✅ NUEVO: patente si está asignada
+        if ($reservation->getVehicleUnit()) {
+            $lines[] = sprintf('Unidad asignada (patente): %s', $reservation->getVehicleUnit()?->getPlate() ?? '');
+        }
+
         $lines[] = '';
         $lines[] = sprintf('Retiro: %s - %s',
             $reservation->getStartAt()?->format('d/m/Y'),

@@ -69,6 +69,15 @@ export const routes: Routes = [
             (m) => m.AdminUnidadesComponent
           ),
       },
+
+      // ✅ NUEVO: Incidentes (ADMIN)
+      {
+        path: 'incidentes',
+        loadComponent: () =>
+          import('./features/admin/incidentes/admin-incidentes.component').then(
+            (m) => m.AdminIncidentesComponent
+          ),
+      },
     ],
   },
 
@@ -146,7 +155,6 @@ export const routes: Routes = [
           ),
       },
 
-      // ✅ NUEVO: Calificaciones + detalle (usa TU estructura real: features/ratings/pages/...)
       {
         path: 'calificaciones',
         children: [
@@ -182,6 +190,21 @@ export const routes: Routes = [
           import('./features/reservas/pages/mis-reservas/mis-reservas.component').then(
             (m) => m.MisReservasComponent
           ),
+      },
+
+      // ✅ (si tenés /reservas/... agregalo acá si ya lo venías usando)
+      {
+        path: 'reservas',
+        children: [
+          {
+            path: 'reportar-problema/:id',
+            canActivate: [authGuard],
+            loadComponent: () =>
+              import('./features/reservas/pages/reportar-problema/reportar-problema.component').then(
+                (m) => m.ReportarProblemaComponent
+              ),
+          },
+        ],
       },
 
       {

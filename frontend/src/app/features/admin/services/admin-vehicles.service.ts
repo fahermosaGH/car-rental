@@ -20,12 +20,12 @@ export interface AdminVehicleCreateUpdate {
   brand: string;
   model: string;
   year: number | null;
-  seats: number | null;
-  transmission: string;
-  categoryId: number;
+  seats: number | null;              // ✅ nuevo
+  transmission: string | null;       // ✅ nuevo
+  categoryId: number | null;         // ✅ nuevo
   dailyPrice: number | null;
   isActive: boolean;
-  imageUrl: string | null;
+  imageUrl?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })

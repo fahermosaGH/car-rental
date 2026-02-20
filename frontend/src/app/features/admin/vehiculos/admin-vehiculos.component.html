@@ -42,11 +42,17 @@
         <td>{{ v.year ?? '-' }}</td>
         <td>{{ v.dailyPrice ?? '-' }}</td>
         <td>
-          <span class="pill" [class.off]="!v.isActive">{{ v.isActive ? 'Sí' : 'No' }}</span>
+          <span class="pill" [class.off]="!v.isActive">
+            {{ v.isActive ? 'Sí' : 'No' }}
+          </span>
         </td>
         <td class="actions">
           <button class="btn-mini" (click)="openEdit(v)">Editar</button>
-          <button class="btn-mini danger" (click)="deactivate(v)" [disabled]="!v.isActive">Desactivar</button>
+          <button class="btn-mini danger"
+                  (click)="deactivate(v)"
+                  [disabled]="!v.isActive">
+            Desactivar
+          </button>
         </td>
       </tr>
     </tbody>
@@ -61,12 +67,15 @@
 <div class="modal-backdrop" *ngIf="modalOpen">
   <div class="modal">
     <div class="modal-head">
-      <div class="modal-title">{{ editing ? 'Editar vehículo' : 'Nuevo vehículo' }}</div>
+      <div class="modal-title">
+        {{ editing ? 'Editar vehículo' : 'Nuevo vehículo' }}
+      </div>
       <button class="x" (click)="closeModal()">✕</button>
     </div>
 
     <div class="modal-body">
       <div class="grid">
+
         <label>
           <span>Marca *</span>
           <input [(ngModel)]="form.brand" required />
@@ -79,35 +88,44 @@
 
         <label>
           <span>Año *</span>
-          <input type="number" [(ngModel)]="form.year" min="1900" required />
+          <input type="number"
+                 [(ngModel)]="form.year"
+                 min="1900"
+                 required />
         </label>
 
-        <!-- ✅ NUEVO -->
         <label>
           <span>Asientos *</span>
-          <input type="number" [(ngModel)]="form.seats" min="1" required />
+          <input type="number"
+                 [(ngModel)]="form.seats"
+                 min="1"
+                 required />
         </label>
 
-        <!-- ✅ NUEVO -->
         <label>
           <span>Transmisión *</span>
           <select [(ngModel)]="form.transmission" required>
-            <option value="">Seleccionar...</option>
+            <option [ngValue]="null">Seleccionar...</option>
             <option value="manual">Manual</option>
             <option value="automatic">Automática</option>
           </select>
         </label>
 
-        <!-- ✅ NUEVO (rápido): categoryId numérico -->
+        <!-- 🔥 CATEGORÍA CONECTADA A BASE -->
         <label>
-          <span>ID Categoría *</span>
-          <input type="number" [(ngModel)]="form.categoryId" min="1" required />
-          <small class="muted">Por ahora ingresá el ID de la categoría (luego lo pasamos a select).</small>
+          <span>Categoría *</span>
+          <select [(ngModel)]="form.categoryId" required>
+            <option [ngValue]="null">Seleccionar...</option>
+            <option *ngFor="let c of categories" [ngValue]="c.id">
+              {{ c.name }}
+            </option>
+          </select>
         </label>
 
         <label>
           <span>Precio por día</span>
-          <input type="number" [(ngModel)]="form.dailyPrice" />
+          <input type="number"
+                 [(ngModel)]="form.dailyPrice" />
         </label>
 
         <label>
@@ -116,15 +134,22 @@
         </label>
 
         <label class="field-check">
-          <input type="checkbox" [(ngModel)]="form.isActive" />
+          <input type="checkbox"
+                 [(ngModel)]="form.isActive" />
           <span>Activo</span>
         </label>
+
       </div>
     </div>
 
     <div class="modal-actions">
-      <button class="btn-ghost" (click)="closeModal()">Cancelar</button>
-      <button class="btn" (click)="save()" [disabled]="loading">
+      <button class="btn-ghost" (click)="closeModal()">
+        Cancelar
+      </button>
+
+      <button class="btn"
+              (click)="save()"
+              [disabled]="saving">
         {{ editing ? 'Guardar cambios' : 'Crear' }}
       </button>
     </div>

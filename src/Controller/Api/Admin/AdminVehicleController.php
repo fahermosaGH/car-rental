@@ -46,7 +46,7 @@ class AdminVehicleController extends AbstractController
             return $this->json(['error' => $error], 422);
         }
 
-        if (!isset($data['isActive']) && method_exists($v, 'setIsActive')) {
+        if (!array_key_exists('isActive', $data) && method_exists($v, 'setIsActive')) {
             $v->setIsActive(true);
         }
 
@@ -100,31 +100,37 @@ class AdminVehicleController extends AbstractController
     }
 
     /**
-     * @return string|null error message
+     * @return string|null Mensaje de error (para devolver 422)
      */
     private function applyPayload(Vehicle $v, array $data, bool $isCreate): ?string
     {
         // brand/model
-        if (isset($data['brand']) && method_exists($v, 'setBrand')) $v->setBrand((string)$data['brand']);
-        if (isset($data['model']) && method_exists($v, 'setModel')) $v->setModel((string)$data['model']);
-
-        // year
-        if (array_key_exists('year', $data) && method_exists($v, 'setYear')) {
-            $year = $data['year'] !== null ? (int)$data['year'] : null;
-            if ($isCreate && (!$year || $year < 1900)) return 'year es obligatorio';
-            if ($year !== null) $v->setYear($year);
+        if (array_key_exists('brand', $data) && method_exists($v, 'setBrand')) {
+            $v->setBrand(trim((string)$data['brand']));
+        }
+        if (array_key_exists('model', $data) && method_exists($v, 'setModel')) {
+            $v->setModel(trim((string)$data['model']));
         }
 
-        // seats (OBLIGATORIO en create)
+        // year (si en tu DB es NOT NULL, dejalo obligatorio)
+        if (array_key_exists('year', $data) && method_exists($v, 'setYear')) {
+            $year = $data['year'] !== null ? (int)$data['year'] : null;
+            if ($isCreate && ($year === null || $year < 1900)) return 'year es obligatorio';
+            if ($year !== null) $v->setYear($year);
+        } elseif ($isCreate) {
+            return 'year es obligatorio';
+        }
+
+        // seats (NOT NULL en DB → obligatorio en create)
         if (array_key_exists('seats', $data) && method_exists($v, 'setSeats')) {
             $seats = $data['seats'] !== null ? (int)$data['seats'] : null;
-            if ($isCreate && (!$seats || $seats <= 0)) return 'seats es obligatorio';
+            if ($isCreate && ($seats === null || $seats <= 0)) return 'seats es obligatorio';
             if ($seats !== null) $v->setSeats($seats);
         } elseif ($isCreate) {
             return 'seats es obligatorio';
         }
 
-        // transmission (OBLIGATORIO en create)
+        // transmission (NOT NULL en DB → obligatorio en create)
         if (array_key_exists('transmission', $data) && method_exists($v, 'setTransmission')) {
             $tr = trim((string)($data['transmission'] ?? ''));
             if ($isCreate && $tr === '') return 'transmission es obligatorio';
@@ -133,7 +139,22 @@ class AdminVehicleController extends AbstractController
             return 'transmission es obligatorio';
         }
 
-        // categoryId (OBLIGATORIO en create)
+        // dailyPriceOverride (front lo manda como dailyPrice)
+        if (array_key_exists('dailyPrice', $data) && method_exists($v, 'setDailyPriceOverride')) {
+            $val = $data['dailyPrice'];
+            if ($val === '' || $val === null) {
+                $v->setDailyPriceOverride(null);
+            } else {
+                $v->setDailyPriceOverride((string)$val); // decimal como string
+            }
+        }
+
+        // isActive
+        if (array_key_exists('isActive', $data) && method_exists($v, 'setIsActive')) {
+            $v->setIsActive((bool)$data['isActive']);
+        }
+
+        // categoryId → setCategory (obligatorio en create)
         if (array_key_exists('categoryId', $data)) {
             $cid = (int)($data['categoryId'] ?? 0);
             if ($isCreate && $cid <= 0) return 'categoryId es obligatorio';
@@ -147,22 +168,6 @@ class AdminVehicleController extends AbstractController
             return 'categoryId es obligatorio';
         }
 
-        // dailyPriceOverride (vos en front lo llamás dailyPrice)
-        if (array_key_exists('dailyPrice', $data) && method_exists($v, 'setDailyPriceOverride')) {
-            $val = $data['dailyPrice'];
-            if ($val === '' || $val === null) {
-                $v->setDailyPriceOverride(null);
-            } else {
-                // guarda como string decimal
-                $v->setDailyPriceOverride((string)$val);
-            }
-        }
-
-        // isActive
-        if (isset($data['isActive']) && method_exists($v, 'setIsActive')) {
-            $v->setIsActive((bool)$data['isActive']);
-        }
-
         return null;
     }
 
@@ -171,15 +176,17 @@ class AdminVehicleController extends AbstractController
         $cat = method_exists($v, 'getCategory') ? $v->getCategory() : null;
 
         return [
-            'id' => $v->getId(),
-            'brand' => $v->getBrand(),
-            'model' => $v->getModel(),
-            'year' => $v->getYear(),
-            'seats' => $v->getSeats(),
+            'id'           => $v->getId(),
+            'brand'        => $v->getBrand(),
+            'model'        => $v->getModel(),
+            'year'         => $v->getYear(),
+            'seats'        => $v->getSeats(),
             'transmission' => $v->getTransmission(),
-            'dailyPrice' => $v->getDailyPriceOverride(),
-            'isActive' => $v->isActive(),
-            'category' => $cat ? ['id' => $cat->getId(), 'name' => $cat->getName()] : null,
+            'dailyPrice'   => $v->getDailyPriceOverride() !== null ? (float)$v->getDailyPriceOverride() : null,
+            'isActive'     => (bool)$v->isActive(),
+            'categoryId'   => $cat?->getId(),
+            'categoryName' => $cat?->getName(),
+            'category'     => $cat ? ['id' => $cat->getId(), 'name' => $cat->getName()] : null,
         ];
     }
 }

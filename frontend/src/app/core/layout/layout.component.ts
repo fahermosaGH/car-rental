@@ -34,21 +34,19 @@ export class LayoutComponent {
     return this.auth.isLoggedIn();
   }
 
-  // ✅ NUEVO: solo muestra "Panel Admin" si tiene ROLE_ADMIN
+  // ✅ Solo muestra "Panel Admin" si tiene ROLE_ADMIN
   get isAdmin(): boolean {
-    // Si tu AuthService ya tiene isAdmin(), esto queda perfecto.
-    // Si no lo tiene, avisame y lo ajustamos al toque.
     return this.auth.isAdmin();
   }
 
   logout() {
     const ok = window.confirm('¿Estás seguro de que querés cerrar sesión?');
-    if (!ok) {
-      return;
-    }
+    if (!ok) return;
 
     this.auth.logout();
-    this.router.navigate(['/cotizar']);
+
+    // ✅ Cambiado: después de cerrar sesión, ir al login (sin tocar permisos/guards)
+    this.router.navigate(['/auth/login']);
   }
 
   // 🔘 toggle del modo oscuro

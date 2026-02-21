@@ -22,7 +22,7 @@ class AdminVehicleController extends AbstractController
         private readonly EntityManagerInterface $em,
     ) {}
 
-    #[Route('', name: 'api_admin_vehicles_list', methods: ['GET'])]
+    #[Route('', methods: ['GET'])]
     public function list(Request $request): JsonResponse
     {
         $includeInactive = $request->query->getBoolean('includeInactive', false);
@@ -34,21 +34,13 @@ class AdminVehicleController extends AbstractController
         return $this->json(array_map([$this, 'toDto'], $items));
     }
 
-    #[Route('', name: 'api_admin_vehicles_create', methods: ['POST'])]
+    #[Route('', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {
-        $data = $this->getJson($request);
-
+        $data = json_decode($request->getContent(), true) ?? [];
         $v = new Vehicle();
 
-        $error = $this->applyPayload($v, $data, true);
-        if ($error) {
-            return $this->json(['error' => $error], 422);
-        }
-
-        if (!array_key_exists('isActive', $data) && method_exists($v, 'setIsActive')) {
-            $v->setIsActive(true);
-        }
+        $this->applyPayload($v, $data, true);
 
         $this->em->persist($v);
         $this->em->flush();
@@ -56,137 +48,70 @@ class AdminVehicleController extends AbstractController
         return $this->json($this->toDto($v), 201);
     }
 
-    #[Route('/{id}', name: 'api_admin_vehicles_update', methods: ['PUT'])]
+    #[Route('/{id}', methods: ['PUT'])]
     public function update(int $id, Request $request): JsonResponse
     {
         $v = $this->vehicles->find($id);
-        if (!$v) {
-            return $this->json(['error' => 'Vehículo no encontrado'], 404);
-        }
+        if (!$v) return $this->json(['error' => 'Vehículo no encontrado'], 404);
 
-        $data = $this->getJson($request);
-
-        $error = $this->applyPayload($v, $data, false);
-        if ($error) {
-            return $this->json(['error' => $error], 422);
-        }
+        $data = json_decode($request->getContent(), true) ?? [];
+        $this->applyPayload($v, $data, false);
 
         $this->em->flush();
 
         return $this->json($this->toDto($v));
     }
 
-    #[Route('/{id}', name: 'api_admin_vehicles_deactivate', methods: ['DELETE'])]
+    #[Route('/{id}', methods: ['DELETE'])]
     public function deactivate(int $id): JsonResponse
     {
         $v = $this->vehicles->find($id);
-        if (!$v) {
-            return $this->json(['error' => 'Vehículo no encontrado'], 404);
-        }
+        if (!$v) return $this->json(['error' => 'Vehículo no encontrado'], 404);
 
-        if (method_exists($v, 'setIsActive')) {
-            $v->setIsActive(false);
-        }
-
+        $v->setIsActive(false);
         $this->em->flush();
 
-        return $this->json(['ok' => true, 'id' => $id]);
+        return $this->json(['ok' => true]);
     }
 
-    private function getJson(Request $request): array
+    private function applyPayload(Vehicle $v, array $data, bool $isCreate): void
     {
-        $data = json_decode((string)$request->getContent(), true);
-        return is_array($data) ? $data : [];
-    }
-
-    /**
-     * @return string|null Mensaje de error (para devolver 422)
-     */
-    private function applyPayload(Vehicle $v, array $data, bool $isCreate): ?string
-    {
-        // brand/model
-        if (array_key_exists('brand', $data) && method_exists($v, 'setBrand')) {
-            $v->setBrand(trim((string)$data['brand']));
+        if (isset($data['brand'])) $v->setBrand(trim($data['brand']));
+        if (isset($data['model'])) $v->setModel(trim($data['model']));
+        if (isset($data['year'])) $v->setYear((int)$data['year']);
+        if (isset($data['seats'])) $v->setSeats((int)$data['seats']);
+        if (isset($data['transmission'])) $v->setTransmission($data['transmission']);
+        if (isset($data['dailyPrice'])) {
+            $v->setDailyPriceOverride($data['dailyPrice'] !== null ? (string)$data['dailyPrice'] : null);
         }
-        if (array_key_exists('model', $data) && method_exists($v, 'setModel')) {
-            $v->setModel(trim((string)$data['model']));
+        if (isset($data['isActive'])) $v->setIsActive((bool)$data['isActive']);
+
+        if (isset($data['imageUrl'])) {
+            $v->setImageUrl($data['imageUrl']);
         }
 
-        // year (si en tu DB es NOT NULL, dejalo obligatorio)
-        if (array_key_exists('year', $data) && method_exists($v, 'setYear')) {
-            $year = $data['year'] !== null ? (int)$data['year'] : null;
-            if ($isCreate && ($year === null || $year < 1900)) return 'year es obligatorio';
-            if ($year !== null) $v->setYear($year);
-        } elseif ($isCreate) {
-            return 'year es obligatorio';
+        if (isset($data['categoryId'])) {
+            $cat = $this->categories->find((int)$data['categoryId']);
+            if ($cat) $v->setCategory($cat);
         }
-
-        // seats (NOT NULL en DB → obligatorio en create)
-        if (array_key_exists('seats', $data) && method_exists($v, 'setSeats')) {
-            $seats = $data['seats'] !== null ? (int)$data['seats'] : null;
-            if ($isCreate && ($seats === null || $seats <= 0)) return 'seats es obligatorio';
-            if ($seats !== null) $v->setSeats($seats);
-        } elseif ($isCreate) {
-            return 'seats es obligatorio';
-        }
-
-        // transmission (NOT NULL en DB → obligatorio en create)
-        if (array_key_exists('transmission', $data) && method_exists($v, 'setTransmission')) {
-            $tr = trim((string)($data['transmission'] ?? ''));
-            if ($isCreate && $tr === '') return 'transmission es obligatorio';
-            if ($tr !== '') $v->setTransmission($tr);
-        } elseif ($isCreate) {
-            return 'transmission es obligatorio';
-        }
-
-        // dailyPriceOverride (front lo manda como dailyPrice)
-        if (array_key_exists('dailyPrice', $data) && method_exists($v, 'setDailyPriceOverride')) {
-            $val = $data['dailyPrice'];
-            if ($val === '' || $val === null) {
-                $v->setDailyPriceOverride(null);
-            } else {
-                $v->setDailyPriceOverride((string)$val); // decimal como string
-            }
-        }
-
-        // isActive
-        if (array_key_exists('isActive', $data) && method_exists($v, 'setIsActive')) {
-            $v->setIsActive((bool)$data['isActive']);
-        }
-
-        // categoryId → setCategory (obligatorio en create)
-        if (array_key_exists('categoryId', $data)) {
-            $cid = (int)($data['categoryId'] ?? 0);
-            if ($isCreate && $cid <= 0) return 'categoryId es obligatorio';
-
-            if ($cid > 0 && method_exists($v, 'setCategory')) {
-                $cat = $this->categories->find($cid);
-                if (!$cat) return 'Categoría inexistente';
-                $v->setCategory($cat);
-            }
-        } elseif ($isCreate) {
-            return 'categoryId es obligatorio';
-        }
-
-        return null;
     }
 
     private function toDto(Vehicle $v): array
     {
-        $cat = method_exists($v, 'getCategory') ? $v->getCategory() : null;
+        $cat = $v->getCategory();
 
         return [
-            'id'           => $v->getId(),
-            'brand'        => $v->getBrand(),
-            'model'        => $v->getModel(),
-            'year'         => $v->getYear(),
-            'seats'        => $v->getSeats(),
+            'id' => $v->getId(),
+            'brand' => $v->getBrand(),
+            'model' => $v->getModel(),
+            'year' => $v->getYear(),
+            'seats' => $v->getSeats(),
             'transmission' => $v->getTransmission(),
-            'dailyPrice'   => $v->getDailyPriceOverride() !== null ? (float)$v->getDailyPriceOverride() : null,
-            'isActive'     => (bool)$v->isActive(),
-            'categoryId'   => $cat?->getId(),
+            'dailyPrice' => $v->getDailyPriceOverride() !== null ? (float)$v->getDailyPriceOverride() : null,
+            'isActive' => (bool)$v->isActive(),
+            'categoryId' => $cat?->getId(),
             'categoryName' => $cat?->getName(),
-            'category'     => $cat ? ['id' => $cat->getId(), 'name' => $cat->getName()] : null,
+            'imageUrl' => $v->getImageUrl(),
         ];
     }
 }

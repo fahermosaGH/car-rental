@@ -33,12 +33,30 @@ export class CotizarService {
   }
 
   // -------------------------------------------------------------
+  // ✅ Normalizador de imagen (usa imageUrl del backend si existe)
+  // -------------------------------------------------------------
+  private normalizeImageUrl(v: any): string {
+    const raw = (v?.imageUrl ?? v?.image_url ?? '').toString().trim();
+
+    // Si viene bien (http/https), la usamos
+    if (raw && /^https?:\/\//i.test(raw)) {
+      return raw;
+    }
+
+    // Fallback: picsum (estable por "brand-model-year" para no cambiar cada refresh)
+    const seed = encodeURIComponent(
+      `${v?.brand ?? ''}-${v?.model ?? ''}-${v?.year ?? ''}`.trim() || 'car'
+    );
+    return `https://picsum.photos/seed/${seed}/400/220`;
+  }
+
+  // -------------------------------------------------------------
   // VEHÍCULOS
   // -------------------------------------------------------------
   buscarVehiculos(): Observable<VehicleOption[]> {
     return this.http.get<any[]>(`${this.apiUrl}/vehicles`).pipe(
       map((data) =>
-        data.map((v) => {
+        (data ?? []).map((v) => {
           const category = this.normalizeCategory(v.category);
 
           return {
@@ -51,10 +69,14 @@ export class CotizarService {
             seats: v.seats,
             transmission: v.transmission,
             dailyRate: parseFloat(v.dailyRate ?? 0),
-            img: 'https://picsum.photos/seed/' + v.model + '/400/220',
+
+            // ✅ ACA: usa imageUrl si existe, sino fallback
+            img: this.normalizeImageUrl(v),
+
             fuel: 'Nafta',
             description: `${v.brand} ${v.model} (${category})`,
-            unitsAvailable: typeof v.unitsAvailable === 'number' ? v.unitsAvailable : undefined,
+            unitsAvailable:
+              typeof v.unitsAvailable === 'number' ? v.unitsAvailable : undefined,
 
             // ratings summary
             ratingAvg: typeof v.ratingAvg === 'number' ? v.ratingAvg : null,
@@ -66,7 +88,9 @@ export class CotizarService {
   }
 
   obtenerVehiculoPorId(id: number): Observable<VehicleOption | undefined> {
-    return this.buscarVehiculos().pipe(map((vehiculos) => vehiculos.find((v) => v.id === id)));
+    return this.buscarVehiculos().pipe(
+      map((vehiculos) => vehiculos.find((v) => v.id === id))
+    );
   }
 
   // -------------------------------------------------------------
@@ -75,7 +99,7 @@ export class CotizarService {
   obtenerSucursales(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/locations`).pipe(
       map((data) =>
-        data.map((s) => ({
+        (data ?? []).map((s) => ({
           id: s.id,
           nombre: s.name || s.nombre,
           ciudad: s.city || '',
@@ -103,38 +127,46 @@ export class CotizarService {
       httpParams = httpParams.set('category', params.category.trim());
     }
 
-    return this.http.get<any[]>(`${this.apiUrl}/vehicles/available`, { params: httpParams }).pipe(
-      map((data) =>
-        data.map((v) => ({
-          id: v.id,
-          category: v.category ?? 'Sin categoría',
-          brand: v.brand,
-          model: v.model,
-          name: `${v.brand} ${v.model}`,
-          year: v.year,
-          seats: v.seats,
-          transmission: v.transmission,
-          dailyRate: parseFloat(v.dailyRate ?? 0),
-          img: 'https://picsum.photos/seed/' + v.model + '/400/220',
-          description: `${v.brand} ${v.model} (${v.category ?? 'Sin categoría'})`,
-          fuel: 'Nafta',
-          unitsAvailable: v.unitsAvailable,
-          branchStock: v.branchStock,
+    return this.http
+      .get<any[]>(`${this.apiUrl}/vehicles/available`, { params: httpParams })
+      .pipe(
+        map((data) =>
+          (data ?? []).map((v) => ({
+            id: v.id,
+            category: v.category ?? 'Sin categoría',
+            brand: v.brand,
+            model: v.model,
+            name: `${v.brand} ${v.model}`,
+            year: v.year,
+            seats: v.seats,
+            transmission: v.transmission,
+            dailyRate: parseFloat(v.dailyRate ?? 0),
 
-          ratingAvg: typeof v.ratingAvg === 'number' ? v.ratingAvg : null,
-          ratingCount: typeof v.ratingCount === 'number' ? v.ratingCount : 0,
-        }))
-      )
-    );
+            // ✅ ACA TAMBIÉN: usa imageUrl si existe
+            img: this.normalizeImageUrl(v),
+
+            description: `${v.brand} ${v.model} (${v.category ?? 'Sin categoría'})`,
+            fuel: 'Nafta',
+            unitsAvailable: v.unitsAvailable,
+            branchStock: v.branchStock,
+
+            ratingAvg: typeof v.ratingAvg === 'number' ? v.ratingAvg : null,
+            ratingCount: typeof v.ratingCount === 'number' ? v.ratingCount : 0,
+          }))
+        )
+      );
   }
 
   // -------------------------------------------------------------
   // RATINGS DETALLE
   // -------------------------------------------------------------
   getVehicleRatings(vehicleId: number, limit = 6): Observable<VehicleRatingsResponse> {
-    return this.http.get<VehicleRatingsResponse>(`${this.apiUrl}/vehicles/${vehicleId}/ratings`, {
-      params: new HttpParams().set('limit', String(limit)),
-    });
+    return this.http.get<VehicleRatingsResponse>(
+      `${this.apiUrl}/vehicles/${vehicleId}/ratings`,
+      {
+        params: new HttpParams().set('limit', String(limit)),
+      }
+    );
   }
 
   // -------------------------------------------------------------
@@ -152,9 +184,12 @@ export class CotizarService {
       .set('start', params.startAt)
       .set('end', params.endAt);
 
-    return this.http.get<{ available: boolean; message: string }>(`${this.apiUrl}/check-availability`, {
-      params: httpParams,
-    });
+    return this.http.get<{ available: boolean; message: string }>(
+      `${this.apiUrl}/check-availability`,
+      {
+        params: httpParams,
+      }
+    );
   }
 
   // -------------------------------------------------------------
@@ -180,9 +215,11 @@ export class CotizarService {
       ? new HttpHeaders({ Authorization: `Bearer ${this.auth.token}` })
       : undefined;
 
-    return this.http.post<{ message: string; id: number; pricing?: any }>(`${this.apiUrl}/reservations`, payload, {
-      headers,
-    });
+    return this.http.post<{ message: string; id: number; pricing?: any }>(
+      `${this.apiUrl}/reservations`,
+      payload,
+      { headers }
+    );
   }
 
   getReservationById(id: number) {
@@ -223,6 +260,10 @@ export class CotizarService {
       ? new HttpHeaders({ Authorization: `Bearer ${this.auth.token}` })
       : undefined;
 
-    return this.http.post(`${this.apiUrl}/reservations/${reservationId}/rating`, payload, { headers });
+    return this.http.post(
+      `${this.apiUrl}/reservations/${reservationId}/rating`,
+      payload,
+      { headers }
+    );
   }
 }

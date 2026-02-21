@@ -1,3 +1,8 @@
+:host {
+  display: block;
+  color-scheme: dark;
+}
+
 .head {
   display: flex;
   justify-content: space-between;
@@ -61,6 +66,12 @@ td {
 th {
   font-size: 12px;
   opacity: 0.8;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+tr:hover td {
+  background: rgba(47, 111, 237, 0.06);
 }
 
 .num {

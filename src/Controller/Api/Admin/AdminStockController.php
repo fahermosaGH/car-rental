@@ -3,41 +3,28 @@
 namespace App\Controller\Api\Admin;
 
 use App\Entity\VehicleLocationStock;
-use App\Repository\LocationRepository;
-use App\Repository\VehicleRepository;
-use App\Repository\VehicleLocationStockRepository;
 use App\Service\StockSyncService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/api/admin/stock')]
 class AdminStockController extends AbstractController
 {
-    #[Route('', name: 'api_admin_stock_list', methods: ['GET'])]
-    public function list(Request $request, VehicleLocationStockRepository $repo): JsonResponse
+    #[Route('', methods: ['GET'])]
+    public function list(EntityManagerInterface $em): JsonResponse
     {
-        $locationId = $request->query->getInt('locationId', 0);
-        $vehicleId  = $request->query->getInt('vehicleId', 0);
-
-        $qb = $repo->createQueryBuilder('s')
-            ->leftJoin('s.vehicle', 'v')->addSelect('v')
-            ->leftJoin('s.location', 'l')->addSelect('l')
-            ->orderBy('l.id', 'DESC')
-            ->addOrderBy('v.id', 'DESC')
-            ->addOrderBy('s.id', 'DESC');
-
-        if ($locationId > 0) {
-            $qb->andWhere('l.id = :lid')->setParameter('lid', $locationId);
-        }
-        if ($vehicleId > 0) {
-            $qb->andWhere('v.id = :vid')->setParameter('vid', $vehicleId);
-        }
-
-        /** @var VehicleLocationStock[] $rows */
-        $rows = $qb->getQuery()->getResult();
+        $rows = $em->createQueryBuilder()
+            ->select('s, v, l')
+            ->from(VehicleLocationStock::class, 's')
+            ->leftJoin('s.vehicle', 'v')
+            ->leftJoin('s.location', 'l')
+            ->orderBy('l.name', 'ASC')
+            ->addOrderBy('v.brand', 'ASC')
+            ->addOrderBy('v.model', 'ASC')
+            ->getQuery()
+            ->getResult();
 
         $data = array_map(static function (VehicleLocationStock $s) {
             $v = $s->getVehicle();
@@ -46,20 +33,16 @@ class AdminStockController extends AbstractController
             return [
                 'id' => $s->getId(),
                 'quantity' => $s->getQuantity(),
-
                 'vehicle' => $v ? [
                     'id' => $v->getId(),
-                    'brand' => method_exists($v, 'getBrand') ? $v->getBrand() : null,
-                    'model' => method_exists($v, 'getModel') ? $v->getModel() : null,
-                    'year'  => method_exists($v, 'getYear') ? $v->getYear() : null,
-                    'isActive' => method_exists($v, 'isActive') ? $v->isActive() : true,
+                    'brand' => $v->getBrand(),
+                    'model' => $v->getModel(),
+                    'year' => $v->getYear(),
                 ] : null,
-
                 'location' => $l ? [
                     'id' => $l->getId(),
                     'name' => $l->getName(),
                     'city' => $l->getCity(),
-                    'isActive' => $l->isActive(),
                 ] : null,
             ];
         }, $rows);
@@ -67,113 +50,38 @@ class AdminStockController extends AbstractController
         return $this->json($data);
     }
 
-    /**
-     * Upsert por (vehicleId, locationId)
-     * ✅ IMPORTANTE: quantity YA NO se toma del request.
-     * El stock se deriva SIEMPRE desde unidades (VehicleUnit) via StockSyncService.
-     */
-    #[Route('', name: 'api_admin_stock_upsert', methods: ['POST'])]
-    public function upsert(
-        Request $request,
-        VehicleLocationStockRepository $stockRepo,
-        VehicleRepository $vehicleRepo,
-        LocationRepository $locationRepo,
-        EntityManagerInterface $em,
-        StockSyncService $stockSync
-    ): JsonResponse {
-        $data = json_decode($request->getContent(), true);
-        if (!is_array($data)) {
-            return $this->json(['error' => 'JSON inválido'], 400);
-        }
-
-        $vehicleId  = (int)($data['vehicleId'] ?? 0);
-        $locationId = (int)($data['locationId'] ?? 0);
-
-        // quantity es opcional: lo ignoramos para evitar stock “inventado”
-        // $requestedQuantity = isset($data['quantity']) ? (int)$data['quantity'] : null;
-
-        if ($vehicleId <= 0 || $locationId <= 0) {
-            return $this->json(['error' => 'vehicleId y locationId son obligatorios'], 422);
-        }
-
-        $vehicle = $vehicleRepo->find($vehicleId);
-        if (!$vehicle) return $this->json(['error' => 'Vehículo no encontrado'], 404);
-
-        $location = $locationRepo->find($locationId);
-        if (!$location) return $this->json(['error' => 'Ubicación no encontrada'], 404);
-
-        // Asegura existencia del registro stock (por unique(vehicle, location))
-        $existing = $stockRepo->findOneBy(['vehicle' => $vehicle, 'location' => $location]);
-        if (!$existing) {
-            $existing = new VehicleLocationStock();
-            $existing->setVehicle($vehicle);
-            $existing->setLocation($location);
-            $existing->setQuantity(0);
-            $em->persist($existing);
-            $em->flush();
-        }
-
-        // ✅ Derivamos quantity desde unidades con patente
-        $realQty = $stockSync->syncFor($vehicle, $location);
-
-        return $this->json([
-            'ok' => true,
-            'id' => $existing->getId(),
-            'quantity' => $realQty,
-            'message' => 'Stock sincronizado desde unidades con patente',
-        ], 200);
-    }
-
-    /**
-     * Update por id
-     * ✅ IMPORTANTE: quantity YA NO se toma del request.
-     * Se recalcula desde unidades con patente para ese (vehicle, location).
-     */
-    #[Route('/{id}', name: 'api_admin_stock_update', methods: ['PUT'])]
-    public function update(
+    // ESTE ES EL BOTÓN "SINCRONIZAR" (por fila)
+    #[Route('/{id}/sync', methods: ['POST'])]
+    public function syncOne(
         int $id,
-        Request $request,
-        VehicleLocationStockRepository $repo,
         EntityManagerInterface $em,
-        StockSyncService $stockSync
+        StockSyncService $sync
     ): JsonResponse {
-        $stock = $repo->find($id);
-        if (!$stock) return $this->json(['error' => 'Stock no encontrado'], 404);
-
-        // Leemos JSON solo para mantener compatibilidad con el front,
-        // pero NO usamos quantity para setear stock.
-        $data = json_decode($request->getContent(), true);
-        if (!is_array($data)) {
-            return $this->json(['error' => 'JSON inválido'], 400);
+        $row = $em->getRepository(VehicleLocationStock::class)->find($id);
+        if (!$row) {
+            return $this->json(['error' => 'Fila de stock no encontrada'], 404);
         }
 
-        $vehicle = $stock->getVehicle();
-        $location = $stock->getLocation();
+        $vehicle = $row->getVehicle();
+        $location = $row->getLocation();
         if (!$vehicle || !$location) {
-            return $this->json(['error' => 'Stock inconsistente (faltan relaciones)'], 500);
+            return $this->json(['error' => 'Fila inválida (sin vehículo o sucursal)'], 422);
         }
 
-        $realQty = $stockSync->syncFor($vehicle, $location);
-
-        // flush ya lo hace el service, pero no molesta mantenerlo consistente
-        $em->flush();
+        $qty = $sync->syncFor($vehicle, $location);
 
         return $this->json([
             'ok' => true,
-            'id' => $stock->getId(),
-            'quantity' => $realQty,
-            'message' => 'Stock sincronizado desde unidades con patente',
+            'quantity' => $qty,
         ]);
     }
 
-    /**
-     * Endpoint opcional: recalcular TODO el stock desde unidades
-     * Útil para dejar todo alineado cuando cargan patentes masivamente.
-     */
-    #[Route('/rebuild', name: 'api_admin_stock_rebuild', methods: ['POST'])]
-    public function rebuild(StockSyncService $stockSync): JsonResponse
+    // "Recalcular todo (patentes)" (si ya lo tenías, no molesta; si no, ahora existe)
+    #[Route('/rebuild-all', methods: ['POST'])]
+    public function rebuildAll(StockSyncService $sync): JsonResponse
     {
-        $stockSync->rebuildAll();
-        return $this->json(['ok' => true, 'message' => 'Stock recalculado desde unidades con patente']);
+        $sync->rebuildAll();
+
+        return $this->json(['ok' => true]);
     }
 }

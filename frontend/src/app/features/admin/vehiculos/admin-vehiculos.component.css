@@ -1,3 +1,8 @@
+:host {
+  display: block;
+  color-scheme: dark;
+}
+
 .page-head {
   display: flex;
   align-items: flex-start;
@@ -52,6 +57,8 @@ h2 { margin: 0 0 6px; font-size: 24px; }
 .table th, .table td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,.08); }
 .table th { text-align: left; opacity: .85; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
 
+.table tr:hover td { background: rgba(47, 111, 237, 0.06); }
+
 .actions { display: flex; gap: 8px; }
 
 .pill {
@@ -69,7 +76,7 @@ h2 { margin: 0 0 6px; font-size: 24px; }
   opacity: .8;
 }
 
-/* ✅ IMPORTANTES: consistencia de layout */
+/* consistencia */
 *,
 *::before,
 *::after {
@@ -117,7 +124,6 @@ h2 { margin: 0 0 6px; font-size: 24px; }
 
 .modal-body { padding: 16px; }
 
-/* ✅ grid más estable y con alto consistente */
 .grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -125,12 +131,11 @@ h2 { margin: 0 0 6px; font-size: 24px; }
   align-items: start;
 }
 
-/* ✅ evita superposición rara: label como contenedor vertical */
 .grid label {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  min-width: 0; /* evita overflow feo */
+  min-width: 0;
 }
 
 label span {
@@ -140,7 +145,6 @@ label span {
   margin: 0;
 }
 
-/* ✅ Estilo unificado para inputs y selects */
 input,
 select {
   width: 100%;
@@ -153,13 +157,18 @@ select {
   outline: none;
 }
 
+select option,
+select optgroup {
+  background: #0b1020;
+  color: #e8eefc;
+}
+
 input:focus,
 select:focus {
   border-color: rgba(124, 58, 237, .55);
   box-shadow: 0 0 0 3px rgba(124, 58, 237, .18);
 }
 
-/* ✅ arregla el select “blanco horrible” en algunos browsers */
 select {
   appearance: none;
   -webkit-appearance: none;
@@ -175,23 +184,6 @@ select {
   padding-right: 34px;
 }
 
-/* ✅ checkbox/activo prolijo y alineado */
-label.check {
-  flex-direction: row;
-  align-items: center;
-  gap: 10px;
-  padding-top: 8px;
-}
-
-.check input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  padding: 0;
-  margin: 0;
-  border-radius: 6px;
-  transform: none;
-}
-
 .modal-actions {
   display:flex;
   justify-content: flex-end;
@@ -204,9 +196,8 @@ label.check {
   .grid { grid-template-columns: 1fr; }
 }
 
-/* --- CHECKBOX PROLIJO EN MODAL --- */
 .field-check {
-  grid-column: 1 / -1;            /* ocupa toda la fila */
+  grid-column: 1 / -1;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -219,7 +210,7 @@ label.check {
 .field-check input[type="checkbox"]{
   width: 18px;
   height: 18px;
-  accent-color: #7c3aed;          /* mismo violeta del theme */
+  accent-color: #7c3aed;
 }
 
 .field-check span{
@@ -227,7 +218,6 @@ label.check {
   opacity: .9;
 }
 
-/* --- SELECT EN TEMA OSCURO (mejora legibilidad del dropdown) --- */
 select.select {
   width: 100%;
   padding: 10px 12px;
@@ -235,18 +225,15 @@ select.select {
   border: 1px solid rgba(255,255,255,.12);
   background: rgba(255,255,255,.06);
   color: #e8eefc;
-  color-scheme: dark;             /* clave: pide controles oscuros */
+  color-scheme: dark;
 }
 
-/* intenta forzar opciones legibles (algunos browsers lo respetan) */
 select.select option {
   background: #0a0f1c;
   color: #e8eefc;
 }
 
-/* si tu select tiene variante "small" en otros módulos */
 select.select.small {
   padding: 8px 10px;
   border-radius: 10px;
 }
-

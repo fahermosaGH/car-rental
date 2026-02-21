@@ -1,57 +1,82 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable, catchError, throwError, switchMap, of } from 'rxjs';
+import { environment } from '../../../../environments/environment';
+import { AuthService } from '../../../core/services/auth.service';
 
-export interface StockRowDto {
+export type StockRowDto = {
   id: number;
   quantity: number;
-  vehicle: {
-    id: number;
-    brand: string | null;
-    model: string | null;
-    year: number | null;
-    isActive: boolean;
-  } | null;
-  location: {
-    id: number;
-    name: string;
-    city: string | null;
-    isActive: boolean;
-  } | null;
-}
-
-export interface StockUpsertPayload {
-  vehicleId: number;
-  locationId: number;
-  quantity: number; // (hoy el backend lo ignora y deriva desde unidades, pero lo dejamos por compatibilidad)
-}
+  vehicle: { id: number; brand: string; model: string; year?: number | null };
+  location: { id: number; name: string; city?: string | null };
+};
 
 @Injectable({ providedIn: 'root' })
 export class AdminStockService {
-  private readonly baseUrl = 'http://127.0.0.1:8000/api/admin/stock';
+  private apiUrl = environment.apiUrl;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private auth: AuthService) {}
 
-  list(params?: { locationId?: number; vehicleId?: number }): Observable<StockRowDto[]> {
-    const q: string[] = [];
-    if (params?.locationId) q.push(`locationId=${params.locationId}`);
-    if (params?.vehicleId) q.push(`vehicleId=${params.vehicleId}`);
-    const url = q.length ? `${this.baseUrl}?${q.join('&')}` : this.baseUrl;
-
-    return this.http.get<StockRowDto[]>(url);
+  private headers(): HttpHeaders {
+    return new HttpHeaders({
+      Authorization: `Bearer ${this.auth.token}`,
+    });
   }
 
-  upsert(payload: StockUpsertPayload): Observable<any> {
-    return this.http.post<any>(this.baseUrl, payload);
+  // LISTADO DE STOCK
+  list(): Observable<StockRowDto[]> {
+    return this.http.get<StockRowDto[]>(`${this.apiUrl}/admin/stock`, {
+      headers: this.headers(),
+    });
   }
 
-  update(id: number, quantity: number): Observable<any> {
-    return this.http.put<any>(`${this.baseUrl}/${id}`, { quantity });
+  // RECALCULAR TODO
+  // Intentamos varias rutas (por si tu backend tiene otro nombre)
+  rebuildAll(): Observable<{ ok: boolean }> {
+    const h = { headers: this.headers() };
+
+    return this.http.post<{ ok: boolean }>(`${this.apiUrl}/admin/stock/rebuild-all`, {}, h).pipe(
+      catchError(() =>
+        this.http.post<{ ok: boolean }>(`${this.apiUrl}/admin/stock/rebuild`, {}, h).pipe(
+          catchError(() =>
+            this.http.post<{ ok: boolean }>(`${this.apiUrl}/admin/stock/recalculate`, {}, h)
+          )
+        )
+      )
+    );
   }
 
-  // ✅ Recalcula TODO el stock desde unidades con patente
-  rebuild(): Observable<any> {
-    return this.http.post<any>(`${this.baseUrl}/rebuild`, {});
+  // SINCRONIZAR UNA FILA
+  // Enviamos vehicleId + locationId y probamos varias rutas comunes.
+  syncRow(row: StockRowDto): Observable<{ ok: boolean; quantity?: number }> {
+    const h = { headers: this.headers() };
+
+    const payload = {
+      vehicleId: row.vehicle?.id,
+      locationId: row.location?.id,
+    };
+
+    const try1$ = this.http.post<{ ok: boolean; quantity?: number }>(
+      `${this.apiUrl}/admin/stock/${row.id}/sync`,
+      payload,
+      h
+    );
+
+    const try2$ = this.http.post<{ ok: boolean; quantity?: number }>(
+      `${this.apiUrl}/admin/stock/${row.id}/synchronize`,
+      payload,
+      h
+    );
+
+    const try3$ = this.http.post<{ ok: boolean; quantity?: number }>(
+      `${this.apiUrl}/admin/stock/sync/${row.id}`,
+      payload,
+      h
+    );
+
+    return try1$.pipe(
+      catchError(() => try2$),
+      catchError(() => try3$)
+    );
   }
 }
-

@@ -2,30 +2,39 @@
 
 namespace App\Controller\Api\Admin;
 
+use App\Entity\Location;
+use App\Entity\Reservation;
+use App\Entity\Vehicle;
 use App\Entity\VehicleUnit;
-use App\Repository\VehicleUnitRepository;
-use App\Repository\VehicleRepository;
-use App\Repository\LocationRepository;
 use App\Service\StockSyncService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/api/admin/vehicle-units')]
+#[IsGranted('ROLE_ADMIN')]
 class AdminVehicleUnitController extends AbstractController
 {
-    #[Route('', name: 'api_admin_vehicle_units_list', methods: ['GET'])]
-    public function list(Request $request, VehicleUnitRepository $repo): JsonResponse
-    {
-        $vehicleId  = $request->query->getInt('vehicleId', 0);
-        $locationId = $request->query->getInt('locationId', 0);
-        $status     = $request->query->get('status');
+    public function __construct(
+        private readonly EntityManagerInterface $em,
+        private readonly StockSyncService $stockSync,
+    ) {}
 
-        $qb = $repo->createQueryBuilder('u')
-            ->leftJoin('u.vehicle', 'v')->addSelect('v')
-            ->leftJoin('u.location', 'l')->addSelect('l')
+    #[Route('', methods: ['GET'])]
+    public function list(Request $request): JsonResponse
+    {
+        $vehicleId  = (int) $request->query->get('vehicleId', 0);
+        $locationId = (int) $request->query->get('locationId', 0);
+        $status     = (string) $request->query->get('status', '');
+
+        $qb = $this->em->createQueryBuilder()
+            ->select('u, v, l')
+            ->from(VehicleUnit::class, 'u')
+            ->leftJoin('u.vehicle', 'v')
+            ->leftJoin('u.location', 'l')
             ->orderBy('u.id', 'DESC');
 
         if ($vehicleId > 0) {
@@ -34,10 +43,11 @@ class AdminVehicleUnitController extends AbstractController
         if ($locationId > 0) {
             $qb->andWhere('l.id = :lid')->setParameter('lid', $locationId);
         }
-        if ($status) {
+        if ($status !== '') {
             $qb->andWhere('u.status = :st')->setParameter('st', $status);
         }
 
+        /** @var VehicleUnit[] $rows */
         $rows = $qb->getQuery()->getResult();
 
         $data = array_map(static function (VehicleUnit $u) {
@@ -65,143 +75,143 @@ class AdminVehicleUnitController extends AbstractController
         return $this->json($data);
     }
 
-    #[Route('', name: 'api_admin_vehicle_units_create', methods: ['POST'])]
-    public function create(
-        Request $request,
-        VehicleRepository $vehicleRepo,
-        LocationRepository $locationRepo,
-        EntityManagerInterface $em,
-        StockSyncService $stockSync
-    ): JsonResponse {
-        $data = json_decode($request->getContent(), true);
-        if (!is_array($data)) return $this->json(['error' => 'JSON inválido'], 400);
+    #[Route('', methods: ['POST'])]
+    public function create(Request $request): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true) ?? [];
 
-        $vehicleId  = (int)($data['vehicleId'] ?? 0);
+        $plate = strtoupper(trim((string)($data['plate'] ?? '')));
+        $vehicleId = (int)($data['vehicleId'] ?? 0);
         $locationId = (int)($data['locationId'] ?? 0);
-        $plate      = trim((string)($data['plate'] ?? ''));
-        $status     = (string)($data['status'] ?? VehicleUnit::STATUS_AVAILABLE);
+        $status = (string)($data['status'] ?? VehicleUnit::STATUS_AVAILABLE);
 
-        if ($vehicleId <= 0 || $locationId <= 0 || $plate === '') {
-            return $this->json(['error' => 'vehicleId, locationId y plate son obligatorios'], 422);
+        if ($plate === '' || $vehicleId <= 0 || $locationId <= 0) {
+            return $this->json(['error' => 'Datos inválidos'], 422);
         }
 
-        if (!in_array($status, [
-            VehicleUnit::STATUS_AVAILABLE,
-            VehicleUnit::STATUS_MAINTENANCE,
-            VehicleUnit::STATUS_INACTIVE
-        ], true)) {
-            return $this->json(['error' => 'Status inválido'], 422);
+        $exists = $this->em->getRepository(VehicleUnit::class)->findOneBy(['plate' => $plate]);
+        if ($exists) {
+            return $this->json(['error' => 'Esa patente ya existe'], 409);
         }
 
-        $vehicle = $vehicleRepo->find($vehicleId);
-        if (!$vehicle) return $this->json(['error' => 'Vehículo no encontrado'], 404);
+        $vehicle = $this->em->getRepository(Vehicle::class)->find($vehicleId);
+        $location = $this->em->getRepository(Location::class)->find($locationId);
 
-        $location = $locationRepo->find($locationId);
-        if (!$location) return $this->json(['error' => 'Ubicación no encontrada'], 404);
-
-        $unit = new VehicleUnit();
-        $unit->setVehicle($vehicle);
-        $unit->setLocation($location);
-        $unit->setPlate($plate);
-        $unit->setStatus($status);
-
-        try {
-            $em->persist($unit);
-            $em->flush();
-        } catch (\Throwable $e) {
-            return $this->json(['error' => 'Patente duplicada o error al guardar'], 409);
+        if (!$vehicle || !$location) {
+            return $this->json(['error' => 'Vehículo o sucursal inválidos'], 422);
         }
 
-        $stockSync->syncFor($vehicle, $location);
+        $u = new VehicleUnit();
+        $u->setPlate($plate);
+        $u->setVehicle($vehicle);
+        $u->setLocation($location);
+        $u->setStatus($status);
 
-        return $this->json([
-            'ok' => true,
-            'id' => $unit->getId(),
-            'plate' => $unit->getPlate(),
-            'message' => 'Unidad creada correctamente'
-        ], 201);
+        $this->em->persist($u);
+        $this->em->flush();
+
+        // ✅ recalcular stock afectado
+        $this->stockSync->syncFor($vehicle, $location);
+
+        return $this->json(['ok' => true], 201);
     }
 
-    #[Route('/{id}', name: 'api_admin_vehicle_units_update', methods: ['PUT'])]
-    public function update(
-        int $id,
-        Request $request,
-        VehicleUnitRepository $repo,
-        VehicleRepository $vehicleRepo,
-        LocationRepository $locationRepo,
-        EntityManagerInterface $em,
-        StockSyncService $stockSync
-    ): JsonResponse {
-        $unit = $repo->find($id);
-        if (!$unit) return $this->json(['error' => 'Unidad no encontrada'], 404);
-
-        $oldVehicle = $unit->getVehicle();
-        $oldLocation = $unit->getLocation();
-
-        $data = json_decode($request->getContent(), true);
-        if (!is_array($data)) return $this->json(['error' => 'JSON inválido'], 400);
-
-        if (isset($data['plate'])) {
-            $unit->setPlate((string)$data['plate']);
+    #[Route('/{id}', methods: ['PUT'])]
+    public function update(int $id, Request $request): JsonResponse
+    {
+        /** @var VehicleUnit|null $u */
+        $u = $this->em->getRepository(VehicleUnit::class)->find($id);
+        if (!$u) {
+            return $this->json(['error' => 'Unidad no encontrada'], 404);
         }
 
-        if (isset($data['status'])) {
-            $unit->setStatus((string)$data['status']);
+        $data = json_decode($request->getContent(), true) ?? [];
+
+        // Guardar “antes” para sincronizar si cambió algo
+        $oldVehicle = $u->getVehicle();
+        $oldLocation = $u->getLocation();
+
+        if (array_key_exists('plate', $data)) {
+            $plate = strtoupper(trim((string)$data['plate']));
+            if ($plate === '') {
+                return $this->json(['error' => 'La patente es obligatoria'], 422);
+            }
+
+            $exists = $this->em->getRepository(VehicleUnit::class)->findOneBy(['plate' => $plate]);
+            if ($exists && $exists->getId() !== $u->getId()) {
+                return $this->json(['error' => 'Esa patente ya existe'], 409);
+            }
+
+            $u->setPlate($plate);
         }
 
-        if (isset($data['vehicleId'])) {
-            $vehicle = $vehicleRepo->find((int)$data['vehicleId']);
-            if (!$vehicle) return $this->json(['error' => 'Vehículo no encontrado'], 404);
-            $unit->setVehicle($vehicle);
+        if (array_key_exists('status', $data)) {
+            $newStatus = (string)$data['status'];
+
+            // (opcional pero recomendado) si la unidad está asignada a una reserva activa,
+            // NO permitir marcarla como "available".
+            if ($newStatus === VehicleUnit::STATUS_AVAILABLE) {
+                $hasActiveReservation = (bool) $this->em->createQueryBuilder()
+                    ->select('COUNT(r.id)')
+                    ->from(Reservation::class, 'r')
+                    ->where('r.vehicleUnit = :u')
+                    ->andWhere('r.status <> :cancelled')
+                    ->setParameter('u', $u)
+                    ->setParameter('cancelled', 'cancelled')
+                    ->getQuery()
+                    ->getSingleScalarResult();
+
+                if ($hasActiveReservation) {
+                    return $this->json(['error' => 'No podés poner Disponible: la unidad está asignada a una reserva'], 409);
+                }
+            }
+
+            $u->setStatus($newStatus);
         }
 
-        if (isset($data['locationId'])) {
-            $location = $locationRepo->find((int)$data['locationId']);
-            if (!$location) return $this->json(['error' => 'Ubicación no encontrada'], 404);
-            $unit->setLocation($location);
+        // si tu UI algún día permite cambiar vehicleId/locationId, lo dejamos soportado:
+        if (array_key_exists('vehicleId', $data)) {
+            $vehicle = $this->em->getRepository(Vehicle::class)->find((int)$data['vehicleId']);
+            if ($vehicle) $u->setVehicle($vehicle);
+        }
+        if (array_key_exists('locationId', $data)) {
+            $location = $this->em->getRepository(Location::class)->find((int)$data['locationId']);
+            if ($location) $u->setLocation($location);
         }
 
-        try {
-            $em->flush();
-        } catch (\Throwable $e) {
-            return $this->json(['error' => 'Error al actualizar (patente duplicada?)'], 409);
-        }
+        $this->em->flush();
 
-        // Re-sync stock (viejo y nuevo por si cambió)
+        // ✅ recalcular stock viejo y nuevo (por si cambió algo)
         if ($oldVehicle && $oldLocation) {
-            $stockSync->syncFor($oldVehicle, $oldLocation);
+            $this->stockSync->syncFor($oldVehicle, $oldLocation);
         }
-        if ($unit->getVehicle() && $unit->getLocation()) {
-            $stockSync->syncFor($unit->getVehicle(), $unit->getLocation());
+        if ($u->getVehicle() && $u->getLocation()) {
+            $this->stockSync->syncFor($u->getVehicle(), $u->getLocation());
         }
 
-        return $this->json([
-            'ok' => true,
-            'id' => $unit->getId(),
-            'message' => 'Unidad actualizada'
-        ]);
+        return $this->json(['ok' => true]);
     }
 
-    #[Route('/{id}', name: 'api_admin_vehicle_units_delete', methods: ['DELETE'])]
-    public function delete(
-        int $id,
-        VehicleUnitRepository $repo,
-        EntityManagerInterface $em,
-        StockSyncService $stockSync
-    ): JsonResponse {
-        $unit = $repo->find($id);
-        if (!$unit) return $this->json(['error' => 'Unidad no encontrada'], 404);
-
-        $vehicle = $unit->getVehicle();
-        $location = $unit->getLocation();
-
-        $em->remove($unit);
-        $em->flush();
-
-        if ($vehicle && $location) {
-            $stockSync->syncFor($vehicle, $location);
+    #[Route('/{id}', methods: ['DELETE'])]
+    public function delete(int $id): JsonResponse
+    {
+        /** @var VehicleUnit|null $u */
+        $u = $this->em->getRepository(VehicleUnit::class)->find($id);
+        if (!$u) {
+            return $this->json(['error' => 'Unidad no encontrada'], 404);
         }
 
-        return $this->json(['ok' => true, 'message' => 'Unidad eliminada']);
+        $v = $u->getVehicle();
+        $l = $u->getLocation();
+
+        $this->em->remove($u);
+        $this->em->flush();
+
+        // ✅ recalcular stock afectado
+        if ($v && $l) {
+            $this->stockSync->syncFor($v, $l);
+        }
+
+        return $this->json(['ok' => true]);
     }
 }

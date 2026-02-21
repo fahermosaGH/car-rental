@@ -1,26 +1,21 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AdminIncidentesService, AdminIncidentRow } from './admin-incidentes.service';
+import { AdminIncidentesService } from './admin-incidentes.service';
 
 @Component({
   selector: 'app-admin-incidentes',
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './admin-incidentes.component.html',
-  styleUrls: ['./admin-incidentes.component.css'],
+  styleUrls: ['./admin-incidentes.component.css']
 })
 export class AdminIncidentesComponent implements OnInit {
-  loading = true;
-  errorMsg = '';
 
-  statusFilter: '' | 'open' | 'resolved' = 'open';
-  rows: AdminIncidentRow[] = [];
-
-  // UI reassign
-  reassigningId: number | null = null;
-  newUnitIdInput: Record<number, string> = {};
-  markMaintenance: Record<number, boolean> = {};
+  rows: any[] = [];
+  unitsMap: Record<number, any[]> = {};
+  selectedUnit: Record<number, number | null> = {};
+  loadingUnits: Record<number, boolean> = {};
 
   constructor(private api: AdminIncidentesService) {}
 
@@ -28,70 +23,57 @@ export class AdminIncidentesComponent implements OnInit {
     this.cargar();
   }
 
-  cargar(): void {
-    this.loading = true;
-    this.errorMsg = '';
+  cargar() {
+    this.api.list().subscribe(data => {
+      this.rows = data ?? [];
+    });
+  }
 
-    const status = this.statusFilter || undefined;
+  isResolved(it: any): boolean {
+    return (it?.status === 'resolved');
+  }
 
-    this.api.list({ status }).subscribe({
-      next: (data) => {
-        this.rows = Array.isArray(data) ? data : [];
-        this.loading = false;
+  fmtDateTime(s: string | null | undefined): string {
+    if (!s) return '-';
+    const d = new Date(s);
+    if (isNaN(d.getTime())) return s;
+    return d.toLocaleString();
+  }
+
+  cargarUnidades(id: number) {
+    this.loadingUnits[id] = true;
+
+    this.api.availableUnits(id).subscribe({
+      next: data => {
+        this.unitsMap[id] = data ?? [];
+        this.selectedUnit[id] = null;
+        this.loadingUnits[id] = false;
       },
       error: () => {
-        this.errorMsg = 'No se pudieron cargar los incidentes (verificá token admin / endpoint).';
-        this.loading = false;
-      },
+        this.unitsMap[id] = [];
+        this.selectedUnit[id] = null;
+        this.loadingUnits[id] = false;
+      }
     });
   }
 
-  resolver(row: AdminIncidentRow): void {
-    if (!confirm(`¿Marcar incidente #${row.id} como resuelto?`)) return;
+  reasignar(id: number) {
+    const unitId = this.selectedUnit[id];
 
-    this.api.resolve(row.id).subscribe({
-      next: () => this.cargar(),
-      error: (err) => {
-        alert(err?.error?.error ?? 'No se pudo resolver el incidente.');
-      },
-    });
-  }
-
-  reasignar(row: AdminIncidentRow): void {
-    const raw = (this.newUnitIdInput[row.id] ?? '').trim();
-    const newUnitId = Number(raw);
-
-    if (!newUnitId || newUnitId <= 0) {
-      alert('Ingresá un ID de unidad válido (newUnitId).');
+    if (!unitId) {
+      alert('Seleccioná una unidad válida.');
       return;
     }
 
-    if (!confirm(`¿Reasignar incidente #${row.id} a la unidad #${newUnitId}?`)) return;
-
-    this.reassigningId = row.id;
-
-    this.api
-      .reassign(row.id, {
-        newUnitId,
-        markDamagedAsMaintenance: this.markMaintenance[row.id] ?? true,
-      })
-      .subscribe({
-        next: () => {
-          this.reassigningId = null;
-          this.newUnitIdInput[row.id] = '';
-          this.cargar();
-        },
-        error: (err) => {
-          this.reassigningId = null;
-          alert(err?.error?.error ?? 'No se pudo reasignar el incidente.');
-        },
-      });
-  }
-
-  badgeClass(status: string): string {
-    if (status === 'open') return 'badge badge-open';
-    if (status === 'resolved') return 'badge badge-resolved';
-    if (status === 'cancelled') return 'badge badge-cancelled';
-    return 'badge';
+    this.api.reassign(id, unitId).subscribe({
+      next: () => {
+        alert('Unidad reasignada correctamente.');
+        this.cargar();
+        this.unitsMap[id] = [];
+      },
+      error: (err) => {
+        alert(err?.error?.error ?? 'Error al reasignar.');
+      }
+    });
   }
 }

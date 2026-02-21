@@ -1,127 +1,120 @@
 <div class="page">
-  <div class="toolbar">
+
+  <div class="header">
     <div>
       <h1>Incidentes</h1>
       <p class="sub">
-        Reportes de problemas durante una reserva. Gestioná reasignación y resolución.
+        Gestioná reasignación manual de unidades ante problemas en reservas.
       </p>
     </div>
-
-    <div class="toolbar-right">
-      <label class="muted">
-        Estado:
-        <select class="select" [(ngModel)]="statusFilter" (change)="cargar()">
-          <option value="open">Abiertos</option>
-          <option value="resolved">Resueltos</option>
-          <option value="">Todos</option>
-        </select>
-      </label>
-
-      <button class="btn" (click)="cargar()">Refrescar</button>
-    </div>
   </div>
 
-  <div *ngIf="loading" class="state">Cargando incidentes...</div>
-  <div *ngIf="!loading && errorMsg" class="state error">{{ errorMsg }}</div>
-
-  <div *ngIf="!loading && !errorMsg && rows.length === 0" class="state">
-    No hay incidentes para mostrar.
-  </div>
-
-  <div *ngIf="!loading && rows.length > 0" class="table-wrap">
+  <div class="card" *ngIf="rows.length > 0">
     <table class="table">
       <thead>
         <tr>
           <th>#</th>
           <th>Reserva</th>
-          <th>Vehículo</th>
-          <th>Fechas</th>
           <th>Descripción</th>
-          <th>Unidad dañada</th>
+          <th>Unidad rota</th>
+          <th>Unidad reemplazo</th>
           <th>Estado</th>
-          <th style="width: 360px;">Acciones</th>
+          <th>Reasignación</th>
         </tr>
       </thead>
 
       <tbody>
         <tr *ngFor="let it of rows">
+
           <td>#{{ it.id }}</td>
 
           <td>
-            <ng-container *ngIf="it.reservation?.id; else noResId">
-              #{{ it.reservation?.id }}
-            </ng-container>
-            <ng-template #noResId>—</ng-template>
-          </td>
-
-          <td>{{ it.reservation?.vehicleName || '—' }}</td>
-
-          <td>
-            <div class="dates" *ngIf="it.reservation?.startAt && it.reservation?.endAt; else noDates">
-              <span>{{ it.reservation?.startAt | date:'shortDate' }}</span>
-              <span>→</span>
-              <span>{{ it.reservation?.endAt | date:'shortDate' }}</span>
+            <strong>#{{ it.reservation?.id }}</strong>
+            <div class="muted">
+              Retiro: {{ it.reservation?.pickupLocationId }} ·
+              {{ it.reservation?.startAt }} → {{ it.reservation?.endAt }}
             </div>
-            <ng-template #noDates>—</ng-template>
           </td>
 
-          <td class="desc">{{ it.description }}</td>
-
-          <td>
-            <span *ngIf="it.damagedUnit?.plate; else noUnit">
-              {{ it.damagedUnit?.plate }} ({{ it.damagedUnit?.status }})
-            </span>
-            <ng-template #noUnit>—</ng-template>
+          <td class="desc">
+            {{ it.description }}
           </td>
 
           <td>
-            <span [class]="badgeClass(it.status)">{{ it.status }}</span>
+            <div *ngIf="it.brokenUnit; else noBroken">
+              <strong>{{ it.brokenUnit.plate }}</strong>
+              <div class="muted">{{ it.brokenUnit.vehicleName }}</div>
+              <div class="muted">Estado unidad: {{ it.brokenUnit.status }}</div>
+            </div>
+            <ng-template #noBroken>-</ng-template>
           </td>
 
           <td>
-            <div class="actions">
-              <button
-                class="btn btn-danger"
-                (click)="resolver(it)"
-                [disabled]="it.status !== 'open'"
-              >
-                Resolver
+            <div *ngIf="it.replacementUnit; else noRepl">
+              <strong>{{ it.replacementUnit.plate }}</strong>
+              <div class="muted">{{ it.replacementUnit.vehicleName }}</div>
+            </div>
+            <ng-template #noRepl>-</ng-template>
+          </td>
+
+          <td>
+            <strong>{{ it.status }}</strong>
+            <div class="muted" *ngIf="it.resolvedAt">
+              Resuelto: {{ fmtDateTime(it.resolvedAt) }}
+            </div>
+          </td>
+
+          <td>
+            <div *ngIf="isResolved(it)">
+              <span class="badge-ok">Ya reasignado</span>
+            </div>
+
+            <div *ngIf="!isResolved(it)">
+              <button class="btn btn-secondary"
+                      (click)="cargarUnidades(it.id)"
+                      [disabled]="loadingUnits[it.id]">
+                {{ loadingUnits[it.id] ? 'Buscando...' : 'Ver disponibles' }}
               </button>
 
-              <div class="actions-row">
-                <input
-                  class="input"
-                  type="number"
-                  placeholder="newUnitId"
-                  [(ngModel)]="newUnitIdInput[it.id]"
-                  [disabled]="it.status !== 'open' || reassigningId === it.id"
-                />
+              <div class="reassign-box" *ngIf="unitsMap[it.id]">
 
-                <label class="checkbox">
-                  <input
-                    type="checkbox"
-                    [(ngModel)]="markMaintenance[it.id]"
-                    [disabled]="it.status !== 'open' || reassigningId === it.id"
-                  />
-                  Daño → maintenance
-                </label>
+                <div *ngIf="unitsMap[it.id].length > 0">
 
-                <button
-                  class="btn btn-primary"
-                  (click)="reasignar(it)"
-                  [disabled]="it.status !== 'open' || reassigningId === it.id"
-                >
-                  {{ reassigningId === it.id ? 'Reasignando...' : 'Reasignar' }}
-                </button>
-              </div>
+                  <select class="form-select"
+                          [(ngModel)]="selectedUnit[it.id]">
+                    <option [ngValue]="null" disabled>
+                      Seleccionar unidad disponible
+                    </option>
 
-              <div class="tip">
-                Tip: buscá el <b>ID</b> de la unidad en “Unidades” y pegalo en <b>newUnitId</b>.
+                    <option *ngFor="let u of unitsMap[it.id]"
+                            [ngValue]="u.id">
+                      {{ u.plate }} · {{ u.vehicleName }}
+                    </option>
+                  </select>
+
+                  <button class="btn btn-primary"
+                          (click)="reasignar(it.id)">
+                    Confirmar
+                  </button>
+
+                </div>
+
+                <div *ngIf="unitsMap[it.id].length === 0"
+                     class="empty-msg">
+                  No hay unidades disponibles en esta sucursal para esas fechas.
+                </div>
+
               </div>
             </div>
           </td>
+
         </tr>
       </tbody>
     </table>
   </div>
+
+  <div *ngIf="rows.length === 0" class="state">
+    No hay incidentes registrados.
+  </div>
+
 </div>

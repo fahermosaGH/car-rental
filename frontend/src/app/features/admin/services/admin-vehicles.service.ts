@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../../../environments/environment';
 
 export interface AdminVehicleDto {
   id: number;
@@ -20,9 +21,9 @@ export interface AdminVehicleCreateUpdate {
   brand: string;
   model: string;
   year: number | null;
-  seats: number | null;              // ✅ nuevo
-  transmission: string | null;       // ✅ nuevo
-  categoryId: number | null;         // ✅ nuevo
+  seats: number | null;
+  transmission: string | null;
+  categoryId: number | null;
   dailyPrice: number | null;
   isActive: boolean;
   imageUrl?: string | null;
@@ -30,9 +31,14 @@ export interface AdminVehicleCreateUpdate {
 
 @Injectable({ providedIn: 'root' })
 export class AdminVehiclesService {
-  private readonly baseUrl = 'http://127.0.0.1:8000/api/admin/vehicles';
+  private readonly baseUrl: string;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) {
+    // ✅ Soporta apiUrl con o sin "/api"
+    const root = (environment.apiUrl || '').replace(/\/+$/, '');
+    const apiRoot = root.endsWith('/api') ? root : `${root}/api`;
+    this.baseUrl = `${apiRoot}/admin/vehicles`;
+  }
 
   list(includeInactive = false): Observable<AdminVehicleDto[]> {
     const url = includeInactive ? `${this.baseUrl}?includeInactive=1` : this.baseUrl;

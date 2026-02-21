@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { RouterModule } from '@angular/router';          // 👈 agregar esto
+import { RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
@@ -39,8 +39,20 @@ export class RegisterComponent {
       return;
     }
 
-    if (this.password.length < 6) {
-      this.errorMsg = 'La contraseña debe tener al menos 6 caracteres.';
+    if (this.password.length < 8) {
+      this.errorMsg = 'La contraseña debe tener al menos 8 caracteres.';
+      return;
+    }
+
+    if (this.password.length > 64) {
+      this.errorMsg = 'La contraseña no puede superar los 64 caracteres.';
+      return;
+    }
+
+    const strongRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
+
+    if (!strongRegex.test(this.password)) {
+      this.errorMsg = 'Debe contener al menos una mayúscula, una minúscula y un número.';
       return;
     }
 
@@ -58,7 +70,6 @@ export class RegisterComponent {
           this.cargando = false;
           this.successMsg = 'Registro exitoso. Ahora podés iniciar sesión.';
 
-          // redirigimos al login después de un pequeño delay
           setTimeout(() => {
             this.router.navigate(['/auth/login'], {
               queryParams: { email: this.email },

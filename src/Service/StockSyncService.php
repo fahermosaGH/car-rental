@@ -12,17 +12,35 @@ final class StockSyncService
 {
     public function __construct(private EntityManagerInterface $em) {}
 
+    /**
+     * Recalcula stock "disponible ahora" por (vehículo, sucursal)
+     * = unidades con status=available que NO estén reservadas hoy.
+     */
     public function syncFor(Vehicle $vehicle, Location $location): int
     {
+        $today = new \DateTimeImmutable('today');
+
         $count = (int) $this->em->createQueryBuilder()
             ->select('COUNT(u.id)')
             ->from(VehicleUnit::class, 'u')
             ->where('u.vehicle = :v')
             ->andWhere('u.location = :l')
             ->andWhere('u.status = :st') // solo disponibles
+            ->andWhere(
+                'NOT EXISTS (
+                    SELECT r2.id
+                    FROM App\Entity\Reservation r2
+                    WHERE r2.vehicleUnit = u
+                      AND r2.status <> :cancelled
+                      AND r2.startAt <= :today
+                      AND r2.endAt >= :today
+                )'
+            )
             ->setParameter('v', $vehicle)
             ->setParameter('l', $location)
             ->setParameter('st', VehicleUnit::STATUS_AVAILABLE)
+            ->setParameter('cancelled', 'cancelled')
+            ->setParameter('today', $today)
             ->getQuery()
             ->getSingleScalarResult();
 
@@ -42,9 +60,12 @@ final class StockSyncService
         return $count;
     }
 
+    /**
+     * Recalcula todo el stock para todas las combinaciones (vehículo, sucursal)
+     * existentes en vehicle_unit.
+     */
     public function rebuildAll(): void
     {
-        // Recorre combinaciones reales existentes en unidades
         $rows = $this->em->createQueryBuilder()
             ->select('IDENTITY(u.vehicle) AS vid, IDENTITY(u.location) AS lid')
             ->from(VehicleUnit::class, 'u')
@@ -56,8 +77,8 @@ final class StockSyncService
         $lRepo = $this->em->getRepository(Location::class);
 
         foreach ($rows as $r) {
-            $v = $vRepo->find((int)$r['vid']);
-            $l = $lRepo->find((int)$r['lid']);
+            $v = $vRepo->find((int) $r['vid']);
+            $l = $lRepo->find((int) $r['lid']);
             if ($v && $l) {
                 $this->syncFor($v, $l);
             }

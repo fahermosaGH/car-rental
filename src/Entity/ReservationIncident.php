@@ -22,10 +22,15 @@ class ReservationIncident
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private ?Reservation $reservation = null;
 
-    // unidad dañada (la que estaba asignada cuando reportaron)
+    // unidad rota (la que estaba asignada cuando reportaron)
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?VehicleUnit $vehicleUnit = null;
+
+    // unidad reemplazo elegida por admin
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(name: 'replacement_unit_id', nullable: true, onDelete: 'SET NULL')]
+    private ?VehicleUnit $replacementUnit = null;
 
     #[ORM\Column(type: Types::TEXT)]
     private string $description = '';
@@ -35,6 +40,9 @@ class ReservationIncident
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private \DateTimeImmutable $createdAt;
+
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $resolvedAt = null;
 
     public function __construct()
     {
@@ -49,6 +57,9 @@ class ReservationIncident
     public function getVehicleUnit(): ?VehicleUnit { return $this->vehicleUnit; }
     public function setVehicleUnit(?VehicleUnit $vehicleUnit): static { $this->vehicleUnit = $vehicleUnit; return $this; }
 
+    public function getReplacementUnit(): ?VehicleUnit { return $this->replacementUnit; }
+    public function setReplacementUnit(?VehicleUnit $replacementUnit): static { $this->replacementUnit = $replacementUnit; return $this; }
+
     public function getDescription(): string { return $this->description; }
     public function setDescription(string $description): static { $this->description = trim($description); return $this; }
 
@@ -56,4 +67,7 @@ class ReservationIncident
     public function setStatus(string $status): static { $this->status = $status; return $this; }
 
     public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
+
+    public function getResolvedAt(): ?\DateTimeImmutable { return $this->resolvedAt; }
+    public function setResolvedAt(?\DateTimeImmutable $resolvedAt): static { $this->resolvedAt = $resolvedAt; return $this; }
 }

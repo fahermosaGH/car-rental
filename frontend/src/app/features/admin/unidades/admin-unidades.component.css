@@ -1,3 +1,8 @@
+:host {
+  display: block;
+  color-scheme: dark;
+}
+
 .head {
   display: flex;
   justify-content: space-between;
@@ -71,11 +76,25 @@ h2 {
   background: rgba(255, 255, 255, 0.04);
   color: #e8eefc;
   padding: 10px 10px;
+  outline: none;
+}
+
+.input:focus,
+.select:focus {
+  border-color: rgba(47,111,237,.55);
+  box-shadow: 0 0 0 4px rgba(47,111,237,.18);
 }
 
 .input.small,
 .select.small {
   padding: 8px 10px;
+}
+
+/* Fix dropdown blanco en Windows/Chrome */
+.select option,
+.select optgroup {
+  background-color: #0b1020;
+  color: #e8eefc;
 }
 
 .form-error {
@@ -105,6 +124,12 @@ td {
 th {
   font-size: 12px;
   opacity: 0.8;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+tr:hover td {
+  background: rgba(47, 111, 237, 0.06);
 }
 
 .num {
@@ -151,13 +176,7 @@ th {
 }
 
 @media (max-width: 1100px) {
-  .form-row {
-    grid-template-columns: 1fr 1fr;
-  }
-  .filters .form-row {
-    grid-template-columns: 1fr 1fr;
-  }
-  .actions {
-    justify-content: flex-start;
-  }
+  .form-row { grid-template-columns: 1fr 1fr; }
+  .filters .form-row { grid-template-columns: 1fr 1fr; }
+  .actions { justify-content: flex-start; }
 }

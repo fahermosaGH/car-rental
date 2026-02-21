@@ -1,8 +1,8 @@
 :host {
   display: block;
-  padding: 24px 28px;
   color: #e7eefc;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color-scheme: dark;
 }
 
 h1 {
@@ -49,6 +49,12 @@ h1 {
 
   outline: none;
   transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+}
+
+.filters select option,
+.filters select optgroup {
+  background: #0b1020;
+  color: #e7eefc;
 }
 
 .filters select:focus,
@@ -161,12 +167,6 @@ h1 {
   white-space: nowrap;
 }
 
-/* ===== Status "pill" (aplica a la columna Estado) ===== */
-.table td:nth-child(8) {
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-
 /* ===== Select de cambiar estado ===== */
 .table td:last-child select {
   height: 34px;
@@ -183,31 +183,29 @@ h1 {
   transition: border-color 120ms ease, box-shadow 120ms ease;
 }
 
+.table td:last-child select option,
+.table td:last-child select optgroup {
+  background: #0b1020;
+  color: #e7eefc;
+}
+
 .table td:last-child select:focus {
   border-color: rgba(120, 170, 255, 0.55);
   box-shadow: 0 0 0 4px rgba(120, 170, 255, 0.12);
 }
 
-/* ===== Responsive: tabla scrolleable en pantallas chicas ===== */
+/* ===== Responsive ===== */
 @media (max-width: 1100px) {
-  :host {
-    padding: 18px 16px;
-  }
-
   .table {
     display: block;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
 
-  .filters label {
-    width: 100%;
-  }
-
+  .filters label { width: 100%; }
   .filters select,
   .filters input[type="date"] {
     width: 100%;
     min-width: 0;
   }
 }
-

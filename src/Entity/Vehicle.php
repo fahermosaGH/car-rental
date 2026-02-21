@@ -7,7 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use App\Entity\VehicleLocationStock; // agregado para tipar correctamente la relación
+use App\Entity\VehicleLocationStock;
 
 #[ORM\Entity(repositoryClass: VehicleRepository::class)]
 class Vehicle
@@ -40,11 +40,12 @@ class Vehicle
     private ?string $dailyPriceOverride = null;
 
     #[ORM\Column]
-    private ?bool $isActive = null;
+    private ?bool $isActive = true;
 
-    /**
-     * @var Collection<int, VehicleLocationStock>
-     */
+    // ✅ NUEVO CAMPO SEGURO
+    #[ORM\Column(length: 1024, nullable: true)]
+    private ?string $imageUrl = null;
+
     #[ORM\OneToMany(
         mappedBy: 'vehicle',
         targetEntity: VehicleLocationStock::class,
@@ -58,114 +59,41 @@ class Vehicle
         $this->stocks = new ArrayCollection();
     }
 
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
+    public function getId(): ?int { return $this->id; }
 
-    public function getCategory(): ?VehicleCategory
-    {
-        return $this->category;
-    }
+    public function getCategory(): ?VehicleCategory { return $this->category; }
+    public function setCategory(?VehicleCategory $category): static { $this->category = $category; return $this; }
 
-    public function setCategory(?VehicleCategory $category): static
-    {
-        $this->category = $category;
+    public function getBrand(): ?string { return $this->brand; }
+    public function setBrand(string $brand): static { $this->brand = $brand; return $this; }
 
+    public function getModel(): ?string { return $this->model; }
+    public function setModel(string $model): static { $this->model = $model; return $this; }
+
+    public function getYear(): ?int { return $this->year; }
+    public function setYear(int $year): static { $this->year = $year; return $this; }
+
+    public function getSeats(): ?int { return $this->seats; }
+    public function setSeats(int $seats): static { $this->seats = $seats; return $this; }
+
+    public function getTransmission(): ?string { return $this->transmission; }
+    public function setTransmission(string $transmission): static { $this->transmission = $transmission; return $this; }
+
+    public function getDailyPriceOverride(): ?string { return $this->dailyPriceOverride; }
+    public function setDailyPriceOverride(?string $val): static { $this->dailyPriceOverride = $val; return $this; }
+
+    public function isActive(): ?bool { return $this->isActive; }
+    public function setIsActive(bool $val): static { $this->isActive = $val; return $this; }
+
+    // ✅ IMAGE URL
+    public function getImageUrl(): ?string { return $this->imageUrl; }
+    public function setImageUrl(?string $url): static
+    {
+        $this->imageUrl = $url !== null && trim($url) !== '' ? trim($url) : null;
         return $this;
     }
 
-    public function getBrand(): ?string
-    {
-        return $this->brand;
-    }
-
-    public function setBrand(string $brand): static
-    {
-        $this->brand = $brand;
-
-        return $this;
-    }
-
-    public function getModel(): ?string
-    {
-        return $this->model;
-    }
-
-    public function setModel(string $model): static
-    {
-        $this->model = $model;
-
-        return $this;
-    }
-
-    public function getYear(): ?int
-    {
-        return $this->year;
-    }
-
-    public function setYear(int $year): static
-    {
-        $this->year = $year;
-
-        return $this;
-    }
-
-    public function getSeats(): ?int
-    {
-        return $this->seats;
-    }
-
-    public function setSeats(int $seats): static
-    {
-        $this->seats = $seats;
-
-        return $this;
-    }
-
-    public function getTransmission(): ?string
-    {
-        return $this->transmission;
-    }
-
-    public function setTransmission(string $transmission): static
-    {
-        $this->transmission = $transmission;
-
-        return $this;
-    }
-
-    public function getDailyPriceOverride(): ?string
-    {
-        return $this->dailyPriceOverride;
-    }
-
-    public function setDailyPriceOverride(?string $dailyPriceOverride): static
-    {
-        $this->dailyPriceOverride = $dailyPriceOverride;
-
-        return $this;
-    }
-
-    public function isActive(): ?bool
-    {
-        return $this->isActive;
-    }
-
-    public function setIsActive(bool $isActive): static
-    {
-        $this->isActive = $isActive;
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, VehicleLocationStock>
-     */
-    public function getStocks(): Collection
-    {
-        return $this->stocks;
-    }
+    public function getStocks(): Collection { return $this->stocks; }
 
     public function addStock(VehicleLocationStock $stock): static
     {
@@ -173,26 +101,21 @@ class Vehicle
             $this->stocks->add($stock);
             $stock->setVehicle($this);
         }
-
         return $this;
     }
 
     public function removeStock(VehicleLocationStock $stock): static
     {
         if ($this->stocks->removeElement($stock)) {
-            // set the owning side to null (unless already changed)
             if ($stock->getVehicle() === $this) {
                 $stock->setVehicle(null);
             }
         }
-
         return $this;
     }
 
-    // Opcional: mejora la visualización en selects/tablas del admin
     public function __toString(): string
     {
-        $label = trim(($this->brand ?? '') . ' ' . ($this->model ?? ''));
-        return $label !== '' ? $label : 'Vehículo #' . ($this->id ?? 0);
+        return trim(($this->brand ?? '') . ' ' . ($this->model ?? '')) ?: 'Vehículo #' . $this->id;
     }
 }

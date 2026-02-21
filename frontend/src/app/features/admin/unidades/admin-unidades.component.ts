@@ -108,12 +108,18 @@ export class AdminUnidadesComponent implements OnInit {
         finalize(() => (this.loading = false))
       )
       .subscribe((rows) => {
-        this.rows = rows;
+        this.rows = rows ?? [];
 
-        // init edit drafts
-        rows.forEach((r) => {
-          this.edit[r.id] = { plate: r.plate, status: r.status };
+        // IMPORTANTÍSIMO:
+        // inicializamos los "drafts" con el status real que viene del backend
+        const nextEdit: Record<number, { plate: string; status: VehicleUnitStatus }> = {};
+        this.rows.forEach((r) => {
+          nextEdit[r.id] = {
+            plate: (r.plate ?? '').toString(),
+            status: (r.status as VehicleUnitStatus) ?? 'available',
+          };
         });
+        this.edit = nextEdit;
       });
   }
 
@@ -170,19 +176,7 @@ export class AdminUnidadesComponent implements OnInit {
       });
   }
 
-  // INLINE EDIT
-  onEditPlate(id: number, v: any): void {
-    const val = String(v ?? '');
-    if (!this.edit[id]) this.edit[id] = { plate: val, status: 'available' };
-    this.edit[id].plate = val;
-  }
-
-  onEditStatus(id: number, v: any): void {
-    const val = v as VehicleUnitStatus;
-    if (!this.edit[id]) this.edit[id] = { plate: '', status: val };
-    this.edit[id].status = val;
-  }
-
+  // SAVE (usa edit[id] que está bindeado por ngModel)
   saveRow(row: VehicleUnitRowDto): void {
     const draft = this.edit[row.id];
     if (!draft) return;
@@ -199,12 +193,15 @@ export class AdminUnidadesComponent implements OnInit {
       .pipe(finalize(() => (this.updating[row.id] = false)))
       .subscribe({
         next: () => {
+          // reflejamos en la tabla
           row.plate = plate.toUpperCase();
           row.status = draft.status;
         },
         error: (err) => {
           if (err?.status === 409) alert('Esa patente ya existe.');
           else alert('No se pudo actualizar la unidad.');
+          // para no dejar inconsistencia visual si falló:
+          this.load();
         },
       });
   }

@@ -90,8 +90,8 @@
     <div class="field">
       <label>Estado</label>
       <select class="select" [(ngModel)]="fStatus" (change)="load()">
-        <option value="">Todos</option>
-        <option *ngFor="let s of statuses" [value]="s.value">{{ s.label }}</option>
+        <option [ngValue]="''">Todos</option>
+        <option *ngFor="let s of statuses" [ngValue]="s.value">{{ s.label }}</option>
       </select>
     </div>
 
@@ -122,18 +122,18 @@
         <td>
           <input
             class="input small"
-            [value]="edit[r.id]?.plate"
-            (input)="onEditPlate(r.id, $any($event.target).value)"
+            [(ngModel)]="edit[r.id].plate"
+            [ngModelOptions]="{ standalone: true }"
           />
         </td>
 
         <td>
           <select
             class="select small"
-            [value]="edit[r.id]?.status"
-            (change)="onEditStatus(r.id, $any($event.target).value)"
+            [(ngModel)]="edit[r.id].status"
+            [ngModelOptions]="{ standalone: true }"
           >
-            <option *ngFor="let s of statuses" [value]="s.value">{{ s.label }}</option>
+            <option *ngFor="let s of statuses" [ngValue]="s.value">{{ s.label }}</option>
           </select>
         </td>
 

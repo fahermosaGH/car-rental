@@ -5,7 +5,6 @@ namespace App\Controller\Api\Admin;
 use App\Entity\ReservationIncident;
 use App\Entity\VehicleUnit;
 use App\Service\StockSyncService;
-use App\Service\VehicleUnitAssignmentService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -15,125 +14,196 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/api/admin/incidents')]
 class AdminReservationIncidentController extends AbstractController
 {
-    #[Route('', name: 'api_admin_incidents_list', methods: ['GET'])]
+    #[Route('', methods: ['GET'])]
     public function list(EntityManagerInterface $em): JsonResponse
     {
         $rows = $em->createQueryBuilder()
-            ->select('i, r, vu')
+            ->select('i, r, bu, ru, bv, rv')
             ->from(ReservationIncident::class, 'i')
-            ->leftJoin('i.reservation', 'r')->addSelect('r')
-            ->leftJoin('i.vehicleUnit', 'vu')->addSelect('vu')
+            ->leftJoin('i.reservation', 'r')
+            ->leftJoin('i.vehicleUnit', 'bu')          // unidad rota (la original)
+            ->leftJoin('i.replacementUnit', 'ru')      // unidad reemplazo (nueva)
+            ->leftJoin('bu.vehicle', 'bv')
+            ->leftJoin('ru.vehicle', 'rv')
             ->orderBy('i.id', 'DESC')
             ->getQuery()->getResult();
 
-        $data = array_map(static function (ReservationIncident $i) {
+        $data = array_map(function (ReservationIncident $i) {
             $r = $i->getReservation();
+            $broken = $i->getVehicleUnit();
+            $repl = $i->getReplacementUnit();
+
             return [
                 'id' => $i->getId(),
                 'status' => $i->getStatus(),
-                'createdAt' => $i->getCreatedAt()->format('c'),
                 'description' => $i->getDescription(),
+                'resolvedAt' => $i->getResolvedAt()?->format('c'),
+
                 'reservation' => $r ? [
                     'id' => $r->getId(),
-                    'status' => $r->getStatus(),
-                    'startAt' => $r->getStartAt()?->format('Y-m-d'),
-                    'endAt' => $r->getEndAt()?->format('Y-m-d'),
                     'vehicleId' => $r->getVehicle()?->getId(),
                     'pickupLocationId' => $r->getPickupLocation()?->getId(),
-                    'unitPlate' => $r->getVehicleUnit()?->getPlate(),
+                    'startAt' => $r->getStartAt()?->format('Y-m-d'),
+                    'endAt' => $r->getEndAt()?->format('Y-m-d'),
                 ] : null,
-                'reportedUnitPlate' => $i->getVehicleUnit()?->getPlate(),
+
+                'brokenUnit' => $broken ? [
+                    'id' => $broken->getId(),
+                    'plate' => $broken->getPlate(),
+                    'status' => $broken->getStatus(),
+                    'vehicleName' => (string) $broken->getVehicle(),
+                ] : null,
+
+                'replacementUnit' => $repl ? [
+                    'id' => $repl->getId(),
+                    'plate' => $repl->getPlate(),
+                    'status' => $repl->getStatus(),
+                    'vehicleName' => (string) $repl->getVehicle(),
+                ] : null,
             ];
         }, $rows);
 
         return $this->json($data);
     }
 
-    #[Route('/{id}/resolve', name: 'api_admin_incidents_resolve', methods: ['POST'])]
-    public function resolve(int $id, EntityManagerInterface $em): JsonResponse
+    /**
+     * Devuelve unidades disponibles por:
+     * - Misma sucursal (pickupLocation)
+     * - Disponibles por FECHAS (no solapadas con reservas)
+     * - Estado AVAILABLE
+     */
+    #[Route('/{id}/available-units', methods: ['GET'])]
+    public function availableUnits(int $id, EntityManagerInterface $em): JsonResponse
     {
-        /** @var ReservationIncident|null $incident */
         $incident = $em->getRepository(ReservationIncident::class)->find($id);
-        if (!$incident) return $this->json(['error' => 'Incidente no encontrado'], 404);
-
-        if ($incident->getStatus() !== ReservationIncident::STATUS_OPEN) {
-            return $this->json(['error' => 'El incidente no está abierto'], 409);
+        if (!$incident) {
+            return $this->json(['error' => 'Incidente no encontrado'], 404);
         }
 
-        $incident->setStatus(ReservationIncident::STATUS_RESOLVED);
-        $em->flush();
+        $reservation = $incident->getReservation();
+        if (!$reservation) {
+            return $this->json([]);
+        }
 
-        return $this->json(['ok' => true, 'message' => 'Incidente resuelto']);
+        $start = $reservation->getStartAt();
+        $end   = $reservation->getEndAt();
+        $loc   = $reservation->getPickupLocation();
+
+        if (!$start || !$end || !$loc) {
+            return $this->json([]);
+        }
+
+        $qb = $em->createQueryBuilder();
+        $qb->select('u, v')
+            ->from(VehicleUnit::class, 'u')
+            ->leftJoin('u.vehicle', 'v')
+            ->where('u.location = :l')
+            ->andWhere('u.status = :st')
+            ->setParameter('l', $loc)
+            ->setParameter('st', VehicleUnit::STATUS_AVAILABLE);
+
+        // Excluir unidades con reservas que se solapen con [start,end]
+        $qb->andWhere(
+            'NOT EXISTS (
+                SELECT r2.id
+                FROM App\Entity\Reservation r2
+                WHERE r2.vehicleUnit = u
+                  AND r2.status <> :cancelled
+                  AND r2.startAt <= :end
+                  AND r2.endAt >= :start
+            )'
+        )
+        ->setParameter('start', $start)
+        ->setParameter('end', $end)
+        ->setParameter('cancelled', 'cancelled');
+
+        $units = $qb->getQuery()->getResult();
+
+        $data = array_map(static fn(VehicleUnit $u) => [
+            'id' => $u->getId(),
+            'plate' => $u->getPlate(),
+            'vehicleName' => (string) $u->getVehicle(),
+        ], $units);
+
+        return $this->json($data);
     }
 
-    #[Route('/{id}/reassign', name: 'api_admin_incidents_reassign', methods: ['POST'])]
+    #[Route('/{id}/reassign', methods: ['POST'])]
     public function reassign(
         int $id,
         Request $request,
         EntityManagerInterface $em,
-        StockSyncService $stockSync,
-        VehicleUnitAssignmentService $assigner
-    ): JsonResponse {
-        /** @var ReservationIncident|null $incident */
+        StockSyncService $stockSync
+    ): JsonResponse
+    {
         $incident = $em->getRepository(ReservationIncident::class)->find($id);
-        if (!$incident) return $this->json(['error' => 'Incidente no encontrado'], 404);
+        if (!$incident) {
+            return $this->json(['error' => 'Incidente no encontrado'], 404);
+        }
 
-        if ($incident->getStatus() !== ReservationIncident::STATUS_OPEN) {
-            return $this->json(['error' => 'El incidente no está abierto'], 409);
+        if ($incident->getStatus() === ReservationIncident::STATUS_RESOLVED) {
+            return $this->json(['error' => 'El incidente ya está resuelto'], 409);
         }
 
         $reservation = $incident->getReservation();
-        if (!$reservation) return $this->json(['error' => 'Incidente sin reserva'], 422);
-
-        $data = json_decode($request->getContent(), true);
-        $markBrokenAsMaintenance = (bool)($data['markBrokenAsMaintenance'] ?? true);
-
-        // unidad “rota”: la que estaba asignada a la reserva
-        $brokenUnit = $reservation->getVehicleUnit();
-        if (!$brokenUnit) {
-            return $this->json(['error' => 'La reserva no tiene unidad asignada'], 422);
+        if (!$reservation) {
+            return $this->json(['error' => 'Sin reserva'], 422);
         }
 
-        // 1) marcar la rota como maintenance (impacta stock automáticamente)
-        if ($markBrokenAsMaintenance) {
-            $brokenUnit->setStatus(VehicleUnit::STATUS_MAINTENANCE);
-            $stockSync->syncFor($brokenUnit->getVehicle(), $brokenUnit->getLocation());
+        $payload = json_decode((string) $request->getContent(), true) ?? [];
+        $newUnitId = (int)($payload['newUnitId'] ?? 0);
+
+        if ($newUnitId <= 0) {
+            return $this->json(['error' => 'newUnitId requerido'], 422);
         }
 
-        // 2) buscar reemplazo (misma sucursal de pickup y mismo vehículo)
-        $newUnit = $assigner->pickUnitOrNull(
-            $reservation->getVehicle(),
-            $reservation->getPickupLocation(),
-            $reservation->getStartAt(),
-            $reservation->getEndAt()
-        );
-
+        $newUnit = $em->getRepository(VehicleUnit::class)->find($newUnitId);
         if (!$newUnit) {
-            // si no hay reemplazo, dejamos incidente abierto para que admin decida (cancelar, etc.)
-            $em->flush();
-            return $this->json([
-                'error' => 'No hay unidad de reemplazo disponible en esa sucursal.',
-                'code' => 'NO_REPLACEMENT_UNIT',
-            ], 409);
+            return $this->json(['error' => 'Unidad no encontrada'], 404);
         }
 
-        // 3) reasignar patente en la reserva
-        $reservation->setVehicleUnit($newUnit);
+        if ($newUnit->getStatus() !== VehicleUnit::STATUS_AVAILABLE) {
+            return $this->json(['error' => 'La unidad seleccionada no está disponible'], 409);
+        }
 
-        // 4) guardar la unidad reportada en el incidente (histórico)
-        $incident->setVehicleUnit($brokenUnit);
+        $broken = $reservation->getVehicleUnit(); // unidad actual de la reserva (rota)
 
-        // 5) opcional: resolver incidente automáticamente al reasignar
-        $incident->setStatus(ReservationIncident::STATUS_RESOLVED);
+        $em->beginTransaction();
+        try {
+            // 1) cambiar unidad en reserva
+            $reservation->setVehicleUnit($newUnit);
 
-        $em->flush();
+            // 2) incidente: set reemplazo + resolver
+            $incident->setReplacementUnit($newUnit);
+            $incident->setStatus(ReservationIncident::STATUS_RESOLVED);
+            $incident->setResolvedAt(new \DateTimeImmutable('now'));
 
-        return $this->json([
-            'ok' => true,
-            'message' => 'Unidad reasignada y unidad rota marcada en mantenimiento',
-            'brokenPlate' => $brokenUnit->getPlate(),
-            'newPlate' => $newUnit->getPlate(),
-            'reservationId' => $reservation->getId(),
-        ]);
+            // 3) estados
+            if ($broken) {
+                $broken->setStatus(VehicleUnit::STATUS_MAINTENANCE);
+                $em->persist($broken);
+            }
+
+            // IMPORTANTÍSIMO: la nueva unidad queda ocupada -> no debe contar como stock disponible
+            $newUnit->setStatus(VehicleUnit::STATUS_INACTIVE);
+
+            $em->persist($reservation);
+            $em->persist($incident);
+            $em->persist($newUnit);
+
+            $em->flush();
+            $em->commit();
+
+            // sincronización stock (después del commit)
+            if ($broken) {
+                $stockSync->syncFor($broken->getVehicle(), $broken->getLocation());
+            }
+            $stockSync->syncFor($newUnit->getVehicle(), $newUnit->getLocation());
+
+            return $this->json(['ok' => true]);
+        } catch (\Throwable $e) {
+            $em->rollback();
+            return $this->json(['error' => 'No se pudo reasignar: '.$e->getMessage()], 500);
+        }
     }
 }

@@ -1,0 +1,62 @@
+<h1>Auditoría</h1>
+
+<div class="filters">
+  <label>
+    Actor:
+    <input type="text" [(ngModel)]="actor" placeholder="email..." />
+  </label>
+
+  <label>
+    Acción:
+    <select [(ngModel)]="action">
+      <option value="">(todas)</option>
+      <option value="create">create</option>
+      <option value="update">update</option>
+      <option value="delete">delete</option>
+      <option value="custom">custom</option>
+    </select>
+  </label>
+
+  <label>
+    Entidad:
+    <select [(ngModel)]="entity">
+      <option *ngFor="let e of entities" [value]="e.value">{{ e.label }}</option>
+    </select>
+  </label>
+
+  <label>
+    ID Entidad:
+    <input type="text" [(ngModel)]="entityId" placeholder="ej: 12" />
+  </label>
+
+  <button type="button" (click)="reload()">Filtrar</button>
+</div>
+
+<div *ngIf="loading" class="state">Cargando…</div>
+<div *ngIf="!loading && error" class="state error">{{ error }}</div>
+
+<table *ngIf="!loading && rows.length" class="table">
+  <thead>
+    <tr>
+      <th>Fecha</th>
+      <th>Actor</th>
+      <th>Acción</th>
+      <th>Entidad</th>
+      <th>ID</th>
+      <th>Cambios</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr *ngFor="let r of rows">
+      <td>{{ r.occurredAt }}</td>
+      <td>{{ r.actorEmail || '-' }}</td>
+      <td>{{ r.action }}</td>
+      <td>{{ r.entityLabel }}</td>
+      <td>{{ r.entityId || '-' }}</td>
+      <td>{{ summarizeChanges(r.changes) }}</td>
+    </tr>
+  </tbody>
+</table>
+
+<div *ngIf="!loading && !rows.length" class="state">No hay logs para mostrar.</div>

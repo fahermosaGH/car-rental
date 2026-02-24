@@ -6,6 +6,7 @@ use App\Entity\Location;
 use App\Entity\Reservation;
 use App\Entity\Vehicle;
 use App\Entity\VehicleUnit;
+use App\Service\AuditLogger;
 use App\Service\StockSyncService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -21,6 +22,7 @@ class AdminVehicleUnitController extends AbstractController
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly StockSyncService $stockSync,
+        private readonly AuditLogger $audit,
     ) {}
 
     #[Route('', methods: ['GET'])]
@@ -110,6 +112,14 @@ class AdminVehicleUnitController extends AbstractController
         $this->em->persist($u);
         $this->em->flush();
 
+        // ✅ AUDIT
+        $this->audit->log('create', VehicleUnit::class, (string) $u->getId(), [
+            'plate' => ['old' => null, 'new' => $u->getPlate()],
+            'status' => ['old' => null, 'new' => $u->getStatus()],
+            'vehicleId' => ['old' => null, 'new' => $vehicle->getId()],
+            'locationId' => ['old' => null, 'new' => $location->getId()],
+        ], ['event' => 'unit_created']);
+
         // ✅ recalcular stock afectado
         $this->stockSync->syncFor($vehicle, $location);
 
@@ -130,6 +140,14 @@ class AdminVehicleUnitController extends AbstractController
         // Guardar “antes” para sincronizar si cambió algo
         $oldVehicle = $u->getVehicle();
         $oldLocation = $u->getLocation();
+
+        // ✅ AUDIT snapshot BEFORE
+        $before = [
+            'plate' => $u->getPlate(),
+            'status' => $u->getStatus(),
+            'vehicleId' => $u->getVehicle()?->getId(),
+            'locationId' => $u->getLocation()?->getId(),
+        ];
 
         if (array_key_exists('plate', $data)) {
             $plate = strtoupper(trim((string)$data['plate']));
@@ -181,6 +199,28 @@ class AdminVehicleUnitController extends AbstractController
 
         $this->em->flush();
 
+        // ✅ AUDIT diff AFTER
+        $after = [
+            'plate' => $u->getPlate(),
+            'status' => $u->getStatus(),
+            'vehicleId' => $u->getVehicle()?->getId(),
+            'locationId' => $u->getLocation()?->getId(),
+        ];
+
+        $changes = [];
+        foreach ($after as $k => $newVal) {
+            $oldVal = $before[$k] ?? null;
+            if ($oldVal !== $newVal) {
+                $changes[$k] = ['old' => $oldVal, 'new' => $newVal];
+            }
+        }
+
+        if ($changes) {
+            $this->audit->log('update', VehicleUnit::class, (string) $u->getId(), $changes, [
+                'event' => 'unit_updated',
+            ]);
+        }
+
         // ✅ recalcular stock viejo y nuevo (por si cambió algo)
         if ($oldVehicle && $oldLocation) {
             $this->stockSync->syncFor($oldVehicle, $oldLocation);
@@ -204,8 +244,21 @@ class AdminVehicleUnitController extends AbstractController
         $v = $u->getVehicle();
         $l = $u->getLocation();
 
+        // ✅ AUDIT snapshot BEFORE delete
+        $beforeDelete = [
+            'plate' => $u->getPlate(),
+            'status' => $u->getStatus(),
+            'vehicleId' => $v?->getId(),
+            'locationId' => $l?->getId(),
+        ];
+
         $this->em->remove($u);
         $this->em->flush();
+
+        // ✅ AUDIT
+        $this->audit->log('delete', VehicleUnit::class, (string) $id, [
+            'deleted' => ['old' => $beforeDelete, 'new' => null],
+        ], ['event' => 'unit_deleted']);
 
         // ✅ recalcular stock afectado
         if ($v && $l) {

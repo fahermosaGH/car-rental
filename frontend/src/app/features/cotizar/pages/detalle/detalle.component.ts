@@ -86,10 +86,10 @@ export class DetalleComponent implements OnInit {
   readonly EXTRAS_PCT_OF_BASE = 0.03;
 
   adicionales: AdicionalOption[] = [
-    { id: 'booster', label: 'Booster (4–10 años)', description: 'Silla especial para niños de 4 a 10 años.', billing: 'per_day', quantity: 0, maxQuantity: 2 },
     { id: 'young_driver', label: 'Conductor joven', description: 'Si tenés entre 18 y 20 años podés alquilar un auto.', billing: 'per_day', quantity: 0, maxQuantity: 1 },
     { id: 'additional_driver', label: 'Conductor adicional', description: 'Persona autorizada para conducir el vehículo aparte del conductor principal.', billing: 'per_day', quantity: 0, maxQuantity: 2 },
     { id: 'baby_seat', label: 'Silla de bebé (1–3 años)', description: 'Silla especial para bebés entre 1 y 3 años.', billing: 'per_day', quantity: 0, maxQuantity: 2 },
+    { id: 'booster', label: 'Silla de niño (4–10 años)', description: 'Silla especial para niños de 4 a 10 años.', billing: 'per_day', quantity: 0, maxQuantity: 2 },
     { id: 'border_cross', label: 'Cruce de frontera', description: 'Permite salir de Argentina y circular por países limítrofes.', billing: 'per_reservation', quantity: 0, maxQuantity: 1 },
   ];
 

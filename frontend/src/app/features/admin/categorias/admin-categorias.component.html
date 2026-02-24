@@ -1,0 +1,78 @@
+<h1>Categorías</h1>
+
+<div class="filters">
+  <label>
+    Buscar:
+    <input type="text" [(ngModel)]="search" placeholder="Ej: SUV, Económico..." />
+  </label>
+
+  <label class="check">
+    <input type="checkbox" [(ngModel)]="showInactive" />
+    Mostrar inactivas
+  </label>
+
+  <button type="button" (click)="reload()">Filtrar</button>
+  <button type="button" class="secondary" (click)="startCreate()">Nueva</button>
+</div>
+
+<div *ngIf="!loading && error" class="state error">{{ error }}</div>
+<div *ngIf="loading" class="state">Cargando…</div>
+
+<!-- Form -->
+<div class="form" *ngIf="showForm">
+  <h2>{{ editingId ? 'Editar categoría' : 'Nueva categoría' }}</h2>
+
+  <div class="grid">
+    <label>
+      Nombre
+      <input type="text" [(ngModel)]="formName" />
+    </label>
+
+    <label class="wide">
+      Descripción
+      <input type="text" [(ngModel)]="formDescription" />
+    </label>
+
+    <label class="check wide">
+      <input type="checkbox" [(ngModel)]="formIsActive" />
+      Activa
+    </label>
+  </div>
+
+  <div class="actions">
+    <button type="button" (click)="save()">Guardar</button>
+    <button type="button" class="secondary" (click)="cancelForm()">Cancelar</button>
+  </div>
+</div>
+
+<table *ngIf="!loading && rows.length" class="table">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Nombre</th>
+      <th>Vehículos</th>
+      <th>Activa</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr *ngFor="let r of rows">
+      <td>{{ r.id }}</td>
+      <td>
+        <div class="name">{{ r.name }}</div>
+        <div class="desc" *ngIf="r.description">{{ r.description }}</div>
+      </td>
+      <td>{{ r.dailyPrice | currency : 'ARS' }}</td>
+      <td>{{ r.vehiclesCount }}</td>
+      <td>{{ r.isActive ? 'sí' : 'no' }}</td>
+      <td class="actionsCell">
+        <button type="button" class="tiny" (click)="startEdit(r)">Editar</button>
+        <button type="button" class="tiny" (click)="toggle(r)">{{ r.isActive ? 'Desactivar' : 'Activar' }}</button>
+        <button type="button" class="tiny danger" (click)="remove(r)">Eliminar</button>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<div *ngIf="!loading && !rows.length" class="state">No hay categorías para mostrar.</div>

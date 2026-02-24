@@ -42,6 +42,23 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'categorias',
+        loadComponent: () =>
+          import('./features/admin/categorias/admin-categorias.component').then(
+            (m) => m.AdminCategoriasComponent
+          ),
+      },
+
+      // ✅ NUEVO: Auditoría (ADMIN)
+      {
+        path: 'auditoria',
+        loadComponent: () =>
+          import('./features/admin/auditoria/admin-auditoria.component').then(
+            (m) => m.AdminAuditoriaComponent
+          ),
+      },
+
+      {
         path: 'ubicaciones',
         loadComponent: () =>
           import('./features/admin/ubicaciones/admin-ubicaciones.component').then(
@@ -192,7 +209,6 @@ export const routes: Routes = [
           ),
       },
 
-      // ✅ (si tenés /reservas/... agregalo acá si ya lo venías usando)
       {
         path: 'reservas',
         children: [

@@ -3,13 +3,16 @@
 namespace App\Controller\Api\Admin;
 
 use App\Entity\Reservation;
+use App\Service\AuditLogger;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/api/admin/reservations')]
+#[IsGranted('ROLE_ADMIN')]
 class AdminReservationController extends AbstractController
 {
     private const ALLOWED_STATUS = ['pending', 'confirmed', 'cancelled'];
@@ -130,7 +133,7 @@ class AdminReservationController extends AbstractController
     }
 
     #[Route('/{id}/status', name: 'api_admin_reservations_update_status', methods: ['PUT'])]
-    public function updateStatus(int $id, Request $request, EntityManagerInterface $em): JsonResponse
+    public function updateStatus(int $id, Request $request, EntityManagerInterface $em, AuditLogger $audit): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
         if (!$data) return $this->json(['error' => 'JSON inválido'], 400);
@@ -147,8 +150,22 @@ class AdminReservationController extends AbstractController
         $r = $em->getRepository(Reservation::class)->find($id);
         if (!$r) return $this->json(['error' => 'Reserva no encontrada'], 404);
 
+        $oldStatus = $r->getStatus();
+        if ($oldStatus === $newStatus) {
+            return $this->json([
+                'message' => 'Sin cambios',
+                'id' => $r->getId(),
+                'status' => $r->getStatus(),
+            ]);
+        }
+
         $r->setStatus($newStatus);
         $em->flush();
+
+        // ✅ AUDIT
+        $audit->custom(Reservation::class, (string)$r->getId(), 'reservation_status_changed', [
+            'status' => ['old' => $oldStatus, 'new' => $r->getStatus()],
+        ]);
 
         return $this->json(['message' => 'Estado actualizado', 'id' => $r->getId(), 'status' => $r->getStatus()]);
     }

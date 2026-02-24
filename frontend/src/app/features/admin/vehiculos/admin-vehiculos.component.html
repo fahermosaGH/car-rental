@@ -15,6 +15,29 @@
   </div>
 </div>
 
+<!-- ✅ filtros como “barra” debajo, estilo Auditoría -->
+<div class="filters">
+  <label>
+    Marca:
+    <input type="text" [(ngModel)]="brandFilter" (input)="applyFilters()" placeholder="Ej: Toyota" />
+  </label>
+
+  <label>
+    Año:
+    <input type="number" [(ngModel)]="yearFilter" (input)="applyFilters()" placeholder="Ej: 2024" />
+  </label>
+
+  <label>
+    Categoría:
+    <select [(ngModel)]="categoryFilter" (change)="applyFilters()">
+      <option [ngValue]="''">(todas)</option>
+      <option *ngFor="let c of categories" [ngValue]="c.id">{{ c.name }}</option>
+    </select>
+  </label>
+
+  <button class="btn-ghost" type="button" (click)="clearFilters()">Limpiar</button>
+</div>
+
 <div *ngIf="error" class="alert">
   {{ error }}
 </div>
@@ -22,12 +45,13 @@
 <div *ngIf="loading" class="muted">Cargando...</div>
 
 <div class="card" *ngIf="!loading">
-  <table class="table" *ngIf="items.length > 0; else empty">
+  <table class="table" *ngIf="filteredItems.length > 0; else empty">
     <thead>
       <tr>
         <th>ID</th>
         <th>Marca</th>
         <th>Modelo</th>
+        <th>Categoría</th>
         <th>Año</th>
         <th>Precio/día</th>
         <th>Act.</th>
@@ -35,10 +59,11 @@
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let v of items">
+      <tr *ngFor="let v of filteredItems">
         <td>{{ v.id }}</td>
         <td>{{ v.brand || '-' }}</td>
         <td>{{ v.model || '-' }}</td>
+        <td>{{ v.categoryName || '-' }}</td>
         <td>{{ v.year ?? '-' }}</td>
         <td>{{ v.dailyPrice ?? '-' }}</td>
         <td>
@@ -48,9 +73,7 @@
         </td>
         <td class="actions">
           <button class="btn-mini" (click)="openEdit(v)">Editar</button>
-          <button class="btn-mini danger"
-                  (click)="deactivate(v)"
-                  [disabled]="!v.isActive">
+          <button class="btn-mini danger" (click)="deactivate(v)" [disabled]="!v.isActive">
             Desactivar
           </button>
         </td>
@@ -88,18 +111,12 @@
 
         <label>
           <span>Año *</span>
-          <input type="number"
-                 [(ngModel)]="form.year"
-                 min="1900"
-                 required />
+          <input type="number" [(ngModel)]="form.year" min="1900" required />
         </label>
 
         <label>
           <span>Asientos *</span>
-          <input type="number"
-                 [(ngModel)]="form.seats"
-                 min="1"
-                 required />
+          <input type="number" [(ngModel)]="form.seats" min="1" required />
         </label>
 
         <label>
@@ -124,8 +141,7 @@
 
         <label>
           <span>Precio por día</span>
-          <input type="number"
-                 [(ngModel)]="form.dailyPrice" />
+          <input type="number" [(ngModel)]="form.dailyPrice" />
         </label>
 
         <label>
@@ -134,8 +150,7 @@
         </label>
 
         <label class="field-check">
-          <input type="checkbox"
-                 [(ngModel)]="form.isActive" />
+          <input type="checkbox" [(ngModel)]="form.isActive" />
           <span>Activo</span>
         </label>
 
@@ -147,9 +162,7 @@
         Cancelar
       </button>
 
-      <button class="btn"
-              (click)="save()"
-              [disabled]="saving">
+      <button class="btn" (click)="save()" [disabled]="saving">
         {{ editing ? 'Guardar cambios' : 'Crear' }}
       </button>
     </div>

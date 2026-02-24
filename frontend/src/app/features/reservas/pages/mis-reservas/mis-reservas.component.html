@@ -14,33 +14,21 @@
   <div *ngIf="!loading && reservas.length > 0" class="toolbar">
     <span class="toolbar-label">Ordenar por:</span>
 
-    <button
-      class="toolbar-btn"
-      [class.active]="sortField === 'startAt'"
-      (click)="setSort('startAt')"
-    >
+    <button class="toolbar-btn" [class.active]="sortField === 'startAt'" (click)="setSort('startAt')">
       Fecha de retiro
       <span *ngIf="sortField === 'startAt'">
         {{ sortDirection === 'asc' ? '↑' : '↓' }}
       </span>
     </button>
 
-    <button
-      class="toolbar-btn"
-      [class.active]="sortField === 'endAt'"
-      (click)="setSort('endAt')"
-    >
+    <button class="toolbar-btn" [class.active]="sortField === 'endAt'" (click)="setSort('endAt')">
       Fecha de devolución
       <span *ngIf="sortField === 'endAt'">
         {{ sortDirection === 'asc' ? '↑' : '↓' }}
       </span>
     </button>
 
-    <button
-      class="toolbar-btn"
-      [class.active]="sortField === 'status'"
-      (click)="setSort('status')"
-    >
+    <button class="toolbar-btn" [class.active]="sortField === 'status'" (click)="setSort('status')">
       Estado
       <span *ngIf="sortField === 'status'">
         {{ sortDirection === 'asc' ? '↑' : '↓' }}
@@ -48,10 +36,7 @@
     </button>
   </div>
 
-  <table
-    *ngIf="!loading && reservas.length > 0"
-    class="tabla-reservas"
-  >
+  <table *ngIf="!loading && reservas.length > 0" class="tabla-reservas">
     <thead>
       <tr>
         <th>N.º de reserva</th>
@@ -72,50 +57,33 @@
         <td>{{ r.vehicleName }}</td>
         <td>{{ r.pickupLocation }}</td>
         <td>{{ r.dropoffLocation }}</td>
-        <td>{{ r.startAt | date: 'shortDate' }}</td>
-        <td>{{ r.endAt | date: 'shortDate' }}</td>
+        <td>{{ r.startAt | date: 'dd/MM/yyyy' }}</td>
+        <td>{{ r.endAt | date: 'dd/MM/yyyy' }}</td>
         <td>{{ r.totalPrice | currency: 'ARS' }}</td>
-
         <td>
-          <span
-            class="badge-estado"
-            [ngClass]="{
+          <span class="badge-estado" [ngClass]="{
               'badge-activa': r.estadoLegible === 'Activa',
               'badge-pendiente': r.estadoLegible === 'Pendiente',
               'badge-finalizada': r.estadoLegible === 'Finalizada',
               'badge-cancelada': r.estadoLegible === 'Cancelada'
-            }"
-          >
+            }">
             {{ r.estadoLegible }}
           </span>
         </td>
 
         <td class="acciones-cell">
-          <button
-            type="button"
-            class="btn-link"
-            (click)="verDetalle(r)"
-          >
+          <button type="button" class="btn-link" (click)="verDetalle(r)">
             Ver detalle
           </button>
 
-          <button
-            type="button"
-            class="btn-cancelar"
-            *ngIf="r.canCancel"
-            [disabled]="cancelandoId === r.id"
-            (click)="confirmarCancelacion(r)"
-          >
+          <button type="button" class="btn-cancelar" [disabled]="!r.canCancel || cancelandoId === r.id"
+            (click)="confirmarCancelacion(r)">
             {{ cancelandoId === r.id ? 'Cancelando...' : 'Cancelar' }}
           </button>
 
           <!-- ✅ NUEVO: Reportar problema -->
-          <button
-            type="button"
-            class="btn-problema"
-            *ngIf="puedeReportarProblema(r.rawStatus)"
-            (click)="reportarProblema(r)"
-          >
+          <button type="button" class="btn-problema" *ngIf="puedeReportarProblema(r.rawStatus)"
+            (click)="reportarProblema(r)">
             Reportar problema
           </button>
         </td>

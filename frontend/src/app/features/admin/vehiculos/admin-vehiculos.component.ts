@@ -9,10 +9,7 @@ import {
   AdminVehicleCreateUpdate,
 } from '../services/admin-vehicles.service';
 
-import {
-  AdminCategoriesService,
-  AdminCategoryDto
-} from '../services/admin-categories.service';
+import { AdminCategoriesService, AdminCategoryDto } from '../services/admin-categories.service';
 
 @Component({
   selector: 'app-admin-vehiculos',
@@ -27,11 +24,17 @@ export class AdminVehiculosComponent implements OnInit {
   categories: AdminCategoryDto[] = [];
 
   // ui state
-  loading = false; // carga tabla / requests generales
-  saving = false;  // guardar crear/editar
+  loading = false;
+  saving = false;
   error = '';
 
   showInactive = false;
+
+  // ✅ filtros (front)
+  brandFilter = '';
+  yearFilter: number | null = null;
+  categoryFilter: number | '' = '';
+  filteredItems: AdminVehicleDto[] = [];
 
   modalOpen = false;
   editing: AdminVehicleDto | null = null;
@@ -39,9 +42,9 @@ export class AdminVehiculosComponent implements OnInit {
   form: AdminVehicleCreateUpdate = this.emptyForm();
 
   constructor(
-  private api: AdminVehiclesService,
-  private catsApi: AdminCategoriesService
-) {}
+    private api: AdminVehiclesService,
+    private catsApi: AdminCategoriesService
+  ) {}
 
   ngOnInit(): void {
     this.load();
@@ -61,7 +64,6 @@ export class AdminVehiculosComponent implements OnInit {
     };
   }
 
-  // ✅ Reemplazo total de load(): trae vehículos + categorías
   load(): void {
     this.error = '';
     this.loading = true;
@@ -69,7 +71,6 @@ export class AdminVehiculosComponent implements OnInit {
     forkJoin({
       vehicles: this.api.list(this.showInactive).pipe(
         catchError((e) => {
-          // si falla vehículos, mostrá error; devolvemos [] para no romper el forkJoin
           this.error =
             e?.error?.error ??
             e?.error?.message ??
@@ -77,15 +78,45 @@ export class AdminVehiculosComponent implements OnInit {
           return of([] as AdminVehicleDto[]);
         })
       ),
-      categories: this.catsApi.list().pipe(
-        catchError(() => of([] as AdminCategoryDto[]))
-      ),
+      categories: this.catsApi.list().pipe(catchError(() => of([] as AdminCategoryDto[]))),
     })
       .pipe(finalize(() => (this.loading = false)))
       .subscribe(({ vehicles, categories }) => {
         this.items = vehicles ?? [];
         this.categories = categories ?? [];
+        this.applyFilters(); // ✅ recalcula tabla
       });
+  }
+
+  // ✅ aplicar filtros (front)
+  applyFilters(): void {
+    const brandQ = this.brandFilter.trim().toLowerCase();
+    const yearQ = this.yearFilter !== null && Number.isFinite(this.yearFilter) ? Number(this.yearFilter) : null;
+    const catQ = this.categoryFilter === '' ? null : Number(this.categoryFilter);
+
+    this.filteredItems = (this.items ?? []).filter((v) => {
+      if (brandQ) {
+        const b = (v.brand ?? '').toLowerCase();
+        if (!b.includes(brandQ)) return false;
+      }
+
+      if (yearQ !== null) {
+        if ((v.year ?? null) !== yearQ) return false;
+      }
+
+      if (catQ !== null) {
+        if ((v.categoryId ?? null) !== catQ) return false;
+      }
+
+      return true;
+    });
+  }
+
+  clearFilters(): void {
+    this.brandFilter = '';
+    this.yearFilter = null;
+    this.categoryFilter = '';
+    this.applyFilters();
   }
 
   openCreate(): void {
@@ -94,7 +125,6 @@ export class AdminVehiculosComponent implements OnInit {
     this.modalOpen = true;
     this.error = '';
 
-    // default categoría si hay alguna
     if (this.categories.length > 0 && this.form.categoryId == null) {
       this.form.categoryId = this.categories[0].id;
     }
@@ -118,7 +148,6 @@ export class AdminVehiculosComponent implements OnInit {
 
     this.modalOpen = true;
 
-    // si el vehículo no tiene categoría por algún dato viejo, seteamos una default
     if (this.categories.length > 0 && this.form.categoryId == null) {
       this.form.categoryId = this.categories[0].id;
     }
@@ -137,32 +166,21 @@ export class AdminVehiculosComponent implements OnInit {
       year: this.form.year !== null ? Number(this.form.year) : null,
       seats: this.form.seats !== null ? Number(this.form.seats) : null,
       transmission: (this.form.transmission ?? '').trim() || null,
-      categoryId:
-        this.form.categoryId !== null ? Number(this.form.categoryId) : null,
-      dailyPrice:
-        this.form.dailyPrice !== null ? Number(this.form.dailyPrice) : null,
+      categoryId: this.form.categoryId !== null ? Number(this.form.categoryId) : null,
+      dailyPrice: this.form.dailyPrice !== null ? Number(this.form.dailyPrice) : null,
       isActive: !!this.form.isActive,
       imageUrl: (this.form.imageUrl ?? '').trim() || null,
     };
 
-    // ✅ Validaciones mínimas (evita 500 por NOT NULL)
     if (!payload.brand) { this.error = 'Marca es obligatoria.'; return; }
     if (!payload.model) { this.error = 'Modelo es obligatorio.'; return; }
 
-    if (
-      payload.year === null ||
-      !Number.isFinite(payload.year) ||
-      payload.year < 1900
-    ) {
+    if (payload.year === null || !Number.isFinite(payload.year) || payload.year < 1900) {
       this.error = 'Año inválido (mínimo 1900).';
       return;
     }
 
-    if (
-      payload.seats === null ||
-      !Number.isFinite(payload.seats) ||
-      payload.seats <= 0
-    ) {
+    if (payload.seats === null || !Number.isFinite(payload.seats) || payload.seats <= 0) {
       this.error = 'Asientos es obligatorio (número > 0).';
       return;
     }
@@ -172,16 +190,11 @@ export class AdminVehiculosComponent implements OnInit {
       return;
     }
 
-    if (
-      payload.categoryId === null ||
-      !Number.isFinite(payload.categoryId) ||
-      payload.categoryId <= 0
-    ) {
+    if (payload.categoryId === null || !Number.isFinite(payload.categoryId) || payload.categoryId <= 0) {
       this.error = 'Categoría es obligatoria.';
       return;
     }
 
-    // (opcional) validar que categoryId exista en la lista cargada
     if (this.categories.length > 0) {
       const exists = this.categories.some((c) => c.id === payload.categoryId);
       if (!exists) {
@@ -202,8 +215,7 @@ export class AdminVehiculosComponent implements OnInit {
         this.load();
       },
       error: (e) => {
-        this.error =
-          e?.error?.error ?? e?.error?.message ?? 'No se pudo guardar.';
+        this.error = e?.error?.error ?? e?.error?.message ?? 'No se pudo guardar.';
       },
     });
   }
@@ -214,14 +226,12 @@ export class AdminVehiculosComponent implements OnInit {
     this.error = '';
     this.loading = true;
 
-    this.api
-      .deactivate(v.id)
+    this.api.deactivate(v.id)
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: () => this.load(),
         error: (e) => {
-          this.error =
-            e?.error?.error ?? e?.error?.message ?? 'No se pudo desactivar.';
+          this.error = e?.error?.error ?? e?.error?.message ?? 'No se pudo desactivar.';
         },
       });
   }

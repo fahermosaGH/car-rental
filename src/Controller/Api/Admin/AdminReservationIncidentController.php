@@ -2,16 +2,20 @@
 
 namespace App\Controller\Api\Admin;
 
+use App\Entity\Reservation;
 use App\Entity\ReservationIncident;
 use App\Entity\VehicleUnit;
+use App\Service\AuditLogger;
 use App\Service\StockSyncService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/api/admin/incidents')]
+#[IsGranted('ROLE_ADMIN')]
 class AdminReservationIncidentController extends AbstractController
 {
     #[Route('', methods: ['GET'])]
@@ -113,9 +117,9 @@ class AdminReservationIncidentController extends AbstractController
                   AND r2.endAt >= :start
             )'
         )
-        ->setParameter('start', $start)
-        ->setParameter('end', $end)
-        ->setParameter('cancelled', 'cancelled');
+            ->setParameter('start', $start)
+            ->setParameter('end', $end)
+            ->setParameter('cancelled', 'cancelled');
 
         $units = $qb->getQuery()->getResult();
 
@@ -133,9 +137,10 @@ class AdminReservationIncidentController extends AbstractController
         int $id,
         Request $request,
         EntityManagerInterface $em,
-        StockSyncService $stockSync
-    ): JsonResponse
-    {
+        StockSyncService $stockSync,
+        AuditLogger $audit
+    ): JsonResponse {
+        /** @var ReservationIncident|null $incident */
         $incident = $em->getRepository(ReservationIncident::class)->find($id);
         if (!$incident) {
             return $this->json(['error' => 'Incidente no encontrado'], 404);
@@ -145,6 +150,7 @@ class AdminReservationIncidentController extends AbstractController
             return $this->json(['error' => 'El incidente ya está resuelto'], 409);
         }
 
+        /** @var Reservation|null $reservation */
         $reservation = $incident->getReservation();
         if (!$reservation) {
             return $this->json(['error' => 'Sin reserva'], 422);
@@ -157,6 +163,7 @@ class AdminReservationIncidentController extends AbstractController
             return $this->json(['error' => 'newUnitId requerido'], 422);
         }
 
+        /** @var VehicleUnit|null $newUnit */
         $newUnit = $em->getRepository(VehicleUnit::class)->find($newUnitId);
         if (!$newUnit) {
             return $this->json(['error' => 'Unidad no encontrada'], 404);
@@ -167,6 +174,18 @@ class AdminReservationIncidentController extends AbstractController
         }
 
         $broken = $reservation->getVehicleUnit(); // unidad actual de la reserva (rota)
+
+        // ✅ AUDIT snapshot BEFORE
+        $before = [
+            'incidentStatus' => $incident->getStatus(),
+            'incidentResolvedAt' => $incident->getResolvedAt()?->format(\DateTimeInterface::ATOM),
+            'incidentReplacementUnitId' => $incident->getReplacementUnit()?->getId(),
+            'reservationVehicleUnitId' => $reservation->getVehicleUnit()?->getId(),
+            'brokenUnitId' => $broken?->getId(),
+            'brokenUnitStatus' => $broken?->getStatus(),
+            'newUnitId' => $newUnit->getId(),
+            'newUnitStatus' => $newUnit->getStatus(),
+        ];
 
         $em->beginTransaction();
         try {
@@ -194,15 +213,66 @@ class AdminReservationIncidentController extends AbstractController
             $em->flush();
             $em->commit();
 
+            // ✅ AUDIT snapshot AFTER + diff
+            $after = [
+                'incidentStatus' => $incident->getStatus(),
+                'incidentResolvedAt' => $incident->getResolvedAt()?->format(\DateTimeInterface::ATOM),
+                'incidentReplacementUnitId' => $incident->getReplacementUnit()?->getId(),
+                'reservationVehicleUnitId' => $reservation->getVehicleUnit()?->getId(),
+                'brokenUnitId' => $broken?->getId(),
+                'brokenUnitStatus' => $broken?->getStatus(),
+                'newUnitId' => $newUnit->getId(),
+                'newUnitStatus' => $newUnit->getStatus(),
+            ];
+
+            $changes = [];
+            foreach ($after as $k => $newVal) {
+                $oldVal = $before[$k] ?? null;
+                if ($oldVal !== $newVal) {
+                    $changes[$k] = ['old' => $oldVal, 'new' => $newVal];
+                }
+            }
+
+            // Log principal: incidente reasignado y resuelto
+            $audit->custom(ReservationIncident::class, (string)$incident->getId(), 'incident_reassigned_and_resolved', $changes, [
+                'reservationId' => $reservation->getId(),
+                'brokenUnitId' => $broken?->getId(),
+                'newUnitId' => $newUnit->getId(),
+            ]);
+
             // sincronización stock (después del commit)
             if ($broken) {
                 $stockSync->syncFor($broken->getVehicle(), $broken->getLocation());
             }
             $stockSync->syncFor($newUnit->getVehicle(), $newUnit->getLocation());
 
+            // ✅ AUDIT extra: stock sync (útil para debug)
+            if ($broken && $broken->getVehicle() && $broken->getLocation()) {
+                $audit->custom(\App\Entity\Vehicle::class, (string)$broken->getVehicle()->getId(), 'stock_sync_after_incident', null, [
+                    'locationId' => $broken->getLocation()?->getId(),
+                    'reason' => 'broken_unit_maintenance',
+                ]);
+            }
+            if ($newUnit->getVehicle() && $newUnit->getLocation()) {
+                $audit->custom(\App\Entity\Vehicle::class, (string)$newUnit->getVehicle()->getId(), 'stock_sync_after_incident', null, [
+                    'locationId' => $newUnit->getLocation()?->getId(),
+                    'reason' => 'replacement_unit_assigned',
+                ]);
+            }
+
             return $this->json(['ok' => true]);
         } catch (\Throwable $e) {
             $em->rollback();
+
+            // ✅ AUDIT fallo
+            $audit->custom(ReservationIncident::class, (string)$incident->getId(), 'incident_reassign_failed', [
+                'error' => ['old' => null, 'new' => $e->getMessage()],
+            ], [
+                'reservationId' => $reservation->getId(),
+                'brokenUnitId' => $broken?->getId(),
+                'newUnitId' => $newUnit->getId(),
+            ]);
+
             return $this->json(['error' => 'No se pudo reasignar: '.$e->getMessage()], 500);
         }
     }

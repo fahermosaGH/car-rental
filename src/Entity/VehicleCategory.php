@@ -25,20 +25,23 @@ class VehicleCategory
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
     private ?string $dailyPrice = null;
 
+    #[ORM\Column(options: ['default' => true])]
+    private bool $isActive = true;
+
     /**
      * @var Collection<int, Vehicle>
      */
     #[ORM\OneToMany(targetEntity: Vehicle::class, mappedBy: 'category')]
     private Collection $vehicles;
 
-    public function __toString(): string
-    {
-        return (string) $this->getName();
-    }
-
     public function __construct()
     {
         $this->vehicles = new ArrayCollection();
+    }
+
+    public function __toString(): string
+    {
+        return (string) $this->getName();
     }
 
     public function getId(): ?int
@@ -54,7 +57,6 @@ class VehicleCategory
     public function setName(string $name): static
     {
         $this->name = $name;
-
         return $this;
     }
 
@@ -66,7 +68,6 @@ class VehicleCategory
     public function setDescription(?string $description): static
     {
         $this->description = $description;
-
         return $this;
     }
 
@@ -78,7 +79,17 @@ class VehicleCategory
     public function setDailyPrice(string $dailyPrice): static
     {
         $this->dailyPrice = $dailyPrice;
+        return $this;
+    }
 
+    public function isActive(): bool
+    {
+        return $this->isActive;
+    }
+
+    public function setIsActive(bool $val): static
+    {
+        $this->isActive = $val;
         return $this;
     }
 
@@ -96,19 +107,16 @@ class VehicleCategory
             $this->vehicles->add($vehicle);
             $vehicle->setCategory($this);
         }
-
         return $this;
     }
 
     public function removeVehicle(Vehicle $vehicle): static
     {
         if ($this->vehicles->removeElement($vehicle)) {
-            // set the owning side to null (unless already changed)
             if ($vehicle->getCategory() === $this) {
                 $vehicle->setCategory(null);
             }
         }
-
         return $this;
     }
 }

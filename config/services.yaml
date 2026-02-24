@@ -21,6 +21,8 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
 
+    App\EventSubscriber\AuditSubscriber:
+        tags: [doctrine.event_subscriber]
     # Si tenés servicios puntuales, van acá abajo
     # App\Algo\MiServicio:
     #     arguments: ['@otro_servicio']

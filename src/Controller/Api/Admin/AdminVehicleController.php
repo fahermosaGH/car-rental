@@ -5,6 +5,7 @@ namespace App\Controller\Api\Admin;
 use App\Entity\Vehicle;
 use App\Repository\VehicleCategoryRepository;
 use App\Repository\VehicleRepository;
+use App\Service\AuditLogger;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -20,6 +21,7 @@ class AdminVehicleController extends AbstractController
         private readonly VehicleRepository $vehicles,
         private readonly VehicleCategoryRepository $categories,
         private readonly EntityManagerInterface $em,
+        private readonly AuditLogger $audit,
     ) {}
 
     #[Route('', methods: ['GET'])]
@@ -45,7 +47,21 @@ class AdminVehicleController extends AbstractController
         $this->em->persist($v);
         $this->em->flush();
 
-        return $this->json($this->toDto($v), 201);
+        // ✅ AUDIT
+        $dto = $this->toDto($v);
+        $this->audit->log('create', Vehicle::class, (string) $v->getId(), [
+            'brand' => ['old' => null, 'new' => $dto['brand'] ?? null],
+            'model' => ['old' => null, 'new' => $dto['model'] ?? null],
+            'year' => ['old' => null, 'new' => $dto['year'] ?? null],
+            'seats' => ['old' => null, 'new' => $dto['seats'] ?? null],
+            'transmission' => ['old' => null, 'new' => $dto['transmission'] ?? null],
+            'dailyPrice' => ['old' => null, 'new' => $dto['dailyPrice'] ?? null],
+            'isActive' => ['old' => null, 'new' => $dto['isActive'] ?? null],
+            'categoryId' => ['old' => null, 'new' => $dto['categoryId'] ?? null],
+            'imageUrl' => ['old' => null, 'new' => $dto['imageUrl'] ?? null],
+        ], ['event' => 'vehicle_created']);
+
+        return $this->json($dto, 201);
     }
 
     #[Route('/{id}', methods: ['PUT'])]
@@ -54,12 +70,31 @@ class AdminVehicleController extends AbstractController
         $v = $this->vehicles->find($id);
         if (!$v) return $this->json(['error' => 'Vehículo no encontrado'], 404);
 
+        $before = $this->toDto($v);
+
         $data = json_decode($request->getContent(), true) ?? [];
         $this->applyPayload($v, $data, false);
 
         $this->em->flush();
 
-        return $this->json($this->toDto($v));
+        $after = $this->toDto($v);
+
+        // ✅ AUDIT diff
+        $changes = [];
+        foreach ($after as $k => $newVal) {
+            $oldVal = $before[$k] ?? null;
+            if ($oldVal !== $newVal) {
+                $changes[$k] = ['old' => $oldVal, 'new' => $newVal];
+            }
+        }
+
+        if ($changes) {
+            $this->audit->log('update', Vehicle::class, (string) $v->getId(), $changes, [
+                'event' => 'vehicle_updated',
+            ]);
+        }
+
+        return $this->json($after);
     }
 
     #[Route('/{id}', methods: ['DELETE'])]
@@ -68,8 +103,15 @@ class AdminVehicleController extends AbstractController
         $v = $this->vehicles->find($id);
         if (!$v) return $this->json(['error' => 'Vehículo no encontrado'], 404);
 
+        $old = (bool) $v->isActive();
+
         $v->setIsActive(false);
         $this->em->flush();
+
+        // ✅ AUDIT (soft delete)
+        $this->audit->custom(Vehicle::class, (string) $v->getId(), 'vehicle_deactivated', [
+            'isActive' => ['old' => $old, 'new' => false],
+        ]);
 
         return $this->json(['ok' => true]);
     }

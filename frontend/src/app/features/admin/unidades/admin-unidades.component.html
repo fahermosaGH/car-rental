@@ -18,7 +18,7 @@
 <div class="card">
   <div class="card-title">Nueva unidad</div>
 
-  <div class="form-row">
+  <div class="form-row create-row">
     <div class="field">
       <label>Patente</label>
       <input class="input" type="text" [(ngModel)]="plate" placeholder="Ej: AA123BB" />
@@ -51,7 +51,7 @@
       </select>
     </div>
 
-    <div class="field actions">
+    <div class="field actions-cell">
       <label>&nbsp;</label>
       <button class="btn" type="button" (click)="create()" [disabled]="creating">
         {{ creating ? 'Creando...' : 'Crear unidad' }}
@@ -66,7 +66,7 @@
 <div class="filters card">
   <div class="card-title">Filtros</div>
 
-  <div class="form-row">
+  <div class="form-row filters-row">
     <div class="field">
       <label>Vehículo</label>
       <select class="select" [(ngModel)]="fVehicleId" (change)="load()">
@@ -95,7 +95,7 @@
       </select>
     </div>
 
-    <div class="field actions">
+    <div class="field actions-cell">
       <label>&nbsp;</label>
       <button class="btn-small" type="button" (click)="clearFilters()" [disabled]="loading">Limpiar</button>
     </div>

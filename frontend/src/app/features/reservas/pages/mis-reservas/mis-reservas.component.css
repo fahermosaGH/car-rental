@@ -1,62 +1,66 @@
 .reservas-wrapper {
   background: #ffffff;
   padding: 1.5rem;
-  border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  border-radius: 14px;
+  box-shadow: 0 14px 40px rgba(15, 23, 42, 0.10);
+  border: 1px solid rgba(15, 23, 42, 0.06);
 }
 
 .reservas-wrapper h2 {
   margin-top: 0;
   margin-bottom: 1rem;
-  font-size: 1.3rem;
+  font-size: 1.35rem;
+  font-weight: 800;
   color: #0f172a;
+  letter-spacing: -0.01em;
 }
 
 /* Estados generales (loading, error, vacío) */
 .estado {
   font-size: 0.95rem;
-  color: #444;
+  color: #475569;
 }
 
 .estado.error {
-  color: #c92a2a;
+  color: #b91c1c;
 }
 
 /* Toolbar de orden */
 .toolbar {
   margin-top: 0.5rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.9rem;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.55rem;
   font-size: 0.85rem;
 }
 
 .toolbar-label {
-  font-weight: 600;
-  color: #4b5563;
+  font-weight: 700;
+  color: #475569;
 }
 
+/* chips de orden */
 .toolbar-btn {
-  border: 1px solid #d1d5db;
-  background: #f9fafb;
-  color: #374151;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  background: rgba(2, 6, 23, 0.02);
+  color: #0f172a;
   border-radius: 999px;
-  padding: 0.3rem 0.75rem;
-  font-size: 0.8rem;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.82rem;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  transition: background 0.15s ease, border-color 0.15s ease,
-    transform 0.12s ease;
+  gap: 0.35rem;
+  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
 }
 
 .toolbar-btn:hover {
-  background: #e5f0ff;
-  border-color: #3b82f6;
+  background: rgba(37, 99, 235, 0.08);
+  border-color: rgba(37, 99, 235, 0.35);
   transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.10);
 }
 
 .toolbar-btn.active {
@@ -65,127 +69,183 @@
   color: #ffffff;
 }
 
+.toolbar-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
+}
+
 /* Tabla */
 .tabla-reservas {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   margin-top: 0.5rem;
   font-size: 0.9rem;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid rgba(15, 23, 42, 0.10);
 }
 
 .tabla-reservas th,
 .tabla-reservas td {
-  padding: 0.55rem 0.6rem;
-  border: 1px solid #e5e7eb;
+  padding: 0.65rem 0.7rem;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  border-right: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.tabla-reservas th:last-child,
+.tabla-reservas td:last-child {
+  border-right: none;
 }
 
 .tabla-reservas thead th {
-  background: #4e5155;
-  color: #fff;
+  background: #0f172a;
+  color: rgba(255, 255, 255, 0.92);
   text-align: left;
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .tabla-reservas tbody tr:nth-child(even) {
-  background: #f9fafb;
+  background: rgba(2, 6, 23, 0.02);
+}
+
+.tabla-reservas tbody tr:hover td {
+  background: rgba(37, 99, 235, 0.05);
 }
 
 /* Badge de estado */
 .badge-estado {
   display: inline-flex;
   align-items: center;
-  padding: 0.15rem 0.55rem;
+  padding: 0.18rem 0.6rem;
   border-radius: 999px;
   font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: none;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
 }
 
 .badge-activa {
   background: rgba(22, 163, 74, 0.12);
   color: #166534;
+  border: 1px solid rgba(22, 163, 74, 0.20);
 }
 
 .badge-pendiente {
-  background: rgba(234, 179, 8, 0.15);
+  background: rgba(234, 179, 8, 0.16);
   color: #92400e;
+  border: 1px solid rgba(234, 179, 8, 0.22);
 }
 
 .badge-finalizada {
   background: rgba(59, 130, 246, 0.12);
   color: #1d4ed8;
+  border: 1px solid rgba(59, 130, 246, 0.20);
 }
 
 .badge-cancelada {
   background: rgba(220, 38, 38, 0.12);
   color: #b91c1c;
+  border: 1px solid rgba(220, 38, 38, 0.20);
 }
 
-/* Botón tipo link para "Ver detalle" */
-.btn-link {
-  border: none;
-  background: transparent;
-  color: #2563eb;
-  font-size: 0.85rem;
-  padding: 0;
+/* Acciones */
+.acciones-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+/* Botón base */
+.btn-link,
+.btn-cancelar {
+  appearance: none;
+  -webkit-appearance: none;
+  border-radius: 999px;
+  padding: 0.38rem 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 800;
   cursor: pointer;
-  text-decoration: underline;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  background: rgba(2, 6, 23, 0.02);
+  color: #0f172a;
+  text-decoration: none; /* adiós subrayado feo */
+  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease, box-shadow 120ms ease, color 120ms ease;
 }
 
 .btn-link:hover {
+  background: rgba(37, 99, 235, 0.10);
+  border-color: rgba(37, 99, 235, 0.35);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.10);
   color: #1d4ed8;
+}
+
+.btn-link:focus-visible,
+.btn-cancelar:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
+}
+
+/* Variante danger (usala para “Reportar problema” o “Cancelar”) */
+.btn-cancelar {
+  border-color: rgba(220, 38, 38, 0.28);
+  background: rgba(220, 38, 38, 0.04);
+  color: #b91c1c;
+}
+
+.btn-cancelar:hover {
+  background: rgba(220, 38, 38, 0.10);
+  border-color: rgba(220, 38, 38, 0.45);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.10);
+  color: #991b1b;
+}
+
+.btn-cancelar:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-problema{
+  appearance:none;
+  border-radius:999px;
+  padding:0.38rem 0.75rem;
+  font-size:0.82rem;
+  font-weight:800;
+  cursor:pointer;
+
+  border:1px solid rgba(234,179,8,0.30);
+  background: rgba(234,179,8,0.08);
+  color:#92400e;
+
+  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease, box-shadow 120ms ease, color 120ms ease;
+}
+
+.btn-problema:hover{
+  background: rgba(234,179,8,0.14);
+  border-color: rgba(234,179,8,0.45);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.10);
+  color:#7c2d12;
 }
 
 /* Responsive suave */
 @media (max-width: 768px) {
   .tabla-reservas {
-    font-size: 0.8rem;
+    font-size: 0.82rem;
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .reservas-wrapper {
     padding: 1rem;
   }
 }
-
-.acciones-cell {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-}
-
-.btn-link {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.8rem;
-  border-radius: 999px;
-  border: 1px solid #4e5155;
-  background: #ffffff;
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-}
-
-.btn-link:hover {
-  background: #4e5155;
-  color: #ffffff;
-}
-
-.btn-cancelar {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.8rem;
-  border-radius: 999px;
-  border: 1px solid #c92a2a;
-  background: #ffffff;
-  color: #c92a2a;
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-}
-
-.btn-cancelar:hover {
-  background: #c92a2a;
-  color: #ffffff;
-}
-
-.btn-cancelar:disabled {
-  opacity: 0.6;
-  cursor: wait;
-}
-

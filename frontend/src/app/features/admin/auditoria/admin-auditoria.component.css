@@ -1,0 +1,194 @@
+:host {
+  display: block;
+  color: #e7eefc;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color-scheme: dark;
+}
+
+h1 {
+  margin: 0 0 16px;
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* ===== Filters bar ===== */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 14px;
+  align-items: end;
+
+  padding: 14px 16px;
+  margin-bottom: 16px;
+
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  backdrop-filter: blur(8px);
+}
+
+.filters label {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(231, 238, 252, 0.75);
+}
+
+.filters select,
+.filters input[type="text"] {
+  min-width: 180px;
+  height: 38px;
+  padding: 0 12px;
+
+  background: rgba(8, 12, 22, 0.55);
+  color: #e7eefc;
+
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 10px;
+
+  outline: none;
+  transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+}
+
+.filters select option,
+.filters select optgroup {
+  background: #0b1020;
+  color: #e7eefc;
+}
+
+.filters select:focus,
+.filters input[type="text"]:focus {
+  border-color: rgba(120, 170, 255, 0.55);
+  box-shadow: 0 0 0 4px rgba(120, 170, 255, 0.12);
+}
+
+.filters button {
+  height: 38px;
+  padding: 0 14px;
+
+  border-radius: 10px;
+  border: 1px solid rgba(120, 170, 255, 0.35);
+
+  background: linear-gradient(180deg, rgba(90, 140, 255, 0.20), rgba(90, 140, 255, 0.08));
+  color: #e7eefc;
+
+  font-weight: 600;
+  cursor: pointer;
+
+  transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+}
+
+.filters button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(120, 170, 255, 0.6);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.25);
+}
+
+.filters button:active {
+  transform: translateY(0);
+}
+
+/* ===== States ===== */
+.state {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.state.error {
+  border-color: rgba(255, 80, 80, 0.35);
+  background: rgba(255, 80, 80, 0.08);
+  color: #ffd7d7;
+}
+
+/* ===== Table ===== */
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+
+  text-align: left;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+
+  color: rgba(231, 238, 252, 0.72);
+
+  padding: 12px 12px;
+
+  background: rgba(8, 12, 22, 0.85);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.table tbody td {
+  padding: 12px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: rgba(231, 238, 252, 0.92);
+  vertical-align: middle;
+}
+
+.table tbody tr {
+  transition: background 120ms ease;
+}
+
+.table tbody tr:hover {
+  background: rgba(120, 170, 255, 0.06);
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Column tweaks */
+.table th:first-child,
+.table td:first-child {
+  min-width: 170px;
+  white-space: nowrap;
+  color: rgba(231, 238, 252, 0.75);
+}
+
+/* Make ID columns tight */
+.table th:nth-child(5),
+.table td:nth-child(5) {
+  width: 80px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: rgba(231, 238, 252, 0.75);
+}
+
+/* Changes column readable */
+.table th:last-child,
+.table td:last-child {
+  font-variant-numeric: tabular-nums;
+  color: rgba(231, 238, 252, 0.85);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 1100px) {
+  .table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .filters label { width: 100%; }
+  .filters select,
+  .filters input[type="text"] {
+    width: 100%;
+    min-width: 0;
+  }
+}

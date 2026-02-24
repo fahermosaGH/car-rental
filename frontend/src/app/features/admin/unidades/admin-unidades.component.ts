@@ -53,6 +53,11 @@ export class AdminUnidadesComponent implements OnInit {
     { value: 'inactive', label: 'Inactiva' },
   ];
 
+  // ✅ formatos válidos Argentina:
+  // - AAA111 (viejo)
+  // - AA111AA (Mercosur)
+  private readonly PLATE_AR = /^(?:[A-Z]{3}\d{3}|[A-Z]{2}\d{3}[A-Z]{2})$/;
+
   constructor(
     private units: AdminVehicleUnitsService,
     private vehiclesSrv: AdminVehiclesService,
@@ -77,7 +82,6 @@ export class AdminUnidadesComponent implements OnInit {
           this.vehicles = vehicles;
           this.locations = locations;
 
-          // Defaults para crear
           if (this.vehicles.length && this.vehicleId === 0) this.vehicleId = this.vehicles[0].id;
           if (this.locations.length && this.locationId === 0) this.locationId = this.locations[0].id;
 
@@ -110,8 +114,6 @@ export class AdminUnidadesComponent implements OnInit {
       .subscribe((rows) => {
         this.rows = rows ?? [];
 
-        // IMPORTANTÍSIMO:
-        // inicializamos los "drafts" con el status real que viene del backend
         const nextEdit: Record<number, { plate: string; status: VehicleUnitStatus }> = {};
         this.rows.forEach((r) => {
           nextEdit[r.id] = {
@@ -130,13 +132,29 @@ export class AdminUnidadesComponent implements OnInit {
     this.load();
   }
 
+  // ✅ Normaliza (saca espacios/guiones y uppercase)
+  private normalizePlate(raw: string): string {
+    return (raw ?? '')
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, ''); // elimina espacios, guiones, puntos, etc.
+  }
+
+  private isValidPlateAR(raw: string): boolean {
+    const plate = this.normalizePlate(raw);
+    return this.PLATE_AR.test(plate);
+  }
+
   // CREATE
   create(): void {
     this.createError = '';
 
-    const plate = (this.plate ?? '').trim();
-    if (!plate) {
+    const plateNorm = this.normalizePlate(this.plate);
+    if (!plateNorm) {
       this.createError = 'La patente es obligatoria.';
+      return;
+    }
+    if (!this.isValidPlateAR(plateNorm)) {
+      this.createError = 'Formato inválido. Usá AAA111 o AA111AA (Argentina).';
       return;
     }
     if (this.vehicleId <= 0) {
@@ -149,7 +167,7 @@ export class AdminUnidadesComponent implements OnInit {
     }
 
     const payload: VehicleUnitCreatePayload = {
-      plate,
+      plate: plateNorm,
       vehicleId: this.vehicleId,
       locationId: this.locationId,
       status: this.status,
@@ -181,26 +199,30 @@ export class AdminUnidadesComponent implements OnInit {
     const draft = this.edit[row.id];
     if (!draft) return;
 
-    const plate = (draft.plate ?? '').trim();
-    if (!plate) {
+    const plateNorm = this.normalizePlate(draft.plate);
+    if (!plateNorm) {
       alert('La patente no puede estar vacía.');
+      return;
+    }
+    if (!this.isValidPlateAR(plateNorm)) {
+      alert('Formato inválido. Usá AAA111 o AA111AA (Argentina).');
       return;
     }
 
     this.updating[row.id] = true;
     this.units
-      .update(row.id, { plate, status: draft.status })
+      .update(row.id, { plate: plateNorm, status: draft.status })
       .pipe(finalize(() => (this.updating[row.id] = false)))
       .subscribe({
         next: () => {
-          // reflejamos en la tabla
-          row.plate = plate.toUpperCase();
+          row.plate = plateNorm;
           row.status = draft.status;
+          // también actualizamos el draft para que quede normalizado
+          this.edit[row.id].plate = plateNorm;
         },
         error: (err) => {
           if (err?.status === 409) alert('Esa patente ya existe.');
           else alert('No se pudo actualizar la unidad.');
-          // para no dejar inconsistencia visual si falló:
           this.load();
         },
       });

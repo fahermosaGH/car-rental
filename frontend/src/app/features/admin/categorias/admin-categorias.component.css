@@ -152,8 +152,8 @@ h2 {
 
 .table {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
+  border-collapse: collapse; /* <- antes: separate */
+  border-spacing: 0;         /* (lo podés dejar, no molesta) */
   overflow: hidden;
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.10);

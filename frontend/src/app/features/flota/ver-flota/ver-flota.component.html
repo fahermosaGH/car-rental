@@ -62,7 +62,11 @@
     <!-- CONTENT GRID -->
     <main class="content">
 
-      <div class="grid">
+      <div *ngIf="loadingFilter" class="state state-info">
+        <span class="spinner"></span> Aplicando filtros...
+      </div>
+
+      <div class="grid" *ngIf="!loadingFilter">
 
         <article class="card" *ngFor="let v of filtered">
 
@@ -79,7 +83,7 @@
 
       </div>
 
-      <p *ngIf="filtered.length === 0" class="state state-info">
+      <p *ngIf="!loadingFilter && filtered.length === 0" class="state state-info">
         No hay vehículos que coincidan con tu búsqueda.
       </p>
 

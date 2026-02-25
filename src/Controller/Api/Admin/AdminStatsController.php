@@ -6,6 +6,7 @@ use App\Entity\Location;
 use App\Entity\Reservation;
 use App\Entity\User;
 use App\Entity\Vehicle;
+use App\Entity\VehicleUnit;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -17,12 +18,10 @@ class AdminStatsController extends AbstractController
     #[Route('/general', name: 'api_admin_stats_general', methods: ['GET'])]
     public function general(EntityManagerInterface $em): JsonResponse
     {
-        // Rango "hoy"
-        $todayStart = new \DateTimeImmutable('today');                 // 00:00 local (según timezone PHP)
-        $tomorrowStart = $todayStart->modify('+1 day');               // 00:00 mañana
+        $todayStart = new \DateTimeImmutable('today');
+        $tomorrowStart = $todayStart->modify('+1 day');
 
-        // Rango "mes actual"
-        $monthStart = $todayStart->modify('first day of this month');  // 00:00 día 1
+        $monthStart = $todayStart->modify('first day of this month');
         $nextMonthStart = $monthStart->modify('first day of next month');
 
         // Usuarios
@@ -32,7 +31,7 @@ class AdminStatsController extends AbstractController
             ->getQuery()
             ->getSingleScalarResult();
 
-        // Vehículos en flota (activos)
+        // Vehículos activos
         $vehicles = (int) $em->createQueryBuilder()
             ->select('COUNT(v.id)')
             ->from(Vehicle::class, 'v')
@@ -50,15 +49,14 @@ class AdminStatsController extends AbstractController
             ->getQuery()
             ->getSingleScalarResult();
 
-        // Reservas totales (históricas)
+        // Reservas totales
         $reservationsTotal = (int) $em->createQueryBuilder()
             ->select('COUNT(r.id)')
             ->from(Reservation::class, 'r')
             ->getQuery()
             ->getSingleScalarResult();
 
-        // Activas hoy: status IN (pending, confirmed) y solapan el día de hoy
-        // Solape: startAt < tomorrowStart AND endAt > todayStart
+        // Activas hoy
         $reservationsActiveToday = (int) $em->createQueryBuilder()
             ->select('COUNT(r.id)')
             ->from(Reservation::class, 'r')
@@ -71,7 +69,7 @@ class AdminStatsController extends AbstractController
             ->getQuery()
             ->getSingleScalarResult();
 
-        // Cancelaciones del mes (usamos startAt como fecha de referencia porque Reservation no tiene createdAt)
+        // Cancelaciones del mes
         $cancellationsThisMonth = (int) $em->createQueryBuilder()
             ->select('COUNT(r.id)')
             ->from(Reservation::class, 'r')
@@ -84,7 +82,7 @@ class AdminStatsController extends AbstractController
             ->getQuery()
             ->getSingleScalarResult();
 
-        // Ingresos del mes: SUM(totalPrice) de confirmed del mes (también por startAt)
+        // Ingresos del mes
         $incomeRaw = $em->createQueryBuilder()
             ->select('COALESCE(SUM(r.totalPrice), 0)')
             ->from(Reservation::class, 'r')
@@ -97,8 +95,32 @@ class AdminStatsController extends AbstractController
             ->getQuery()
             ->getSingleScalarResult();
 
-        // Doctrine devuelve DECIMAL como string
         $incomeThisMonth = (float) $incomeRaw;
+
+        // 🔹 NUEVO: unidades por estado
+        $unitsAvailable = (int) $em->createQueryBuilder()
+            ->select('COUNT(u.id)')
+            ->from(VehicleUnit::class, 'u')
+            ->where('u.status = :st')
+            ->setParameter('st', VehicleUnit::STATUS_AVAILABLE)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        $unitsMaintenance = (int) $em->createQueryBuilder()
+            ->select('COUNT(u.id)')
+            ->from(VehicleUnit::class, 'u')
+            ->where('u.status = :st')
+            ->setParameter('st', VehicleUnit::STATUS_MAINTENANCE)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        $unitsInactive = (int) $em->createQueryBuilder()
+            ->select('COUNT(u.id)')
+            ->from(VehicleUnit::class, 'u')
+            ->where('u.status = :st')
+            ->setParameter('st', VehicleUnit::STATUS_INACTIVE)
+            ->getQuery()
+            ->getSingleScalarResult();
 
         return $this->json([
             'users' => $users,
@@ -108,6 +130,11 @@ class AdminStatsController extends AbstractController
             'reservationsActiveToday' => $reservationsActiveToday,
             'cancellationsThisMonth' => $cancellationsThisMonth,
             'incomeThisMonth' => $incomeThisMonth,
+
+            // NUEVOS
+            'unitsAvailable' => $unitsAvailable,
+            'unitsMaintenance' => $unitsMaintenance,
+            'unitsInactive' => $unitsInactive,
         ]);
     }
 }

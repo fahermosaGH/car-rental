@@ -7,6 +7,7 @@
 </div>
 
 <div class="grid" *ngIf="!loading && stats">
+
   <div class="card">
     <div class="kpi-title">Usuarios</div>
     <div class="kpi-value">{{ stats.users }}</div>
@@ -48,4 +49,25 @@
     <div class="kpi-value">{{ stats.incomeThisMonth | currency:'ARS' }}</div>
     <div class="kpi-sub">Reservas confirmadas</div>
   </div>
+
+  <!-- NUEVAS CARDS DENTRO DEL MISMO GRID -->
+
+  <div class="card">
+    <div class="kpi-title">Unidades disponibles</div>
+    <div class="kpi-value">{{ stats.unitsAvailable }}</div>
+    <div class="kpi-sub">En servicio</div>
+  </div>
+
+  <div class="card">
+    <div class="kpi-title">En mantenimiento</div>
+    <div class="kpi-value">{{ stats.unitsMaintenance }}</div>
+    <div class="kpi-sub">Fuera de servicio</div>
+  </div>
+
+  <div class="card">
+    <div class="kpi-title">Unidades inactivas</div>
+    <div class="kpi-value">{{ stats.unitsInactive }}</div>
+    <div class="kpi-sub">Deshabilitadas</div>
+  </div>
+
 </div>

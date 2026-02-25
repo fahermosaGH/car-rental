@@ -57,22 +57,28 @@
   </thead>
 
   <tbody>
-    <tr *ngFor="let r of rows">
-      <td>{{ r.id }}</td>
-      <td>
-        <div class="name">{{ r.name }}</div>
-        <div class="desc" *ngIf="r.description">{{ r.description }}</div>
-      </td>
-      <td>{{ r.dailyPrice | currency : 'ARS' }}</td>
-      <td>{{ r.vehiclesCount }}</td>
-      <td>{{ r.isActive ? 'sí' : 'no' }}</td>
-      <td class="actionsCell">
-        <button type="button" class="tiny" (click)="startEdit(r)">Editar</button>
-        <button type="button" class="tiny" (click)="toggle(r)">{{ r.isActive ? 'Desactivar' : 'Activar' }}</button>
-        <button type="button" class="tiny danger" (click)="remove(r)">Eliminar</button>
-      </td>
-    </tr>
-  </tbody>
+  <tr *ngFor="let r of rows">
+    <td>{{ r.id }}</td>
+
+    <td>
+      <div class="name">{{ r.name }}</div>
+      <div class="desc" *ngIf="r.description">{{ r.description }}</div>
+    </td>
+
+    <!-- Vehículos = cantidad -->
+    <td class="num">{{ r.vehiclesCount }}</td>
+
+    <!-- Activa = sí/no -->
+    <td class="center">{{ r.isActive ? 'sí' : 'no' }}</td>
+
+    <!-- Acciones = botones -->
+    <td class="actionsCell">
+      <button type="button" class="tiny" (click)="startEdit(r)">Editar</button>
+      <button type="button" class="tiny" (click)="toggle(r)">{{ r.isActive ? 'Desactivar' : 'Activar' }}</button>
+      <button type="button" class="tiny danger" (click)="remove(r)">Eliminar</button>
+    </td>
+  </tr>
+</tbody>
 </table>
 
 <div *ngIf="!loading && !rows.length" class="state">No hay categorías para mostrar.</div>

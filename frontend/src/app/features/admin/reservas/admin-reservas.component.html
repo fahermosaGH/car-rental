@@ -5,10 +5,10 @@
     Estado:
     <select [(ngModel)]="status">
       <option value="">(todos)</option>
-      <option value="pending">pending</option>
-      <option value="confirmed">confirmed</option>
-      <option value="completed">completed</option>
-      <option value="cancelled">cancelled</option>
+      <option value="pending">Pendiente</option>
+      <option value="confirmed">Confirmada</option>
+      <option value="completed">Completada</option>
+      <option value="cancelled">Cancelada</option>
     </select>
   </label>
 
@@ -39,6 +39,7 @@
       <th>Total</th>
       <th>Estado</th>
       <th>Cambiar</th>
+      <th>Devolución</th>
     </tr>
   </thead>
 
@@ -54,14 +55,75 @@
 
       <td>
         <select [ngModel]="r.status" (ngModelChange)="changeStatus(r, $event)">
-          <option value="pending">pending</option>
-          <option value="confirmed">confirmed</option>
-          <option value="completed">completed</option>
-          <option value="cancelled">cancelled</option>
+          <option value="pending">Pendiente</option>
+          <option value="confirmed">Confirmada</option>
+          <option value="completed">Completada</option>
+          <option value="cancelled">Cancelada</option>
         </select>
+      </td>
+
+      <td class="return-cell">
+        <button
+          type="button"
+          class="btn-return"
+          [disabled]="!canRegisterReturn(r)"
+          (click)="openReturnModal(r)"
+          [title]="canRegisterReturn(r) ? 'Registrar/editar devolución' : 'Solo disponible cuando está completed'"
+        >
+          {{ r.returnNote ? 'Ver registro' : 'Registrar' }}
+        </button>
+
+        <span *ngIf="r.returnNote" class="badge">OK</span>
       </td>
     </tr>
   </tbody>
 </table>
 
 <div *ngIf="!loading && !rows.length" class="state">No hay reservas para mostrar.</div>
+
+<!-- ===== Modal devolución ===== -->
+<div class="modal-backdrop" *ngIf="showReturnModal" (click)="closeReturnModal()"></div>
+
+<div class="modal" *ngIf="showReturnModal" role="dialog" aria-modal="true">
+  <div class="modal-header">
+    <div class="modal-title">
+      Registrar devolución — Reserva #{{ selectedRow?.id }}
+    </div>
+    <button type="button" class="modal-close" (click)="closeReturnModal()">×</button>
+  </div>
+
+  <div class="modal-body">
+    <div class="modal-row">
+      <label class="modal-label">Observación *</label>
+      <textarea
+        rows="4"
+        [(ngModel)]="formReturnNote"
+        placeholder="Escribe aqui tu observación sobre el estado del vehículo al momento de la devolución."
+      ></textarea>
+    </div>
+
+    <div class="modal-row">
+      <label class="modal-label">Multa (opcional)</label>
+      <input
+        type="number"
+        min="0"
+        step="100"
+        [(ngModel)]="formReturnPenalty"
+        placeholder="20000"
+      />
+    </div>
+
+    <div *ngIf="returnError" class="state error" style="margin-top: 10px;">
+      {{ returnError }}
+    </div>
+  </div>
+
+  <div class="modal-footer">
+    <button type="button" class="btn-secondary" (click)="closeReturnModal()" [disabled]="savingReturn">
+      Cancelar
+    </button>
+    <button type="button" class="btn-primary" (click)="saveReturn()" [disabled]="savingReturn">
+      {{ savingReturn ? 'Guardando…' : 'Guardar' }}
+    </button>
+  </div>
+</div>

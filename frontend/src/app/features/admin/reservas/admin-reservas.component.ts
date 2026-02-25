@@ -6,7 +6,7 @@ import {
   AdminReservasService,
   AdminReservationRow,
   ReservationStatus,
-} from '../services/admin-reservas.service'; // ✅ ESTA ES LA RUTA CORRECTA EN TU ESTRUCTURA
+} from '../services/admin-reservas.service';
 
 @Component({
   selector: 'app-admin-reservas',
@@ -24,8 +24,16 @@ export class AdminReservasComponent implements OnInit {
   from = '';
   to = '';
 
-  // ✅ Incluimos completed
   statuses: ReservationStatus[] = ['pending', 'confirmed', 'completed', 'cancelled'];
+
+  // ===== Modal devolución =====
+  showReturnModal = false;
+  savingReturn = false;
+  returnError = '';
+
+  selectedRow: AdminReservationRow | null = null;
+  formReturnNote = '';
+  formReturnPenalty: number | null = null;
 
   constructor(private api: AdminReservasService) {}
 
@@ -66,5 +74,80 @@ export class AdminReservasComponent implements OnInit {
         this.error = 'No se pudo actualizar el estado.';
       },
     });
+  }
+
+  // ===== Devolución =====
+  canRegisterReturn(row: AdminReservationRow): boolean {
+    return row.status === 'completed';
+  }
+
+  openReturnModal(row: AdminReservationRow): void {
+    this.selectedRow = row;
+    this.formReturnNote = row.returnNote ?? '';
+
+    // normaliza penalty a number|null (puede venir string del backend)
+    const p: any = row.returnPenalty as any;
+    this.formReturnPenalty =
+      p === null || p === undefined || p === ''
+        ? null
+        : typeof p === 'number'
+          ? p
+          : Number(p);
+
+    this.returnError = '';
+    this.savingReturn = false;
+    this.showReturnModal = true;
+  }
+
+  closeReturnModal(): void {
+    this.showReturnModal = false;
+    this.selectedRow = null;
+    this.formReturnNote = '';
+    this.formReturnPenalty = null;
+    this.returnError = '';
+    this.savingReturn = false;
+  }
+
+  saveReturn(): void {
+    if (!this.selectedRow) return;
+
+    const note = (this.formReturnNote ?? '').trim();
+    if (!note) {
+      this.returnError = 'La observación es obligatoria.';
+      return;
+    }
+
+    this.savingReturn = true;
+    this.returnError = '';
+
+    this.api
+      .updateReturnNote(this.selectedRow.id, {
+        returnNote: note,
+        returnPenalty: this.formReturnPenalty,
+      })
+      .subscribe({
+        next: (resp) => {
+          // actualiza la fila local
+          this.selectedRow!.returnNote = resp?.returnNote ?? note;
+
+          const rp = resp?.returnPenalty;
+          this.selectedRow!.returnPenalty =
+            rp === null || rp === undefined || rp === ''
+              ? this.formReturnPenalty
+              : typeof rp === 'number'
+                ? rp
+                : Number(rp);
+
+          this.savingReturn = false;
+          this.closeReturnModal();
+        },
+        error: (err) => {
+          const msg =
+            err?.error?.error ||
+            'No se pudo guardar la observación de devolución.';
+          this.returnError = msg;
+          this.savingReturn = false;
+        },
+      });
   }
 }

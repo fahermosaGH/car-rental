@@ -17,6 +17,10 @@ export type AdminReservationRow = {
   endAt?: string | null;
   totalPrice?: number | string | null;
   status: ReservationStatus;
+
+  // ✅ NUEVO: devolución (observación + multa)
+  returnNote?: string | null;
+  returnPenalty?: number | string | null;
 };
 
 @Injectable({ providedIn: 'root' })
@@ -48,9 +52,22 @@ export class AdminReservasService {
   }
 
   updateStatus(id: number, status: ReservationStatus): Observable<any> {
+    // ⚠️ Nota: tu controller "bueno" usa PUT. Esto queda en PATCH para no cambiar lo existente.
     return this.http.patch(
       `${this.apiUrl}/admin/reservations/${id}/status`,
       { status },
+      { headers: this.headers }
+    );
+  }
+
+  // ✅ NUEVO: registrar/editar devolución
+  updateReturnNote(
+    id: number,
+    payload: { returnNote: string; returnPenalty?: number | string | null }
+  ): Observable<any> {
+    return this.http.put(
+      `${this.apiUrl}/admin/reservations/${id}/return-note`,
+      payload,
       { headers: this.headers }
     );
   }

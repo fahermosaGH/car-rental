@@ -30,7 +30,7 @@ class Reservation
     #[ORM\JoinColumn(nullable: false)]
     private ?Vehicle $vehicle = null;
 
-    // ✅ NUEVO: unidad física asignada (patente)
+    // ✅ unidad física asignada (patente)
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?VehicleUnit $vehicleUnit = null;
@@ -64,6 +64,14 @@ class Reservation
     #[ORM\Column(type: 'string', length: 500, nullable: true)]
     private ?string $ratingComment = null;
 
+    // ✅ NUEVO: observación de devolución (admin)
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $returnNote = null;
+
+    // ✅ NUEVO: multa/penalidad (opcional)
+    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true)]
+    private ?string $returnPenalty = null;
+
     public function __construct()
     {
         $this->extras = new ArrayCollection();
@@ -80,7 +88,6 @@ class Reservation
     public function getVehicle(): ?Vehicle { return $this->vehicle; }
     public function setVehicle(?Vehicle $vehicle): static { $this->vehicle = $vehicle; return $this; }
 
-    // ✅ NUEVO
     public function getVehicleUnit(): ?VehicleUnit { return $this->vehicleUnit; }
     public function setVehicleUnit(?VehicleUnit $vehicleUnit): static { $this->vehicleUnit = $vehicleUnit; return $this; }
 
@@ -117,6 +124,23 @@ class Reservation
 
     public function getRatingComment(): ?string { return $this->ratingComment; }
     public function setRatingComment(?string $ratingComment): static { $this->ratingComment = $ratingComment; return $this; }
+
+    // ✅ NUEVO
+    public function getReturnNote(): ?string { return $this->returnNote; }
+    public function setReturnNote(?string $note): static
+    {
+        $note = $note !== null ? trim($note) : null;
+        $this->returnNote = ($note === '') ? null : $note;
+        return $this;
+    }
+
+    public function getReturnPenalty(): ?string { return $this->returnPenalty; }
+    public function setReturnPenalty(?string $val): static
+    {
+        $val = $val !== null ? trim($val) : null;
+        $this->returnPenalty = ($val === '') ? null : $val;
+        return $this;
+    }
 
     public function __toString(): string { return 'Reserva #' . ($this->id ?? 0); }
 }

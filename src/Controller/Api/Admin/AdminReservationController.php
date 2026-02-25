@@ -12,14 +12,14 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/api/admin/reservations')]
 class AdminReservationController extends AbstractController
 {
-    private const ALLOWED_STATUS = ['pending', 'confirmed', 'cancelled'];
+    private const ALLOWED_STATUS = ['pending', 'confirmed', 'completed', 'cancelled'];
 
     #[Route('', name: 'api_admin_reservations_list', methods: ['GET'])]
     public function list(Request $request, EntityManagerInterface $em): JsonResponse
     {
-        $status = $request->query->get('status'); // pending|confirmed|cancelled|null
-        $fromStr = $request->query->get('from');  // YYYY-MM-DD|null
-        $toStr   = $request->query->get('to');    // YYYY-MM-DD|null
+        $status = $request->query->get('status');
+        $fromStr = $request->query->get('from');
+        $toStr   = $request->query->get('to');
 
         $qb = $em->getRepository(Reservation::class)->createQueryBuilder('r')
             ->leftJoin('r.user', 'u')->addSelect('u')
@@ -69,6 +69,10 @@ class AdminReservationController extends AbstractController
                 'vehicle' => $v ? trim(($v->getBrand() ?? '') . ' ' . ($v->getModel() ?? '')) : null,
                 'pickupLocation' => $pl?->getName(),
                 'dropoffLocation' => $dl?->getName(),
+
+                // NUEVO (para mostrar badge/indicador en listado si querés)
+                'returnNote' => $r->getReturnNote(),
+                'returnPenalty' => $r->getReturnPenalty() !== null ? (float)$r->getReturnPenalty() : null,
             ];
         }, $rows);
 
@@ -101,6 +105,7 @@ class AdminReservationController extends AbstractController
         }
 
         $v = $r->getVehicle();
+
         return $this->json([
             'id' => $r->getId(),
             'status' => $r->getStatus(),
@@ -109,6 +114,8 @@ class AdminReservationController extends AbstractController
             'totalPrice' => $r->getTotalPrice() !== null ? (float)$r->getTotalPrice() : 0,
             'rating' => $r->getRating(),
             'ratingComment' => $r->getRatingComment(),
+            'returnNote' => $r->getReturnNote(),
+            'returnPenalty' => $r->getReturnPenalty() !== null ? (float)$r->getReturnPenalty() : null,
 
             'user' => $r->getUser() ? [
                 'email' => $r->getUser()->getEmail(),
@@ -151,5 +158,43 @@ class AdminReservationController extends AbstractController
         $em->flush();
 
         return $this->json(['message' => 'Estado actualizado', 'id' => $r->getId(), 'status' => $r->getStatus()]);
+    }
+
+    // ✅ NUEVO: guardar observación de devolución
+    #[Route('/{id}/return-note', name: 'api_admin_reservations_update_return_note', methods: ['PUT'])]
+    public function updateReturnNote(int $id, Request $request, EntityManagerInterface $em): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+        if (!$data) return $this->json(['error' => 'JSON inválido'], 400);
+
+        /** @var Reservation|null $r */
+        $r = $em->getRepository(Reservation::class)->find($id);
+        if (!$r) return $this->json(['error' => 'Reserva no encontrada'], 404);
+
+        // Regla simple: solo cargar devolución cuando esté finalizada
+        if ($r->getStatus() !== 'completed') {
+            return $this->json(['error' => 'Solo se puede registrar devolución si la reserva está en estado completed'], 422);
+        }
+
+        $note = $data['returnNote'] ?? null;
+        $penalty = $data['returnPenalty'] ?? null; // number o string
+
+        $r->setReturnNote($note);
+
+        if ($penalty === null || $penalty === '') {
+            $r->setReturnPenalty(null);
+        } else {
+            // normaliza a string decimal para el campo DECIMAL
+            $r->setReturnPenalty((string)$penalty);
+        }
+
+        $em->flush();
+
+        return $this->json([
+            'message' => 'Devolución registrada',
+            'id' => $r->getId(),
+            'returnNote' => $r->getReturnNote(),
+            'returnPenalty' => $r->getReturnPenalty() !== null ? (float)$r->getReturnPenalty() : null,
+        ]);
     }
 }

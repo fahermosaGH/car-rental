@@ -12,6 +12,10 @@ export interface AdminGeneralStats {
   reservationsActiveToday: number;
   cancellationsThisMonth: number;
   incomeThisMonth: number;
+
+  unitsAvailable: number;
+  unitsMaintenance: number;
+  unitsInactive: number;
 }
 
 @Injectable({ providedIn: 'root' })

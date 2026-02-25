@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { CotizarService } from '../../cotizar/services/cotizar.service';
+import { VehicleOption } from '../../cotizar/models/quote';
 
 @Component({
   selector: 'app-ver-flota',
@@ -12,26 +13,22 @@ import { CotizarService } from '../../cotizar/services/cotizar.service';
   styleUrls: ['./ver-flota.component.css'],
 })
 export class VerFlotaComponent implements OnInit {
-
   private cotizarService = inject(CotizarService);
 
   loading = false;
   loadingFilter = false;
   error: string | null = null;
 
-  vehicles: any[] = [];
-  filtered: any[] = [];
+  vehicles: VehicleOption[] = [];
+  filtered: VehicleOption[] = [];
 
-  categories = [
-    'Todos', 'Económico', 'Compacto', 'SUV',
-    'Camioneta', 'Sedán', 'Premium', 'Largos'
-  ];
-
+  categories: string[] = ['Todos'];
   selectedCategory = 'Todos';
+
   sort: 'az' | 'za' = 'az';
 
-  searchText: string = '';
-  searchTrigger: string = '';
+  searchText = '';
+  searchTrigger = '';
 
   ngOnInit(): void {
     this.loadVehicles();
@@ -43,62 +40,93 @@ export class VerFlotaComponent implements OnInit {
 
     this.cotizarService.buscarVehiculos().subscribe({
       next: (data) => {
-        this.vehicles = data;
+        this.vehicles = Array.isArray(data) ? data : [];
+        this.buildCategories();
         this.applyFilters(false);
         this.loading = false;
       },
       error: () => {
         this.error = 'No se pudo cargar la flota de vehículos.';
         this.loading = false;
-      }
+      },
     });
   }
 
-  onSearchEnter() {
+  private normalize(s: string): string {
+    return (s || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim();
+  }
+
+  private buildCategories(): void {
+    const set = new Set<string>();
+
+    for (const v of this.vehicles) {
+      const cat = (v.category || '').toString().trim();
+      if (cat) set.add(cat);
+    }
+
+    const list = Array.from(set).sort((a, b) => a.localeCompare(b));
+    this.categories = ['Todos', ...list];
+
+    if (!this.categories.includes(this.selectedCategory)) {
+      this.selectedCategory = 'Todos';
+    }
+  }
+
+  onSearchEnter(): void {
     this.searchTrigger = this.searchText.trim().toLowerCase();
     this.applyFilters(true);
   }
 
-  selectCategory(cat: string) {
+  selectCategory(cat: string): void {
     this.selectedCategory = cat;
     this.applyFilters(true);
   }
 
-  changeSort(dir: 'az' | 'za') {
+  changeSort(dir: 'az' | 'za'): void {
     this.sort = dir;
     this.applyFilters(true);
   }
 
-  applyFilters(animated: boolean = true) {
+  applyFilters(animated = true): void {
     if (animated) {
       this.loadingFilter = true;
       setTimeout(() => {
         this.runFiltering();
         this.loadingFilter = false;
-      }, 350);
+      }, 200);
     } else {
       this.runFiltering();
     }
   }
 
-  private runFiltering() {
-    let items = [...this.vehicles];
+  private runFiltering(): void {
+    let items = this.vehicles.slice();
 
+    // filtro categoría
     if (this.selectedCategory !== 'Todos') {
-      items = items.filter(v => (v.category || '').toLowerCase() === this.selectedCategory.toLowerCase());
+      const selected = this.normalize(this.selectedCategory);
+      items = items.filter((v) => this.normalize((v.category || '').toString()) === selected);
     }
 
+    // búsqueda por marca/modelo
     if (this.searchTrigger !== '') {
-      items = items.filter(v =>
-        `${v.brand} ${v.model}`.toLowerCase().includes(this.searchTrigger)
-      );
+      items = items.filter((v) => {
+        const brand = (v.brand || '').toString();
+        const model = (v.model || '').toString();
+        return (brand + ' ' + model).toLowerCase().includes(this.searchTrigger);
+      });
     }
 
-    if (this.sort === 'az') {
-      items.sort((a, b) => (a.brand + a.model).localeCompare(b.brand + b.model));
-    } else {
-      items.sort((a, b) => (b.brand + b.model).localeCompare(a.brand + a.model));
-    }
+    // orden
+    items.sort((a, b) => {
+      const aKey = ((a.brand || '') + ' ' + (a.model || '')).toString();
+      const bKey = ((b.brand || '') + ' ' + (b.model || '')).toString();
+      return this.sort === 'az' ? aKey.localeCompare(bKey) : bKey.localeCompare(aKey);
+    });
 
     this.filtered = items;
   }

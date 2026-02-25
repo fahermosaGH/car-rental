@@ -6,68 +6,132 @@
   {{ error }}
 </div>
 
-<div class="grid" *ngIf="!loading && stats">
+<div *ngIf="!loading && stats">
 
-  <div class="card">
-    <div class="kpi-title">Usuarios</div>
-    <div class="kpi-value">{{ stats.users }}</div>
-    <div class="kpi-sub">Registrados</div>
+  <!-- RANKINGS ARRIBA (más grandes) -->
+  <div class="grid grid--rankings">
+
+    <div class="card card--rank" *ngIf="stats.topVehicles?.length">
+      <div class="kpi-title">Vehículos más requeridos (mes)</div>
+
+      <div class="rank" *ngFor="let it of stats.topVehicles; let i = index">
+        <div class="rank-row">
+          <span class="rank-label">{{ i + 1 }}. {{ it.label }}</span>
+          <span class="rank-value">{{ it.value }}</span>
+        </div>
+        <div class="bar">
+          <div class="bar-fill" [style.width]="barWidth(it.value, maxValue(stats.topVehicles))"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card--rank" *ngIf="stats.topPickupLocations?.length">
+      <div class="kpi-title">Ubicaciones más alquiladas (retiro)</div>
+
+      <div class="rank" *ngFor="let it of stats.topPickupLocations; let i = index">
+        <div class="rank-row">
+          <span class="rank-label">{{ i + 1 }}. {{ it.label }}</span>
+          <span class="rank-value">{{ it.value }}</span>
+        </div>
+        <div class="bar">
+          <div class="bar-fill" [style.width]="barWidth(it.value, maxValue(stats.topPickupLocations))"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card--rank" *ngIf="stats.topCategories?.length">
+      <div class="kpi-title">Categorías más vendidas (mes)</div>
+
+      <div class="rank" *ngFor="let it of stats.topCategories; let i = index">
+        <div class="rank-row">
+          <span class="rank-label">{{ i + 1 }}. {{ it.label }}</span>
+          <span class="rank-value">{{ it.value }}</span>
+        </div>
+        <div class="bar">
+          <div class="bar-fill" [style.width]="barWidth(it.value, maxValue(stats.topCategories))"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card--rank" *ngIf="stats.incomeByLocation?.length">
+      <div class="kpi-title">Ingresos por sucursal (mes)</div>
+
+      <div class="rank" *ngFor="let it of stats.incomeByLocation; let i = index">
+        <div class="rank-row">
+          <span class="rank-label">{{ i + 1 }}. {{ it.label }}</span>
+          <span class="rank-value">{{ it.value | currency:'ARS' }}</span>
+        </div>
+        <div class="bar">
+          <div class="bar-fill" [style.width]="barWidth(it.value, maxValue(stats.incomeByLocation))"></div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
-  <div class="card">
-    <div class="kpi-title">Vehículos</div>
-    <div class="kpi-value">{{ stats.vehicles }}</div>
-    <div class="kpi-sub">En flota</div>
-  </div>
+  <!-- KPIs ABAJO (más chicos) -->
+  <div class="grid grid--kpis">
 
-  <div class="card">
-    <div class="kpi-title">Sucursales</div>
-    <div class="kpi-value">{{ stats.locations }}</div>
-    <div class="kpi-sub">Activas</div>
-  </div>
+    <div class="card card--kpi">
+      <div class="kpi-title">Usuarios</div>
+      <div class="kpi-value">{{ stats.users }}</div>
+      <div class="kpi-sub">Registrados</div>
+    </div>
 
-  <div class="card">
-    <div class="kpi-title">Reservas totales</div>
-    <div class="kpi-value">{{ stats.reservationsTotal }}</div>
-    <div class="kpi-sub">Históricas</div>
-  </div>
+    <div class="card card--kpi">
+      <div class="kpi-title">Vehículos</div>
+      <div class="kpi-value">{{ stats.vehicles }}</div>
+      <div class="kpi-sub">En flota</div>
+    </div>
 
-  <div class="card">
-    <div class="kpi-title">Activas hoy</div>
-    <div class="kpi-value">{{ stats.reservationsActiveToday }}</div>
-    <div class="kpi-sub">Pending / Confirmed</div>
-  </div>
+    <div class="card card--kpi">
+      <div class="kpi-title">Sucursales</div>
+      <div class="kpi-value">{{ stats.locations }}</div>
+      <div class="kpi-sub">Activas</div>
+    </div>
 
-  <div class="card">
-    <div class="kpi-title">Cancelaciones del mes</div>
-    <div class="kpi-value">{{ stats.cancellationsThisMonth }}</div>
-    <div class="kpi-sub">Status: cancelled</div>
-  </div>
+    <div class="card card--kpi">
+      <div class="kpi-title">Reservas totales</div>
+      <div class="kpi-value">{{ stats.reservationsTotal }}</div>
+      <div class="kpi-sub">Históricas</div>
+    </div>
 
-  <div class="card">
-    <div class="kpi-title">Ingresos del mes</div>
-    <div class="kpi-value">{{ stats.incomeThisMonth | currency:'ARS' }}</div>
-    <div class="kpi-sub">Reservas confirmadas</div>
-  </div>
+    <div class="card card--kpi">
+      <div class="kpi-title">Activas hoy</div>
+      <div class="kpi-value">{{ stats.reservationsActiveToday }}</div>
+      <div class="kpi-sub">Pending / Confirmed</div>
+    </div>
 
-  <!-- NUEVAS CARDS DENTRO DEL MISMO GRID -->
+    <div class="card card--kpi">
+      <div class="kpi-title">Cancelaciones del mes</div>
+      <div class="kpi-value">{{ stats.cancellationsThisMonth }}</div>
+      <div class="kpi-sub">Status: cancelled</div>
+    </div>
 
-  <div class="card">
-    <div class="kpi-title">Unidades disponibles</div>
-    <div class="kpi-value">{{ stats.unitsAvailable }}</div>
-    <div class="kpi-sub">En servicio</div>
-  </div>
+    <div class="card card--kpi">
+      <div class="kpi-title">Ingresos del mes</div>
+      <div class="kpi-value">{{ stats.incomeThisMonth | currency:'ARS' }}</div>
+      <div class="kpi-sub">Reservas confirmadas</div>
+    </div>
 
-  <div class="card">
-    <div class="kpi-title">En mantenimiento</div>
-    <div class="kpi-value">{{ stats.unitsMaintenance }}</div>
-    <div class="kpi-sub">Fuera de servicio</div>
-  </div>
+    <div class="card card--kpi">
+      <div class="kpi-title">Unidades disponibles</div>
+      <div class="kpi-value">{{ stats.unitsAvailable }}</div>
+      <div class="kpi-sub">En servicio</div>
+    </div>
 
-  <div class="card">
-    <div class="kpi-title">Unidades inactivas</div>
-    <div class="kpi-value">{{ stats.unitsInactive }}</div>
-    <div class="kpi-sub">Deshabilitadas</div>
+    <div class="card card--kpi">
+      <div class="kpi-title">En mantenimiento</div>
+      <div class="kpi-value">{{ stats.unitsMaintenance }}</div>
+      <div class="kpi-sub">Fuera de servicio</div>
+    </div>
+
+    <div class="card card--kpi">
+      <div class="kpi-title">Unidades inactivas</div>
+      <div class="kpi-value">{{ stats.unitsInactive }}</div>
+      <div class="kpi-sub">Deshabilitadas</div>
+    </div>
+
   </div>
 
 </div>

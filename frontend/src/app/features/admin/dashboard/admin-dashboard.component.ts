@@ -36,4 +36,14 @@ export class AdminDashboardComponent implements OnInit {
       },
     });
   }
+
+  maxValue(list: { value: number }[] | undefined | null): number {
+    if (!list || list.length === 0) return 0;
+    return Math.max(...list.map((x) => x.value));
+  }
+
+  barWidth(value: number, max: number): string {
+    if (!max) return '0%';
+    return `${Math.round((value / max) * 100)}%`;
+  }
 }

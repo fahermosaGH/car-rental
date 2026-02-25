@@ -97,7 +97,7 @@ class AdminStatsController extends AbstractController
 
         $incomeThisMonth = (float) $incomeRaw;
 
-        // 🔹 NUEVO: unidades por estado
+        // Unidades por estado
         $unitsAvailable = (int) $em->createQueryBuilder()
             ->select('COUNT(u.id)')
             ->from(VehicleUnit::class, 'u')
@@ -122,6 +122,86 @@ class AdminStatsController extends AbstractController
             ->getQuery()
             ->getSingleScalarResult();
 
+        // =========================
+        // Rankings del mes (confirmadas)
+        // =========================
+        $rankLimit = 5;
+
+        // 1) Vehículo más requerido
+        $topVehiclesRaw = $em->createQueryBuilder()
+            ->select("CONCAT(v.brand, ' ', v.model) AS label, COUNT(r.id) AS value")
+            ->from(Reservation::class, 'r')
+            ->join('r.vehicle', 'v')
+            ->where('r.status = :confirmed')
+            ->andWhere('r.startAt >= :monthStart')
+            ->andWhere('r.startAt < :nextMonthStart')
+            ->groupBy('v.id')
+            ->orderBy('value', 'DESC')
+            ->setMaxResults($rankLimit)
+            ->setParameter('confirmed', 'confirmed')
+            ->setParameter('monthStart', $monthStart)
+            ->setParameter('nextMonthStart', $nextMonthStart)
+            ->getQuery()
+            ->getArrayResult();
+
+        // 2) Ubicación más alquilada (pickup)
+        $topPickupLocationsRaw = $em->createQueryBuilder()
+            ->select('l.name AS label, COUNT(r.id) AS value')
+            ->from(Reservation::class, 'r')
+            ->join('r.pickupLocation', 'l')
+            ->where('r.status = :confirmed')
+            ->andWhere('r.startAt >= :monthStart')
+            ->andWhere('r.startAt < :nextMonthStart')
+            ->groupBy('l.id')
+            ->orderBy('value', 'DESC')
+            ->setMaxResults($rankLimit)
+            ->setParameter('confirmed', 'confirmed')
+            ->setParameter('monthStart', $monthStart)
+            ->setParameter('nextMonthStart', $nextMonthStart)
+            ->getQuery()
+            ->getArrayResult();
+
+        // 3) Categoría más vendida
+        $topCategoriesRaw = $em->createQueryBuilder()
+            ->select('c.name AS label, COUNT(r.id) AS value')
+            ->from(Reservation::class, 'r')
+            ->join('r.vehicle', 'v')
+            ->join('v.category', 'c')
+            ->where('r.status = :confirmed')
+            ->andWhere('r.startAt >= :monthStart')
+            ->andWhere('r.startAt < :nextMonthStart')
+            ->groupBy('c.id')
+            ->orderBy('value', 'DESC')
+            ->setMaxResults($rankLimit)
+            ->setParameter('confirmed', 'confirmed')
+            ->setParameter('monthStart', $monthStart)
+            ->setParameter('nextMonthStart', $nextMonthStart)
+            ->getQuery()
+            ->getArrayResult();
+
+        // 4) Ingresos por ubicación (pickup)
+        $incomeByLocationRaw = $em->createQueryBuilder()
+            ->select('l.name AS label, COALESCE(SUM(r.totalPrice), 0) AS value')
+            ->from(Reservation::class, 'r')
+            ->join('r.pickupLocation', 'l')
+            ->where('r.status = :confirmed')
+            ->andWhere('r.startAt >= :monthStart')
+            ->andWhere('r.startAt < :nextMonthStart')
+            ->groupBy('l.id')
+            ->orderBy('value', 'DESC')
+            ->setMaxResults($rankLimit)
+            ->setParameter('confirmed', 'confirmed')
+            ->setParameter('monthStart', $monthStart)
+            ->setParameter('nextMonthStart', $nextMonthStart)
+            ->getQuery()
+            ->getArrayResult();
+
+        // Normalización a tipos simples
+        $topVehicles = array_map(fn($x) => ['label' => (string) $x['label'], 'value' => (int) $x['value']], $topVehiclesRaw);
+        $topPickupLocations = array_map(fn($x) => ['label' => (string) $x['label'], 'value' => (int) $x['value']], $topPickupLocationsRaw);
+        $topCategories = array_map(fn($x) => ['label' => (string) $x['label'], 'value' => (int) $x['value']], $topCategoriesRaw);
+        $incomeByLocation = array_map(fn($x) => ['label' => (string) $x['label'], 'value' => (float) $x['value']], $incomeByLocationRaw);
+
         return $this->json([
             'users' => $users,
             'vehicles' => $vehicles,
@@ -131,10 +211,15 @@ class AdminStatsController extends AbstractController
             'cancellationsThisMonth' => $cancellationsThisMonth,
             'incomeThisMonth' => $incomeThisMonth,
 
-            // NUEVOS
             'unitsAvailable' => $unitsAvailable,
             'unitsMaintenance' => $unitsMaintenance,
             'unitsInactive' => $unitsInactive,
+
+            // Rankings
+            'topVehicles' => $topVehicles,
+            'topPickupLocations' => $topPickupLocations,
+            'topCategories' => $topCategories,
+            'incomeByLocation' => $incomeByLocation,
         ]);
     }
 }

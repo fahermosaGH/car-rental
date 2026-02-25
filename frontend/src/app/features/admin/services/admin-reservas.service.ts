@@ -8,6 +8,7 @@ export type ReservationStatus = 'pending' | 'confirmed' | 'completed' | 'cancell
 
 export type AdminReservationRow = {
   id: number;
+  userFullName?: string | null;
   userEmail?: string | null;
   vehicle?: string | null;
   pickupLocation?: string | null;

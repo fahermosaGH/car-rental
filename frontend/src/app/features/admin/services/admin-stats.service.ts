@@ -4,6 +4,11 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { AuthService } from '../../../core/services/auth.service';
 
+export interface RankItem {
+  label: string;
+  value: number;
+}
+
 export interface AdminGeneralStats {
   users: number;
   vehicles: number;
@@ -16,6 +21,12 @@ export interface AdminGeneralStats {
   unitsAvailable: number;
   unitsMaintenance: number;
   unitsInactive: number;
+
+  // Rankings (mes)
+  topVehicles: RankItem[];
+  topPickupLocations: RankItem[];
+  topCategories: RankItem[];
+  incomeByLocation: RankItem[];
 }
 
 @Injectable({ providedIn: 'root' })

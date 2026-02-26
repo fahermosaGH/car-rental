@@ -289,3 +289,20 @@ select.select.small {
     grid-template-columns: 1fr;
   }
 }
+
+/* ✅ Checkbox "Mostrar inactivos" (cabecera / head-actions) */
+.head-actions input[type="checkbox"]{
+  width: 14px;
+  height: 14px;
+  accent-color: #7c3aed;
+  transform: translateY(1px);
+}
+
+/* Opcional: si el label queda gigante por padding/line-height */
+.head-actions label{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  opacity: .9;
+}
